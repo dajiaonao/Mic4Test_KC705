@@ -46,6 +46,19 @@ class MIC4Config():
     def useCurrentDAC(yes=1):
         pass
 
+    def test_config(self):
+        ### Configure DAC8568
+        cmdStr = ''
+        cmdStr += self.dac.set_voltage(0, 1.2)
+        cmdStr += self.dac.set_voltage(2, 1.4)
+        cmdStr += self.dac.set_voltage(3, 1.2)
+        cmdStr += self.dac.set_voltage(4, 0.8)
+        cmdStr += self.dac.set_voltage(6, 1.2)
+        self.s.sendall(cmdStr)
+
+        ### 
+
+
     def test(self):
         print("testing...")
 
@@ -80,8 +93,9 @@ class MIC4Config():
 #         print rw
 
 class bitSet():
-    def __init__(self,bits=[]):
+    def __init__(self,bits=[], reverse=False):
         self.value = 0
+        self.reverse = reverse
         self.setBits(bits)
     def setBits(self, bits):
         self.bits = bits
@@ -90,12 +104,18 @@ class bitSet():
 
     def parse(self, v):
         self.value = 0
-        for i in range(len(self.bits)):
+        nBits = len(self.bits)
+        for i in range(nBits):
             v1 = (v>>i)&1
-            self.value |= v1<<self.bits[i]
+            j = i if not self.reverse else nBits-i-1
+            self.value |= v1<<self.bits[j]
 
     def setTo(self, r):
+        print(r, self.mask, self.value)
         return (r & ~self.mask)|(self.value & self.mask)
+    def setValueTo(self, v, r):
+        self.parse(v)
+        return self.setTo(r)
 
     def test(self):
         self.setBits([0,4,8,12])
@@ -105,6 +125,33 @@ class bitSet():
             print('{0:b} {1:b}'.format(i,self.mask))
             print('{0:b} {1:b}'.format(i,self.value))
             print('{0:b} {1:b}'.format(i,self.setTo(0xffff)))
+
+class MIC4Reg(object):
+    def __init__(self, value=0):
+        self.value = value
+        self.vChanbits = bitSet([191,190,139,138,127,126],True) ### MONI_SEL<8:3>
+        self.vValbits = bitSet([193,188,186,182,180,178,174,172,170,166], True) ### DATA<59:50>
+        self.cChanbits = bitSet([96,50,63,80,41,51,62], True) ### MONI_SEL<2:0>, MONI_SEL_IHEP<3:0>
+        self.cValbits = bitSet([94,93,92,91,90,89,99,98], True) ### Input_IDB<7:0>
+
+    def setVolDAC(self, chan, v):
+        self.value = self.vChanbits.setValueTo(1<<chan, self.value)
+        self.value = self.vValbits.setValueTo(v, self.value)
+
+    def setCurDAC(self, chan, v):
+        self.value = self.cChanbits.setValueTo(1<<chan, self.value)
+        self.value = self.cValbits.setValueTo(v, self.value)
+    def getConf(self):
+        ### if it's not clear what does this class is supposed to provide
+        return self.value
+    def test(self):
+        self.setCurDAC(2, 0xd)
+        x = '{0:b}'.format(self.getConf())
+        for a in range(len(x)): 
+            if int(x[a])!=0: print(len(x)-1-a, x[a])
+        print('chan', self.cChanbits.bits)
+        print('val ', self.cValbits.bits)
+        print(bin(self.getConf()))
 
 class PixelConfig():
     '''Auxilary class for pxiel config.'''
@@ -130,7 +177,7 @@ class PixelConfig():
         cmdStr += cmd.write_memory(addr, data, n)
         cmdStr += send_pulse(2)
 
-class MIC4Reg(object):
+class MIC4Reg0(object):
     ## @var _defaultRegMap default register values
     _defaultRegMap = {
         'DAC'    : [0x75c3, 0x8444, 0x7bbb, 0x7375, 0x86d4, 0xe4b2], # from DAC1 to DAC6
@@ -211,19 +258,21 @@ class DAC8568(object):
         self.cmd = cmd
     def DACVolt(self, x):
         '''Convert voltage to a 16'b number'''
-        return int(x / 2.5 * 65536.0)    #calculation
+        return int(x / 5. * 65536.0)    #calculation
+#         return int(x / 2.5 * 65536.0)    #calculation
     def write_spi(self, val):
         ret = ""          # 32 bits, send two times, each for a half, starting with the higher one
         ret += self.cmd.write_register(0, (val >> 16) & 0xffff)
-        ret += self.cmd.send_pulse(2)
+        ret += self.cmd.send_pulse(1)
         ret += self.cmd.write_register(0, val & 0xffff)
-        ret += self.cmd.send_pulse(2)
+        ret += self.cmd.send_pulse(1)
         return ret
     def turn_on_2V5_ref(self):
         return self.write_spi(0x08000001)
     def set_voltage(self, ch, v):
         # 32 bit, first 8 is constent, next 4'b for channel, then the 16'b for voltage. Last 4'b is 0.
-        return self.write_spi((0x03 << 24) | (ch << 20) | (self.DACVolt(v) << 4))
+        # There is some issues, might overwrite some values in the current way. FIXME!
+        return self.write_spi((0x03 << 24) | ((ch&0xf) << 20) | (self.DACVolt(v) << 4))
  
 ## Shift_register write and read function.
 #
