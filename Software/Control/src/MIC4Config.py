@@ -79,6 +79,33 @@ class MIC4Config():
 #         ret = self.s.recv(25, socket.MSG_WAITALL)
 #         print rw
 
+class bitSet():
+    def __init__(self,bits=[]):
+        self.value = 0
+        self.setBits(bits)
+    def setBits(self, bits):
+        self.bits = bits
+        self.mask = 0
+        for i in bits: self.mask |= 1<<i
+
+    def parse(self, v):
+        self.value = 0
+        for i in range(len(self.bits)):
+            v1 = (v>>i)&1
+            self.value |= v1<<self.bits[i]
+
+    def setTo(self, r):
+        return (r & ~self.mask)|(self.value & self.mask)
+
+    def test(self):
+        self.setBits([0,4,8,12])
+        for i in range(20):
+            self.parse(i)
+            print ('-----')
+            print('{0:b} {1:b}'.format(i,self.mask))
+            print('{0:b} {1:b}'.format(i,self.value))
+            print('{0:b} {1:b}'.format(i,self.setTo(0xffff)))
+
 class PixelConfig():
     '''Auxilary class for pxiel config.'''
     def __init__(self, cmd, s):
@@ -177,13 +204,16 @@ class MIC4Reg(object):
 ## Command generator for controlling DAC8568
 #
 class DAC8568(object):
+    '''used to generate the control string for DAC8568. 
+    '''
  
     def __init__(self, cmd):
         self.cmd = cmd
     def DACVolt(self, x):
+        '''Convert voltage to a 16'b number'''
         return int(x / 2.5 * 65536.0)    #calculation
     def write_spi(self, val):
-        ret = ""          # 32 bits 
+        ret = ""          # 32 bits, send two times, each for a half, starting with the higher one
         ret += self.cmd.write_register(0, (val >> 16) & 0xffff)
         ret += self.cmd.send_pulse(2)
         ret += self.cmd.write_register(0, val & 0xffff)
@@ -192,6 +222,7 @@ class DAC8568(object):
     def turn_on_2V5_ref(self):
         return self.write_spi(0x08000001)
     def set_voltage(self, ch, v):
+        # 32 bit, first 8 is constent, next 4'b for channel, then the 16'b for voltage. Last 4'b is 0.
         return self.write_spi((0x03 << 24) | (ch << 20) | (self.DACVolt(v) << 4))
  
 ## Shift_register write and read function.
