@@ -133,6 +133,7 @@ class MIC4Reg(object):
         self.vValbits = bitSet([193,188,186,182,180,178,174,172,170,166], True) ### DATA<59:50>
         self.cChanbits = bitSet([96,50,63,80,41,51,62], True) ### MONI_SEL<2:0>, MONI_SEL_IHEP<3:0>
         self.cValbits = bitSet([94,93,92,91,90,89,99,98], True) ### Input_IDB<7:0>
+        self.selColbits = bitSet([23+(64-i) for range(64,53-1,-1)]+[42,43,46,47,52,53,60,61,70,71,74,75,78,79,87,88,95,97,100,101,104,105,112,113,120,121,129,131,132,133,134,135,144,145,150,153,158,159,164,165,168,169,176,177,184,185,192,195,196,197,198,199], True) ### COL_SEL
 
     def setVolDAC(self, chan, v):
         self.value = self.vChanbits.setValueTo(1<<chan, self.value)
@@ -141,6 +142,15 @@ class MIC4Reg(object):
     def setCurDAC(self, chan, v):
         self.value = self.cChanbits.setValueTo(1<<chan, self.value)
         self.value = self.cValbits.setValueTo(v, self.value)
+    def selectCol(self, n):
+        self.value = self.selColbits.setValueTo((1<<n)&0xffffffffffff, self.value)
+    def setPDB(self, v):
+        self.setBit(21,v)
+
+    def setBit(self,n,v):
+        mask = 1<<n
+        self.value = (self.value & mask)|((v<<n) & mask)
+
     def getConf(self):
         ### if it's not clear what does this class is supposed to provide
         return self.value
