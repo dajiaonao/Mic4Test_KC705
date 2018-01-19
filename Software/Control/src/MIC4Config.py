@@ -10,6 +10,7 @@ import copy
 from command import *
 import socket
 import time
+import sys
 
 ## Manage Topmetal-S 1mm chip's internal register map.
 # Allow combining and disassembling individual registers
@@ -21,7 +22,7 @@ class MIC4Config():
 
     def __init__(self):
         self.s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        self.sReg = MIC4Reg()
+        self.sReg = MIC4Reg(0)
         self.dac = DAC8568(self.cmd)
         self.pCfg = PixelConfig(self.cmd, self.s)
 
@@ -29,6 +30,32 @@ class MIC4Config():
         host = '192.168.2.3'
         port = 1024
         self.s.connect((host,port))
+
+    def configReg(self):
+        div = 1
+        fifo_out = 1
+        dxc = self.sReg.getConf()
+        print('{0:x}'.format(dxc))
+
+        cmdStr = ''
+        for i in range(13):
+            din = 0xffff & dxc
+            cmdStr += self.cmd.write_register(0, din)
+            cmdStr += self.cmd.send_pulse(3)
+
+            ### shift dxc
+            dxc = dxc>>16
+            print('{1:d} {0:x} {2:x}'.format(dxc, i, din))
+
+        ### send data to register and read them back
+        cmdStr += self.cmd.write_register(1, (div<<1)+fifo_out)
+        cmdStr += self.cmd.send_pulse(0)
+        cmdStr += self.cmd.read_datafifo(200)
+        self.s.sendall(cmdStr)
+
+        ### read back
+        rw = self.s.recv(25, socket.MSG_WAITALL)
+        return rw
 
     def T(self):
         addr = 0
@@ -43,10 +70,22 @@ class MIC4Config():
 
         return retw
 
-    def useCurrentDAC(yes=1):
-        pass
+    def setClocks(self, strobe_b, lt_div, clk_div):
+        wd = 0
+        wd |= (strobe_b&0x1) << 12
+        wd |= (lt_div&0x3f) << 6
+        wd |= (clk_div&0x3f)
+        self.s.sendall(self.cmd.write_register(2, wd))
 
-    def test_config(self):
+    def sendGRST_B(self):
+        self.s.sendall(self.cmd.send_pulse(5))
+    def sendA_PULSE(self):
+        self.s.sendall(self.cmd.send_pulse(6))
+    def sendD_PULSE(self):
+        self.s.sendall(self.cmd.send_pulse(7))
+      
+
+    def test_DAC8568_config(self):
         ### Configure DAC8568
         cmdStr = ''
         cmdStr += self.dac.set_voltage(0, 1.2)
@@ -55,7 +94,6 @@ class MIC4Config():
         cmdStr += self.dac.set_voltage(4, 0.8)
         cmdStr += self.dac.set_voltage(6, 1.2)
         self.s.sendall(cmdStr)
-
         ### 
 
 
@@ -111,7 +149,7 @@ class bitSet():
             self.value |= v1<<self.bits[j]
 
     def setTo(self, r):
-        print(r, self.mask, self.value)
+#         print(r, self.mask, self.value)
         return (r & ~self.mask)|(self.value & self.mask)
     def setValueTo(self, v, r):
         self.parse(v)
@@ -127,42 +165,90 @@ class bitSet():
             print('{0:b} {1:b}'.format(i,self.setTo(0xffff)))
 
 class MIC4Reg(object):
+    VCLIPBits  = bitSet([193,188,186,182,180,178,174,172,170,166],True) ### DATA<59:50>
+    VResetBits = bitSet([137,141,143,147,149,152,155,157,161,163],True) ## DATA<49:40>
+    VCASN2Bits = bitSet([128,124,122,118,116,114,110,108,106,102],True) # DATA<39:30>
+    VCASNBits  = bitSet([194,189,187,183,181,179,175,173,171,167],True) # DATA<29:20>
+    VCASPBits  = bitSet([136,140,142,146,148,151,154,156,160,162],True) # DATA<19:10>
+    VRefBits   = bitSet([130,125,123,119,117,115,111,109,107,103],True) # DATA<9:0>
+    IBIASBits  = bitSet([69,68,67,66,65,64,73,72],True) # Input_IBIAS<7:0> 
+    IDBBits    = bitSet([94,93,92,91,90,89,99,98],True) # Input_IDB<7:0>
+    ITHRBits   = bitSet([54,55,56,57,58,59,48,49],True) # Input_ITHR<7:0>
+    IRESETBits = bitSet([40,39,38,37,36,35,45,44],True) # Input_IHEP_IRESET<7:0>
+    IDB2Bits   = bitSet([81,82,83,84,85,86,76,77],True) # Input_IHEP_IDB2<7:0>
+
+    vChanbits = bitSet([191,190,139,138,127,126],True) ### MONI_SEL<8:3>
+    cChanbits = bitSet([96 ,50 ,63 ,80 ,41 ,51 ,62], True) ### MONI_SEL<2:0>, MONI_SEL_IHEP<3:0>
+    selColbits = bitSet([23+(64-i) for i in range(64,53-1,-1)]+[42,43,46,47,52,53,60,61,70,71,74,75,78,79,87,88,95,97,100,101,104,105,112,113,120,121,129,131,132,133,134,135,144,145,150,153,158,159,164,165,168,169,176,177,184,185,192,195,196,197,198,199], True) ### COL_SEL, 64 bits 
+
     def __init__(self, value=0):
         self.value = value
-        self.vChanbits = bitSet([191,190,139,138,127,126],True) ### MONI_SEL<8:3>
-        self.vValbits = bitSet([193,188,186,182,180,178,174,172,170,166], True) ### DATA<59:50>
-        self.cChanbits = bitSet([96,50,63,80,41,51,62], True) ### MONI_SEL<2:0>, MONI_SEL_IHEP<3:0>
-        self.cValbits = bitSet([94,93,92,91,90,89,99,98], True) ### Input_IDB<7:0>
-        self.selColbits = bitSet([23+(64-i) for range(64,53-1,-1)]+[42,43,46,47,52,53,60,61,70,71,74,75,78,79,87,88,95,97,100,101,104,105,112,113,120,121,129,131,132,133,134,135,144,145,150,153,158,159,164,165,168,169,176,177,184,185,192,195,196,197,198,199], True) ### COL_SEL
-
-    def setVolDAC(self, chan, v):
-        self.value = self.vChanbits.setValueTo(1<<chan, self.value)
-        self.value = self.vValbits.setValueTo(v, self.value)
-
-    def setCurDAC(self, chan, v):
-        self.value = self.cChanbits.setValueTo(1<<chan, self.value)
-        self.value = self.cValbits.setValueTo(v, self.value)
+    def selectVolDAC(self, chan):
+        self.value = self.vChanbits.setValueTo((1<<chan)&0x3f, self.value)
+    def selectCurDAC(self, chan):
+        self.value = self.cChanbits.setValueTo((1<<chan)&0x3f, self.value)
     def selectCol(self, n):
-        self.value = self.selColbits.setValueTo((1<<n)&0xffffffffffff, self.value)
+        self.value = self.selColbits.setValueTo((1<<n)&0xffffffffffffffff, self.value)
+
     def setPDB(self, v):
         self.setBit(21,v)
+    def setTEST(self, v):
+        self.setBit(22,v)
 
     def setBit(self,n,v):
         mask = 1<<n
-        self.value = (self.value & mask)|((v<<n) & mask)
+        self.value = (self.value & ~mask)|((v<<n) & mask)
+
+    def setPar(self, parname, v):
+        try:
+            x = getattr(self, parname+'Bits')
+            if x:
+                self.value = x.setValueTo(v, self.value)
+        except AttributeError as e:
+            print(e)
+            sys.exit(1)
+
+    def setLVDS_TEST(self, v):
+        n = 9
+        mask = 0xf<<n
+        self.value = (self.value & ~mask)|((v<<n) & mask)
+    def setTRX16(self, v):
+        n = 13
+        mask = 0xf<<n
+        self.value = (self.value & ~mask)|((v<<n) & mask)
+    def setTRX15_serializer(self, v):
+        n = 17
+        mask = 0xf<<n
+        self.value = (self.value & ~mask)|((v<<n) & mask)
+
+    def useDefault(self):
+        self.value =  0
+        self.setLVDS_TEST(0b1000)
+        self.setTRX16(0b1000)
+        self.setTRX15_serializer(0b1000)
+        self.setPDB(0)
+        self.setTEST(0)
+        self.setPar('VCLIP',0b0000101001)
+        self.setPar('VReset',0b0101010101)
+        self.setPar('VCASN2',0b0110011001)
+        self.setPar('VCASN',0b0100010001)
+        self.setPar('VCASP',0b1011101110)
+        self.setPar('VRef',0b0100010001)
+        self.setPar('IBIAS',0x80)
+        self.setPar('IDB',0x80)
+        self.setPar('ITHR',0x80)
+        self.setPar('IRESET',0x80)
+        self.setPar('IDB2',0x80)
+        # self.setPar('XYZ',0x80) ### test the exception handling
+        self.selectVolDAC(0)
+        self.selectCurDAC(0)
 
     def getConf(self):
         ### if it's not clear what does this class is supposed to provide
         return self.value
-    def test(self):
-        self.setCurDAC(2, 0xd)
-        x = '{0:b}'.format(self.getConf())
-        for a in range(len(x)): 
-            if int(x[a])!=0: print(len(x)-1-a, x[a])
-        print('chan', self.cChanbits.bits)
-        print('val ', self.cValbits.bits)
-        print(bin(self.getConf()))
 
+    def test(self):
+        pass
 class PixelConfig():
     '''Auxilary class for pxiel config.'''
     def __init__(self, cmd, s):
@@ -180,11 +266,21 @@ class PixelConfig():
     def setPixel(self, x, y, pulse, mask):
         self.pixels.append((x+(y<<6),pulse+(mask<<1)))
 
-    def getConfigVector(self):
+    def getConfigVector(self, clk_div):
         ### address + config
+        data0 = 0
+        data0 |= (clk_div & 0x3f)
+
+        n = 0
+        data1 = 0
+        if self.allAre is not None:
+            for i in range():
+                for j in range():
+                    data1 = data1<<16
+
         cmdStr = ''
-        cmdStr += cmd.write_register(0, data)
-        cmdStr += cmd.write_memory(addr, data, n)
+        cmdStr += cmd.write_register(0, data0)
+        cmdStr += cmd.write_memory(0, data1, n)
         cmdStr += send_pulse(2)
 
 class MIC4Reg0(object):
