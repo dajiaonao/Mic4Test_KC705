@@ -9,5 +9,6 @@ if __name__ == '__main__':
 #     bs1 = bitSet()
 #     bs1.test()
     mc1.sReg.useDefault()
-    print('{0:b}'.format(mc1.sReg.getConf()))
-    mc1.sReg.test()
+    mc1.sReg.simpleCheck()
+#     print('{0:b}'.format(mc1.sReg.getConf()))
+#     mc1.sReg.test()
