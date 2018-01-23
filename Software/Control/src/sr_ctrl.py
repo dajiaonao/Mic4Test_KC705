@@ -20,14 +20,14 @@ import time
 # @return Value stored in the external SR that is read back.
 # @return valid signal shows that the value stored in external SR is read back.
 def shift_register_rw(s, data_to_send, clk_div):
-    div_reg = (clk_div & 0x3f) << 170
-    data_reg = data_to_send & ((1<<170)-1)
+    div_reg = ((clk_div & 0x3f) | (1<<6)) << 200
+    data_reg = data_to_send & ((1<<200)-1)
 
     cmd = Cmd()
 
     val = div_reg | data_reg
     cmdstr = ""
-    for i in xrange(11):
+    for i in xrange(13):
         cmdstr += cmd.write_register(i, (val >> i*16) & 0xffff)
 
     cmdstr += cmd.send_pulse(0x01)
@@ -36,6 +36,7 @@ def shift_register_rw(s, data_to_send, clk_div):
 
     s.sendall(cmdstr)
 
+    return
     # read back
     time.sleep(1)
     cmdstr = ""
@@ -54,6 +55,42 @@ def shift_register_rw(s, data_to_send, clk_div):
     return ret
     return valid
 
+def test(s):
+    print("testing...")
+
+    div = 8
+    fifo_out = 1
+    #dx = 0xabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde
+    dx = 0xffffffffffffffffffffffffffffffffffffffffffffffffff
+    #dx = 1<<200
+    dxc = dx
+    print('{0:x}'.format(dxc))
+
+    cmd = Cmd()
+    cmdStr = ''
+    cmdStr += cmd.write_register(1, (div<<1)+fifo_out)
+    for i in range(13):
+        din = 0xffff & dxc
+        cmdStr += cmd.write_register(0, din)
+        cmdStr += cmd.send_pulse(0x4)
+
+        ### shift dxc
+        dxc = dxc>>16
+        print('{1:d} {0:x} {2:x}'.format(dxc, i, din))
+
+    #time.sleep(2)
+    ### send data to register and read them back
+    #cmdStr += cmd.write_register(1, (div<<1)+fifo_out)
+    cmdStr += cmd.send_pulse(0x1)
+    #cmdStr += self.cmd.read_datafifo(200)
+
+    print([ord(x) for x in cmdStr])
+    print(len([ord(x) for x in cmdStr]))
+    print(cmdStr)
+    s.sendall(cmdStr)
+
+
+
 if __name__ == "__main__":
     host = '192.168.2.3'
     port = 1024
@@ -63,5 +100,6 @@ if __name__ == "__main__":
     data_in=123456
     div=7
     shift_register_rw(s, data_in, div)
+    #test(s)
 
     s.close()

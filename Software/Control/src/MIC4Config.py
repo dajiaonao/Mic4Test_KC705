@@ -62,11 +62,14 @@ class MIC4Config():
         n = 1
 
         cmdStr = ''
-        cmdStr += self.cmd.send_pulse(4)
-        cmdStr += self.cmd.read_memory(addr,n)
+        cmdStr += self.cmd.send_pulse(0x8)
+        #cmdStr += self.cmd.read_memory(addr,n)
+        print("string:",cmdStr)
+        print("string:",[ord(x) for x in cmdStr])
 
         self.s.sendall(cmdStr)
-        retw = self.s.recv(1)
+        #retw = self.s.recv(1)
+        retw = 0
 
         return retw
 
@@ -75,24 +78,36 @@ class MIC4Config():
         wd |= (strobe_b&0x1) << 12
         wd |= (lt_div&0x3f) << 6
         wd |= (clk_div&0x3f)
+        print(bin(wd))
         self.s.sendall(self.cmd.write_register(2, wd))
 
     def sendGRST_B(self):
-        self.s.sendall(self.cmd.send_pulse(5))
+        self.s.sendall(self.cmd.send_pulse(0x10))
     def sendA_PULSE(self):
-        self.s.sendall(self.cmd.send_pulse(6))
+        self.s.sendall(self.cmd.send_pulse(0x20))
     def sendD_PULSE(self):
-        self.s.sendall(self.cmd.send_pulse(7))
-      
+        self.s.sendall(self.cmd.send_pulse(0x40))
+     
+    def test_pixel_config(self):
+        xyz = self.pCfg.get_test_vector()
+        print(xyz)
+        self.s.sendall(xyz)
 
     def test_DAC8568_config(self):
         ### Configure DAC8568
         cmdStr = ''
-        cmdStr += self.dac.set_voltage(0, 1.2)
-        cmdStr += self.dac.set_voltage(2, 1.4)
-        cmdStr += self.dac.set_voltage(3, 1.2)
-        cmdStr += self.dac.set_voltage(4, 0.8)
-        cmdStr += self.dac.set_voltage(6, 1.2)
+#        cmdStr += self.dac.set_voltage(0, 1.2)
+#        cmdStr += self.dac.set_voltage(2, 1.4)
+#        cmdStr += self.dac.set_voltage(3, 1.2)
+#        cmdStr += self.dac.set_voltage(4, 0.8)
+#        cmdStr += self.dac.set_voltage(6, 1.2)
+        cmdStr += self.dac.set_voltage(0, 2.5)
+#        cmdStr += self.dac.set_voltage(1, 0)
+#        cmdStr += self.dac.set_voltage(2, 0)
+#        cmdStr += self.dac.set_voltage(3, 0)
+#        cmdStr += self.dac.set_voltage(4, 0)
+#        cmdStr += self.dac.set_voltage(5, 0)
+#        cmdStr += self.dac.set_voltage(6, 0)
         self.s.sendall(cmdStr)
         ### 
 
@@ -119,12 +134,12 @@ class MIC4Config():
         ### send data to register and read them back
         cmdStr += self.cmd.write_register(1, (div<<1)+fifo_out)
         cmdStr += self.cmd.send_pulse(0)
-        cmdStr += self.cmd.read_datafifo(200)
+#        cmdStr += self.cmd.read_datafifo(200)
 
         print([ord(x) for x in cmdStr])
         print(len([ord(x) for x in cmdStr]))
-#         print(cmdStr)
-#         self.s.sendall(cmdStr)
+        print(cmdStr)
+        self.s.sendall(cmdStr)
 
         ### read back
 #         ret = self.s.recv(25, socket.MSG_WAITALL)
@@ -279,9 +294,31 @@ class PixelConfig():
                     data1 = data1<<16
 
         cmdStr = ''
-        cmdStr += cmd.write_register(0, data0)
-        cmdStr += cmd.write_memory(0, data1, n)
-        cmdStr += send_pulse(2)
+        cmdStr += self.cmd.write_register(0, data0)
+        cmdStr += self.cmd.write_memory(0, data1, n)
+        cmdStr += self.cmd.send_pulse(0x4)
+    def get_test_vector(self):
+        clk_div = 7
+        data0 = 0
+        data0 |= (clk_div & 0x3f)
+ 
+        data1 = [i&0xffff for i in range(10)]
+        print(data1)
+
+        cmdStr = ''
+        cmdStr += self.cmd.write_register(0, data0)
+        cmdStr += self.cmd.write_memory(0, data1)
+        print(cmdStr)
+
+        self.s.sendall(cmdStr)
+
+        cmdStr = ''
+        time.sleep(1)
+        cmdStr += self.cmd.send_pulse(0x4)
+        print(cmdStr)
+        self.s.sendall(cmdStr)
+        return cmdStr
+        
 
 class MIC4Reg0(object):
     ## @var _defaultRegMap default register values
@@ -369,9 +406,9 @@ class DAC8568(object):
     def write_spi(self, val):
         ret = ""          # 32 bits, send two times, each for a half, starting with the higher one
         ret += self.cmd.write_register(0, (val >> 16) & 0xffff)
-        ret += self.cmd.send_pulse(1)
+        ret += self.cmd.send_pulse(0x2)
         ret += self.cmd.write_register(0, val & 0xffff)
-        ret += self.cmd.send_pulse(1)
+        ret += self.cmd.send_pulse(0x2)
         return ret
     def turn_on_2V5_ref(self):
         return self.write_spi(0x08000001)
