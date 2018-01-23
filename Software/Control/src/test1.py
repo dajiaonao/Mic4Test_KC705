@@ -23,3 +23,7 @@ if __name__ == '__main__':
     #mc1.test_pixel_config()
     #mc1.pCfg.get_test_vector()
 #    testRegister(mc1)
+    mc1.sReg.useDefault()
+    mc1.sReg.simpleCheck()
+#     print('{0:b}'.format(mc1.sReg.getConf()))
+#     mc1.sReg.test()

@@ -264,6 +264,30 @@ class MIC4Reg(object):
 
     def test(self):
         pass
+    def simpleCheck(self):
+        dic1 = []
+        dic1 += self.VCLIPBits.bits
+        dic1 += self.VResetBits.bits
+        dic1 += self.VCASN2Bits.bits
+        dic1 += self.VCASNBits.bits
+        dic1 += self.VCASPBits.bits
+        dic1 += self.VRefBits.bits
+        dic1 += self.IBIASBits.bits
+        dic1 += self.IDBBits.bits
+        dic1 += self.ITHRBits.bits
+        dic1 += self.IRESETBits.bits
+        dic1 += self.IDB2Bits.bits
+        dic1 += self.vChanbits.bits
+        dic1 += self.cChanbits.bits
+        dic1 += self.selColbits.bits
+
+        print(sorted(dic1))
+        j = 0
+        for i in range(200):
+            if i not in dic1:
+                print(j,':',i)
+                j+=1
+
 class PixelConfig():
     '''Auxilary class for pxiel config.'''
     def __init__(self, cmd, s):
