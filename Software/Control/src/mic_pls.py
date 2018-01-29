@@ -125,6 +125,6 @@ if __name__ == "__main__":
     All_plse(s)
     #shift_register_rw(s, data_in, div)
     #test(s)
-    pixel_config(s)
+    #pixel_config(s)
 
     s.close()

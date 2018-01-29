@@ -13,7 +13,7 @@ if __name__ == '__main__':
     mc1.connect()
     #mc1.test()
     #print(mc1.T())
-    mc1.setClocks(1,2,4)
+    mc1.setClocks(1,0,0)
     mc1.sendGRST_B()
     mc1.sendA_PULSE()
     mc1.sendD_PULSE()

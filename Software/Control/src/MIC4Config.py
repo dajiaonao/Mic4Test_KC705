@@ -82,11 +82,11 @@ class MIC4Config():
         self.s.sendall(self.cmd.write_register(2, wd))
 
     def sendGRST_B(self):
-        self.s.sendall(self.cmd.send_pulse(0x10))
-    def sendA_PULSE(self):
         self.s.sendall(self.cmd.send_pulse(0x20))
-    def sendD_PULSE(self):
+    def sendA_PULSE(self):
         self.s.sendall(self.cmd.send_pulse(0x40))
+    def sendD_PULSE(self):
+        self.s.sendall(self.cmd.send_pulse(0x80))
      
     def test_pixel_config(self):
         xyz = self.pCfg.get_test_vector()
