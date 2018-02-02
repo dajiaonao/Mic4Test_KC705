@@ -58,23 +58,51 @@ def getVoltMeasurements():
     ss.send(":SOUR:VOLT:PROT PROT2\n".encode())
     #ss.send(":FORM:ELEM VOLT\n".encode())
     ss.send("DISP:DIG 6\n".encode())                                    #display digital the max is 6
+
+    count = 20
+    cmd = ''
+    cmd += ':TRACe:MAKE "voltMeasBuffer", 10000;'
+    #cmd += ':SENSe:FUNCtion "VOLTage";'
+    cmd += ':COUN %d;'%count
+    cmd += '\n'
+
+    ss.send(cmd.encode())                                       #open output 
+
+    #Interactive()
+    #return
     ss.send("OUTP ON\n".encode())                                       #open output 
 
     a = datetime.datetime.now()
-    T = datetime.timedelta(seconds = 50)
+    T = datetime.timedelta(seconds = 100)
     try:
+        fout = open("fout1.dat",'w')
         while True:                                                         #voltage range 0-200
-            #ss.send(":READ?\n".encode())                                    #read current of the output
-            ss.send(":MEASure:VOLT?\n".encode())                                    #read current of the output
-            v = "%s"%ss.recv(100)                        #receive output current value
+            #ss.send(":TRAC:DATA?1:5,'voltMeasBuffer' READ REL")
+            #ss.send(":READ? \n".encode())                                    #read current of the output
+            #ss.send(":MEASure:VOLT?\n".encode())                                    #read current of the output
+            #ss.send("TRACe:DATA? 1,5, 'voltMeasBuffer', READ, REL, SOUR;\n".encode())                                    #read current of the output
+            #ss.send(":MEASure:VOLT:DC? 'voltMeasBuffer'\n".encode())                                    #read current of the output
+            ss.send(":MEASure:VOLT:DC? 'voltMeasBuffer'\n".encode())                                    #Only the last measure will be returned
+            v = "%s"%ss.recv(2048)                        #receive output current value
+            ss.send("TRACe:DATA? 1,20, 'voltMeasBuffer', REL, READ;\n".encode())                                    #to get all the measuremnets
+            v = "%s"%ss.recv(2048)                        #here are they
+            ss.send("TRACe:CLEar 'voltMeasBuffer';\n".encode())                                    #to get all the measuremnets
+            print v
+            len(v), len(v.split(','))
 
             b = datetime.datetime.now()
             d = b-a
+            print b,d,v
+            fout.write(' '.join(['#TIME:', str(b), str(d)])+'\n')
+            vs = v.split(',')
+            for i in range(count):
+                fout.write(','.join([str(i),vs[2*i],vs[2*i+1]])+'\n')
             if d>T: break
-            print b, d, d.total_seconds(),v
+            #print b, d, d.total_seconds(),v
             time.sleep(10)                                                 #delay 100ms
-    except KeyboardInterrupt:
+    except KeyboardInterrupt, AttributeError:
         print "Exiting."
+    fout.close()
     ss.send("OUTP OFF\n".encode())                                       #open output 
     ss.close()                                                          #close socket
     print("Ok!")
