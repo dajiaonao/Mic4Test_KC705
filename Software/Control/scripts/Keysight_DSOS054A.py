@@ -93,6 +93,8 @@ def main():
         ss.send(":WAVeform:FORMat WORD;")           #Waveform data format
         ss.send(":WAVeform:STReaming 1;")           #Waveform streaming on
         ss.send(":WAVeform:DATA? 1,%d;"%int(total_point))         #Query waveform data with start address and length
+
+        ### Why these magic numbers 2 and 3? A number contains 2 words? And there is a header with 3 words?
         n = total_point * 2 + 3
         print "n = %d"%n                            #calculate fetching data byte number
         totalContent = ""
@@ -107,6 +109,7 @@ def main():
         length = len(totalContent[3:])              #print length
         print length/2
         for i in xrange(length/2):              #store data into file
+            ### combine two words to form the number
             digital_number = (ord(totalContent[3+i*2+1])<<8)+ord(totalContent[3+i*2])
             if (ord(totalContent[3+i*2+1]) & 0x80) == 0x80:             
                 outfile.write("%f %f\n"%(Xrange[i] + Timebase_Poistion_X, (digital_number - 65535+1000)*Y_Factor + CH1_Offset))
