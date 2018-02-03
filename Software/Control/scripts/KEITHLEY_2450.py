@@ -106,6 +106,70 @@ def getVoltMeasurements():
     ss.send("OUTP OFF\n".encode())                                       #open output 
     ss.close()                                                          #close socket
     print("Ok!")
+###---------------------------------
+def getVoltMeasurements2():
+    ss.send("*IDN?\n".encode())                                         #command terminated with '\n'
+    print("Instrument ID: %s"%ss.recv(50))
+
+    ss.send("*RST\n".encode())                                          #command terminated with '\n'
+    ss.send(":SOUR:FUNC CURR\n".encode())
+    #ss.send(":SENS:FUNC 'VOLT'\n".encode())
+    ss.send(":SENS:VOLT:RANGE 2\n".encode())
+#    ss.send(":SOUR:CURR:MODE FIXED\n".encode())
+    ss.send(":SOUR:CURR:RANGE MIN\n".encode())
+    ss.send(":SOUR:CURR:LEV 0\n".encode())
+    ss.send(":SOUR:VOLT:PROT PROT2\n".encode())
+    #ss.send(":FORM:ELEM VOLT\n".encode())
+    ss.send("DISP:DIG 6\n".encode())                                    #display digital the max is 6
+
+    count = 30
+    cmd = ''
+    cmd += ':TRACe:MAKE "voltMeasBuffer", 10000;'
+    #cmd += ':SENSe:FUNCtion "VOLTage";'
+    cmd += ':COUN %d;'%count
+    cmd += '\n'
+
+    ss.send(cmd.encode())                                       #open output 
+
+    #Interactive()
+    #return
+    ss.send("OUTP ON\n".encode())                                       #open output 
+
+    a = datetime.datetime.now()
+    T = datetime.timedelta(hours=3.5)
+    try:
+        fout = open("fout1.dat",'w')
+        while True:                                                         #voltage range 0-200
+            #ss.send(":TRAC:DATA?1:5,'voltMeasBuffer' READ REL")
+            #ss.send(":READ? \n".encode())                                    #read current of the output
+            #ss.send(":MEASure:VOLT?\n".encode())                                    #read current of the output
+            #ss.send("TRACe:DATA? 1,5, 'voltMeasBuffer', READ, REL, SOUR;\n".encode())                                    #read current of the output
+            #ss.send(":MEASure:VOLT:DC? 'voltMeasBuffer'\n".encode())                                    #read current of the output
+            ss.send(":MEASure:VOLT:DC? 'voltMeasBuffer'\n".encode())                                    #Only the last measure will be returned
+            v = "%s"%ss.recv(4096)                        #receive output current value
+            ss.send("TRACe:DATA? 1,30, 'voltMeasBuffer', REL, READ;\n".encode())                                    #to get all the measuremnets
+            v = "%s"%ss.recv(4096)                        #here are they
+            ss.send("TRACe:CLEar 'voltMeasBuffer';\n".encode())                                    #to get all the measuremnets
+            print v
+            len(v), len(v.split(','))
+
+            b = datetime.datetime.now()
+            d = b-a
+            print b,d,v
+            fout.write(' '.join(['#TIME:', str(b), str(d)])+'\n')
+            vs = v.split(',')
+            for i in range(count):
+                fout.write(','.join([str(i),vs[2*i],vs[2*i+1]])+'\n')
+            if d>T: break
+            #print b, d, d.total_seconds(),v
+            time.sleep(60)                                                 #delay 100ms
+    except KeyboardInterrupt, AttributeError:
+        print "Exiting."
+    fout.close()
+    ss.send("OUTP OFF\n".encode())                                       #open output 
+    ss.close()                                                          #close socket
+    print("Ok!")
+
 
 def test1():
     a = datetime.datetime.now()
@@ -237,7 +301,7 @@ if __name__ == "__main__":
     ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      #init local socket handle
     ss.connect((hostname, port))                                #connect to the instrument 
 #     main()                                                      #execute main function
-    getVoltMeasurements()
+    getVoltMeasurements2()
     #print getWaveform()
     #Interactive()
 #    test1()
