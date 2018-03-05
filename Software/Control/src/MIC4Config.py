@@ -57,18 +57,25 @@ class MIC4Config():
         rw = self.s.recv(25, socket.MSG_WAITALL)
         return rw
 
+    def testReg(self, info=None):
+        '''Test writing the register configure file'''
+        if info is None:
+            info = self.sReg.getConf()
+
+
+
     def T(self):
         addr = 0
         n = 1
 
         cmdStr = ''
-        cmdStr += self.cmd.send_pulse(0x8)
-        #cmdStr += self.cmd.read_memory(addr,n)
+        cmdStr += self.cmd.send_pulse(1<<4)
+        cmdStr += self.cmd.read_memory(addr,n)
         print("string:",cmdStr)
         print("string:",[ord(x) for x in cmdStr])
 
         self.s.sendall(cmdStr)
-        #retw = self.s.recv(1)
+        retw = self.s.recv(1)
         retw = 0
 
         return retw
