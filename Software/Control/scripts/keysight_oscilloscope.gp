@@ -2,7 +2,8 @@
 set terminal postscript eps enhanced color dl 2.0 lw 1.5 "Helvetica" 12
 set output "./keysight_oscilloscope.eps"
 #--------------------------------------------------------------------------#
-set grid xtics y2tics front lw 1.5  lc rgb "0xffffff" 
+#set grid xtics y2tics front lw 1.5  lc rgb "0xffffff" 
+set grid xtics y2tics front lw 1.5  lc rgb "#ffffff" 
 set title "KEYSIGHT DSOS054A 500MHz 20GSa/s 10-bit ADC CH1" offset 0,-0.3 font ",15"
 set object 1 rectangle from graph 0,0 to graph 1,1 back fillcolor rgb '#1a1a1a' fillstyle solid noborder
 set y2range [-y_var+offset:y_var+offset]

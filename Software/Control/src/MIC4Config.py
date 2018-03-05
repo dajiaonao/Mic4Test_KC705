@@ -75,8 +75,10 @@ class MIC4Config():
         print("string:",[ord(x) for x in cmdStr])
 
         self.s.sendall(cmdStr)
-        retw = self.s.recv(1)
-        retw = 0
+        retw = self.s.recv(4)
+        #retw = ord(self.s.recv(50))
+        #retw = 0
+        print("read (",len(retw),'):', [ord(x) for x in retw])
 
         return retw
 
@@ -103,12 +105,17 @@ class MIC4Config():
     def test_DAC8568_config(self):
         ### Configure DAC8568
         cmdStr = ''
-#        cmdStr += self.dac.set_voltage(0, 1.2)
-#        cmdStr += self.dac.set_voltage(2, 1.4)
-#        cmdStr += self.dac.set_voltage(3, 1.2)
-#        cmdStr += self.dac.set_voltage(4, 0.8)
-#        cmdStr += self.dac.set_voltage(6, 1.2)
-        cmdStr += self.dac.set_voltage(0, 2.5)
+        val = 1.
+        cmdStr += self.dac.turn_on_2V5_ref()			#turn on internal reference voltage
+        #cmdStr += self.dac.set_voltage(2, 2)
+        #for i in range(8):
+        #    cmdStr += self.dac.set_voltage(i, val)
+        cmdStr += self.dac.set_voltage(0, 1.2) # LT_VREF
+        cmdStr += self.dac.set_voltage(2, 1.4) # VPLUSE_HIGH
+        cmdStr += self.dac.set_voltage(3, 1.2) # LVDS_REF
+        cmdStr += self.dac.set_voltage(4, 0.8) # VPULSE_LOW
+        cmdStr += self.dac.set_voltage(6, 1.2) # DAC_REF
+#        cmdStr += self.dac.set_voltage(0, 2.5)
 #        cmdStr += self.dac.set_voltage(1, 0)
 #        cmdStr += self.dac.set_voltage(2, 0)
 #        cmdStr += self.dac.set_voltage(3, 0)
@@ -432,9 +439,11 @@ class DAC8568(object):
         self.cmd = cmd
     def DACVolt(self, x):
         '''Convert voltage to a 16'b number'''
-        return int(x / 5. * 65536.0)    #calculation
-#         return int(x / 2.5 * 65536.0)    #calculation
+        print("V=",x)
+        #return int(x / 5. * 65536.0)    #calculation
+        return int(x / 2.5 * 65536.0)    #calculation
     def write_spi(self, val):
+        print(bin(val))
         ret = ""          # 32 bits, send two times, each for a half, starting with the higher one
         ret += self.cmd.write_register(0, (val >> 16) & 0xffff)
         ret += self.cmd.send_pulse(0x2)
