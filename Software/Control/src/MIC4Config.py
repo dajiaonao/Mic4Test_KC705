@@ -61,7 +61,23 @@ class MIC4Config():
         '''Test writing the register configure file'''
         if info is None:
             info = self.sReg.getConf()
+        ### write the info twice and compare the output of the second one with the input
+        cmdStr = ''
+        cmdStr += self.cmd.write_register(1, (div<<1)+fifo_out)
+        for i in range(13):
+            cmdStr += self.cmd.write_register(0, (info>>(i*16))&0xffff)
+            cmdStr += self.cmd.send_pulse(1<<3)
 
+            ### shift dxc
+            dxc = info>>(i*16)
+            print('{1:d} {0:x} {2:x}'.format(dxc, i, dxc&0xffff))
+        cmdStr += self.cmd.send_pulse(1)
+        cmdStr += self.cmd.read_datafifo(200)
+        self.s.sendall(cmdStr)
+
+        ### read back
+        rw = self.s.recv(25, socket.MSG_WAITALL)
+        return rw
 
 
     def T(self):
