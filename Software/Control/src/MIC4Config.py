@@ -177,6 +177,7 @@ class MIC4Config():
 
 class bitSet():
     def __init__(self,bits=[], reverse=False):
+        self.value0 = 0
         self.value = 0
         self.reverse = reverse
         self.setBits(bits)
@@ -186,6 +187,7 @@ class bitSet():
         for i in bits: self.mask |= 1<<i
 
     def parse(self, v):
+        self.value0 = v
         self.value = 0
         nBits = len(self.bits)
         for i in range(nBits):
@@ -208,6 +210,18 @@ class bitSet():
             print('{0:b} {1:b}'.format(i,self.mask))
             print('{0:b} {1:b}'.format(i,self.value))
             print('{0:b} {1:b}'.format(i,self.setTo(0xffff)))
+    def getValue(self, v0, vMax=None, vMin=None):
+        v = 0
+        temp1 = reversed(self.bits) if self.reverse else self.bits
+        for i,k in enumerate(temp1):
+            # test bit k and set bit i
+            v |= (((v0>>k) & 0x1) << i)
+
+        # normalize using the given range
+        if vMax is not None:
+            vMn = 0 if vMin is None else vMin
+            v = vMn+v*(vMax-vMn)/((1<<(len(self.bits)))-1)
+        return v
 
 class MIC4Reg(object):
     VCLIPBits  = bitSet([193,188,186,182,180,178,174,172,170,166],True) ### DATA<59:50>
@@ -226,6 +240,12 @@ class MIC4Reg(object):
     cChanbits = bitSet([96 ,50 ,63 ,80 ,41 ,51 ,62], True) ### MONI_SEL<2:0>, MONI_SEL_IHEP<3:0>
     selColbits = bitSet([23+(64-i) for i in range(64,53-1,-1)]+[42,43,46,47,52,53,60,61,70,71,74,75,78,79,87,88,95,97,100,101,104,105,112,113,120,121,129,131,132,133,134,135,144,145,150,153,158,159,164,165,168,169,176,177,184,185,192,195,196,197,198,199], True) ### COL_SEL, 64 bits 
 
+
+    ### Voltage and current DAC list
+    VList = [('VREF_Current_DAC','VRef'),('VCASN2','VCASN2'),('VReset','VReset'),('VCASP','VCASP'),('VCASN','VCASN'),('VCLIP','VCLIP')]
+    IList = [('IBIAS_IHEP_40n','IBIAS'),('IHEP_IFOL_2n','ITHR'),('IHEP_IRESET_40p','IRESET'),('IHEP_IDB2','IDB2'),('IBIAS','IBIAS'),('ITHR','ITHR'),('IDB','IDB')]
+
+
     def __init__(self, value=0):
         self.value = value
     def selectVolDAC(self, chan):
@@ -243,6 +263,39 @@ class MIC4Reg(object):
     def setBit(self,n,v):
         mask = 1<<n
         self.value = (self.value & ~mask)|((v<<n) & mask)
+
+    def show(self):
+        print("Current configuration:")
+
+        # Voltage DAC
+        print ('-'*20)
+        for i,k in enumerate(self.VList):
+            flag = '+' if ((1<<i)&self.vChanbits.value0)!=0 else 'O'
+            print(flag, k[0]+':','code={0:b}'.format(self.getPar(k[1])))
+
+        # Current DAC
+        print ('-'*20)
+        for i,k in enumerate(self.IList):
+            flag = '+' if ((1<<i)&self.cChanbits.value0)!=0 else 'O'
+            print(flag, k[0]+':','code={0:b}'.format(self.getPar(k[1])))
+
+        # select Collumn
+        print('-'*10, len(self.selColbits.bits),'in total', '-'*10)
+        for i,j in enumerate(reversed(self.selColbits.bits)):
+            if (self.value & (1<<j))!=0:
+                print('COL', i, 'Selected')
+
+        # Other: TEST, PDB, LVDS_TEST, TRX16, TRX15_serializer
+
+    def getPar(self,parname, vMax=None, vMin=None):
+        try:
+            x = getattr(self, parname+'Bits')
+            if x:
+                v = x.getValue(self.value, vMax, vMin)
+                return v
+        except AttributeError as e:
+            print(e)
+            sys.exit(1)
 
     def setPar(self, parname, v):
         try:
