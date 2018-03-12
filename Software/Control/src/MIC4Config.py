@@ -286,6 +286,15 @@ class MIC4Reg(object):
                 print('COL', i, 'Selected')
 
         # Other: TEST, PDB, LVDS_TEST, TRX16, TRX15_serializer
+        print('-'*10,'Other','-'*10)
+        print('TEST     :',(self.value>>22)&0x1)
+        print('PDB      :',(self.value>>21)&0x1)
+        print('TRX5_seri:',(self.value>>20)&0x1)
+        print('TRX6_seri:',(self.value>>19)&0x1)
+        print('TRX7_seri:',(self.value>>18)&0x1)
+        print('TRX8_seri:',(self.value>>17)&0x1)
+        print('TRX16    :',(self.value>>13)&0xf)
+        print('LVDS_Test:',(self.value>>9)&0xf)
 
     def getPar(self,parname, vMax=None, vMin=None):
         try:

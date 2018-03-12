@@ -11,9 +11,9 @@ def testRegister(mc1):
 if __name__ == '__main__':
     mc1 = MIC4Config()
 
-#     mc1.sReg.useDefault()
+    #mc1.sReg.useDefault()
     mc1.sReg.value = 123456
-    mc1.sReg.selectCol(23)
+#     mc1.sReg.selectCol(23)
     mc1.sReg.show()
     sys.exit(0)
 
