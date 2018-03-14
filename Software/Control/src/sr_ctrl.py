@@ -20,6 +20,7 @@ import time
 # @return Value stored in the external SR that is read back.
 # @return valid signal shows that the value stored in external SR is read back.
 def shift_register_rw(s, data_to_send, clk_div):
+    print("testing AAA")
     div_reg = ((clk_div & 0x3f) | (1<<6)) << 200
     data_reg = data_to_send & ((1<<200)-1)
 
@@ -29,7 +30,6 @@ def shift_register_rw(s, data_to_send, clk_div):
     cmdstr = ""
     for i in xrange(13):
         cmdstr += cmd.write_register(i, (val >> i*16) & 0xffff)
-
     cmdstr += cmd.send_pulse(0x01)
 
     print [hex(ord(w)) for w in cmdstr]
@@ -40,15 +40,20 @@ def shift_register_rw(s, data_to_send, clk_div):
     # read back
     time.sleep(1)
     cmdstr = ""
-    for i in xrange(11):
-        cmdstr += cmd.read_status(10-i)
+    #for i in xrange(11):
+    #    cmdstr += cmd.read_status(10-i)
+    cmdstr += cmd.read_datafifo(7)
     s.sendall(cmdstr)
-    retw = s.recv(4*11)
-    print [hex(ord(w)) for w in retw]
+    retw = s.recv(50)
+    print len(retw), [hex(ord(w)) for w in retw]
+    return
+
     ret_all = 0
-    for i in xrange(11):
-        ret_all = ret_all | int(ord(retw[i*4+2])) << ((10-i) * 16 + 8) | int(ord(retw[i*4+3])) << ((10-i) * 16)
-    ret = ret_all & ((1<<170)-1)
+    for i in range(32):
+        print i, int(ord(retw[i]))
+        ret_all = ret_all | (int(ord(retw[i]))<<i*8)
+    ret = ret_all & ((1<<200)-1)
+    print ret
     valid = (ret_all & (1 <<170)) >> 170
     print "%x" % ret
     print valid

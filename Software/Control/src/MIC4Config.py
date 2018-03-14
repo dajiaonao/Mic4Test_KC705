@@ -57,26 +57,49 @@ class MIC4Config():
         rw = self.s.recv(25, socket.MSG_WAITALL)
         return rw
 
-    def testReg(self, info=None):
+    def shift_register_rw(self, data_to_send, clk_div):
+        div_reg = ((clk_div & 0x3f) | (1<<6)) << 200
+        data_reg = data_to_send & ((1<<200)-1)
+
+        val = div_reg | data_reg
+        cmdstr = ""
+        for i in xrange(13):
+            cmdstr += self.cmd.write_register(i, (val >> i*16) & 0xffff)
+        cmdstr += self.cmd.send_pulse(0x01)
+
+#         print([hex(ord(w)) for w in cmdstr])
+
+        self.s.sendall(cmdstr)
+
+        # read back
+        time.sleep(1)
+        cmdstr = ""
+        cmdstr += self.cmd.read_datafifo(7)
+        self.s.sendall(cmdstr)
+        retw = self.s.recv(25)
+        print([hex(ord(w)) for w in retw])
+        print(len(retw))
+
+        return
+        ret_all = 0
+        for i in xrange(7):
+            ret_all = ret_all | int(ord(retw[i*4+2])) << ((10-i) * 16 + 8) | int(ord(retw[i*4+3])) << ((10-i) * 16)
+        ret = ret_all & ((1<<200)-1)
+        valid = (ret_all & (1 <<200)) >> 200
+        print("%x" % data_to_send)
+        print("%x" % ret)
+        print(valid)
+        return valid
+
+    def testReg(self, div = None, info=None):
         '''Test writing the register configure file'''
+        if div is None: div = 7
+        fifo_out = 1
         if info is None:
+            #self.sReg.useDefault()
+            print(self.sReg.value)
             info = self.sReg.getConf()
-        ### write the info twice and compare the output of the second one with the input
-        cmdStr = ''
-        cmdStr += self.cmd.write_register(1, (div<<1)+fifo_out)
-        for i in range(13):
-            cmdStr += self.cmd.write_register(0, (info>>(i*16))&0xffff)
-            cmdStr += self.cmd.send_pulse(1<<3)
-
-            ### shift dxc
-            dxc = info>>(i*16)
-            print('{1:d} {0:x} {2:x}'.format(dxc, i, dxc&0xffff))
-        cmdStr += self.cmd.send_pulse(1)
-        cmdStr += self.cmd.read_datafifo(200)
-        self.s.sendall(cmdStr)
-
-        ### read back
-        rw = self.s.recv(25, socket.MSG_WAITALL)
+        rw = self.shift_register_rw(info, div)
         return rw
 
 
@@ -130,6 +153,7 @@ class MIC4Config():
         cmdStr += self.dac.set_voltage(2, 1.4) # VPLUSE_HIGH
         cmdStr += self.dac.set_voltage(3, 1.2) # LVDS_REF
         cmdStr += self.dac.set_voltage(4, 0.8) # VPULSE_LOW
+        #cmdStr += self.dac.set_voltage(6, 1.63) # DAC_REF
         cmdStr += self.dac.set_voltage(6, 1.2) # DAC_REF
 #        cmdStr += self.dac.set_voltage(0, 2.5)
 #        cmdStr += self.dac.set_voltage(1, 0)
@@ -229,7 +253,10 @@ class MIC4Reg(object):
     def __init__(self, value=0):
         self.value = value
     def selectVolDAC(self, chan):
-        self.value = self.vChanbits.setValueTo((1<<chan)&0x3f, self.value)
+        if chan>5:
+            print("only 6 channels avaliable. Your input:", chan)
+            ## raise error
+            self.value = self.vChanbits.setValueTo((1<<chan)&0x3f, self.value)
     def selectCurDAC(self, chan):
         self.value = self.cChanbits.setValueTo((1<<chan)&0x3f, self.value)
     def selectCol(self, n):

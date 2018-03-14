@@ -60,8 +60,8 @@ def test(s):
 
     div = 8
     fifo_out = 1
-    #dx = 0xabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde
-    dx = 0xffffffffffffffffffffffffffffffffffffffffffffffffff
+    dx = 0xabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde
+    #dx = 0xffffffffffffffffffffffffffffffffffffffffffffffffff
     #dx = 1<<200
     dxc = dx
     print('{0:x}'.format(dxc))
@@ -72,7 +72,7 @@ def test(s):
     for i in range(13):
         din = 0xffff & dxc
         cmdStr += cmd.write_register(0, din)
-        cmdStr += cmd.send_pulse(0x4)
+        cmdStr += cmd.send_pulse(0x8)
 
         ### shift dxc
         dxc = dxc>>16
@@ -122,9 +122,9 @@ if __name__ == "__main__":
 
     data_in=123456
     div=7
-    All_plse(s)
+    #All_plse(s)
     #shift_register_rw(s, data_in, div)
-    #test(s)
+    test(s)
     #pixel_config(s)
 
     s.close()
