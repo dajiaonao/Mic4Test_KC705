@@ -502,7 +502,8 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------< Mic4 temperature sensor
   COMPONENT Temp_Sensor
     GENERIC (
-      TS_COUNT_WIDTH : positive := 32
+      TS_COUNT_WIDTH : positive := 32;
+      PLS_LOW : positive := 100000000 --> 1s = 100 000 000 * 10 ns
     );
     PORT (
       clk_100MHz : IN std_logic;
@@ -1401,7 +1402,8 @@ BEGIN
   ---------------------------------------------< Mic4 temperature sensor
   Temp_Sensor_inst : Temp_Sensor
     GENERIC MAP(
-      TS_COUNT_WIDTH => 32
+      TS_COUNT_WIDTH => 32,
+      PLS_LOW => 100000000
     )
     PORT MAP (
       clk_100MHz => control_clk,
