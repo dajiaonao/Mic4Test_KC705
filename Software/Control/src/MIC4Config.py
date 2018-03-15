@@ -57,7 +57,7 @@ class MIC4Config():
         rw = self.s.recv(25, socket.MSG_WAITALL)
         return rw
 
-    def shift_register_rw(self, data_to_send, clk_div):
+    def shift_register_rw(self, data_to_send, clk_div, read=True):
         div_reg = ((clk_div & 0x3f) | (1<<6)) << 200
         data_reg = data_to_send & ((1<<200)-1)
 
@@ -66,19 +66,18 @@ class MIC4Config():
         for i in xrange(13):
             cmdstr += self.cmd.write_register(i, (val >> i*16) & 0xffff)
         cmdstr += self.cmd.send_pulse(0x01)
-
-#         print([hex(ord(w)) for w in cmdstr])
-
         self.s.sendall(cmdstr)
 
         # read back
-        time.sleep(1)
-        cmdstr = ""
-        cmdstr += self.cmd.read_datafifo(7)
-        self.s.sendall(cmdstr)
-        retw = self.s.recv(25)
-        print([hex(ord(w)) for w in retw])
-        print(len(retw))
+        if read:
+            time.sleep(1)
+            cmdstr = ""
+            cmdstr += self.cmd.read_datafifo(7)
+            self.s.sendall(cmdstr)
+            retw = self.s.recv(100)
+
+            print([hex(ord(w)) for w in retw])
+            print(len(retw))
 
         return
         ret_all = 0
@@ -91,7 +90,7 @@ class MIC4Config():
         print(valid)
         return valid
 
-    def testReg(self, div = None, info=None):
+    def testReg(self, div=None, info=None, read=True):
         '''Test writing the register configure file'''
         if div is None: div = 7
         fifo_out = 1
@@ -99,7 +98,7 @@ class MIC4Config():
             #self.sReg.useDefault()
             print(self.sReg.value)
             info = self.sReg.getConf()
-        rw = self.shift_register_rw(info, div)
+        rw = self.shift_register_rw(info, div, read)
         return rw
 
 
@@ -205,6 +204,7 @@ class bitSet():
         self.value = 0
         self.reverse = reverse
         self.setBits(bits)
+        self.outputLevel = 0
     def setBits(self, bits):
         self.bits = bits
         self.mask = 0
@@ -217,6 +217,8 @@ class bitSet():
         for i in range(nBits):
             v1 = (v>>i)&1
             j = i if not self.reverse else nBits-i-1
+            if self.outputLevel <0:
+                print('setting bit', self.bits, 'to', v1)
             self.value |= v1<<self.bits[j]
 
     def setTo(self, r):
@@ -276,7 +278,7 @@ class MIC4Reg(object):
         if chan>5:
             print("only 6 channels avaliable. Your input:", chan)
             ## raise error
-            self.value = self.vChanbits.setValueTo((1<<chan)&0x3f, self.value)
+        self.value = self.vChanbits.setValueTo((1<<chan)&0x3f, self.value)
     def selectCurDAC(self, chan):
         self.value = self.cChanbits.setValueTo((1<<chan)&0x3f, self.value)
     def selectCol(self, n):
@@ -354,6 +356,27 @@ class MIC4Reg(object):
         n = 17
         mask = 0xf<<n
         self.value = (self.value & ~mask)|((v<<n) & mask)
+
+    def useAllZero(self):
+        self.value =  0
+        self.setLVDS_TEST(0b1000)
+        self.setTRX16(0b1000)
+        self.setTRX15_serializer(0b1000)
+        self.setPDB(0)
+        self.setTEST(0)
+        self.setPar('VCLIP', 0x0)
+        self.setPar('VReset',0x0)
+        self.setPar('VCASN2',0x0)
+        self.setPar('VCASN', 0x0)
+        self.setPar('VCASP', 0x0)
+        self.setPar('VRef',  0x0)
+        self.setPar('IBIAS', 0x0)
+        self.setPar('IDB',   0x0)
+        self.setPar('ITHR',  0x0)
+        self.setPar('IRESET',0x0)
+        self.setPar('IDB2',  0x0)
+        self.selectVolDAC(0)
+        self.selectCurDAC(0)
 
     def useDefault(self):
         self.value =  0

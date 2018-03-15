@@ -11,24 +11,32 @@ def testRegister(mc1):
 if __name__ == '__main__':
     mc1 = MIC4Config()
 
-    #mc1.sReg.useDefault()
-    mc1.sReg.value = 123456
-#     mc1.sReg.selectCol(23)
-    mc1.sReg.show()
-    sys.exit(0)
+#     #mc1.sReg.useDefault()
+#     mc1.sReg.value = 123456
+# #     mc1.sReg.selectCol(23)
+#     mc1.sReg.show()
+#     sys.exit(0)
 
     mc1.connect()
     #mc1.test()
-    mc1.setClocks(1,10,10)
-#    mc1.test_DAC8568_config()
+#     mc1.setClocks(1,10,10)
+#     mc1.test_DAC8568_config()
+#     sys.exit(0)
 #     mc1.sendGRST_B()
 #     mc1.sendA_PULSE()
 #     mc1.sendD_PULSE()
 # 
+    mc1.sReg.useAllZero()
 #     mc1.sReg.useDefault()
-#     mc1.sReg.selectVolDAC(0) 
+
+    ### --- CAUTION: all channel open, for TEST ONLY
+    #mc1.sReg.vChanbits.outputLevel = -1
+    #mc1.sReg.value = mc1.sReg.vChanbits.setValueTo(0x3f, mc1.sReg.value)
+
+#     mc1.sReg.selectVolDAC(1)
 #     mc1.sReg.selectCurDAC(1) 
-#     mc1.testReg()
+    mc1.sReg.show()
+    mc1.testReg(read=True)
     #x = mc1.shift_register_rw(0xabcdeabcdeabcdeabcde, 8)
     #print(x)
     #sys.exit(0)
