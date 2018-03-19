@@ -69,17 +69,24 @@ class MIC4Config():
         self.s.sendall(cmdstr)
 
         # read back
+        ret = 0
         if read:
-            time.sleep(1)
+            nWord = 7
+            time.sleep(0.2)
             cmdstr = ""
-            cmdstr += self.cmd.read_datafifo(7)
+            cmdstr += self.cmd.read_datafifo(nWord)
             self.s.sendall(cmdstr)
-            retw = self.s.recv(100)
 
+            retw = s.recv(4*nWord, socket.MSG_WAITALL)
             print([hex(ord(w)) for w in retw])
             print(len(retw))
 
-        return
+            for i in xrange(nWord):
+                ret = ret | ( int(ord(retw[i*4+2])) << ((nWord+1-i) * 16 + 8) |
+                              int(ord(retw[i*4+3])) << ((nWord+1-i) * 16))
+            ret = ret & ((1<<200)-1) 
+        return ret
+
         ret_all = 0
         for i in xrange(7):
             ret_all = ret_all | int(ord(retw[i*4+2])) << ((10-i) * 16 + 8) | int(ord(retw[i*4+3])) << ((10-i) * 16)
