@@ -33,7 +33,6 @@ def plot(x_range,y_range,ch1_offset,timebase_position,x_unit):
 ## main function: sent oscilloscope commands and fetch data
 #
 
-
 def captureScreen(filename='testing.png'):
     '''Capture screen from remote PC
     Ref: https://community.keysight.com/thread/18792
@@ -50,7 +49,7 @@ def captureScreen(filename='testing.png'):
 
     pass
 
-def main():
+def captureWaveform():
     with open("./data_output.dat",'w') as outfile:
         Timebase_scale = 0
         ss.send("*IDN?;")                           #read back device ID
@@ -135,14 +134,10 @@ def main():
             else:
                 outfile.write("%f %f\n"%(Xrange[i] + Timebase_Poistion_X, (digital_number+1000)*Y_Factor + CH1_Offset))
     return [X_Range,Y_Range,CH1_Offset,Timebase_Poistion]             #return gnuplot parameters
-#========================================================#
-## if statement
-#
-if __name__ == '__main__':
-    ss = socket.socket(socket.AF_INET,socket.SOCK_STREAM)       #init local socket handle
-    ss.connect((hostname,port))                                 #connect to the server
+
+def saveWaveform():
     xyrange = []
-    xyrange = main()
+    xyrange = captureWaveform()
     print xyrange 
     if xyrange[0] >= 2.0:                                       #x-axis unit is second
         x_range = xyrange[0]*0.5    
@@ -161,4 +156,14 @@ if __name__ == '__main__':
         timebase_poistion = xyrange[3] * 1000000000.0
         x_unit = 4
     plot(x_range,xyrange[1]*0.5,xyrange[2],timebase_poistion,x_unit)   #plot waveform using fetched data
+
+
+#========================================================#
+## if statement
+#
+if __name__ == '__main__':
+    ss = socket.socket(socket.AF_INET,socket.SOCK_STREAM)       #init local socket handle
+    ss.connect((hostname,port))                                 #connect to the server
+#     saveWaveform()
+    saveWaveform()
     ss.close()

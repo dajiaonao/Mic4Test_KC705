@@ -57,6 +57,20 @@ class MIC4Config():
         rw = self.s.recv(25, socket.MSG_WAITALL)
         return rw
 
+    def empty_fifo(self):
+        nWord = 1
+        time.sleep(0.5)
+        cmdstr = ""
+        cmdstr += self.cmd.read_datafifo(nWord)
+        self.s.sendall(cmdstr)
+#         retw = self.s.recv(4*nWord)
+        retw = self.s.recv(100)
+
+        print([hex(ord(w)) for w in retw])
+        print(len(retw))
+
+
+
     def shift_register_rw(self, data_to_send, clk_div, read=True):
         div_reg = ((clk_div & 0x3f) | (1<<6)) << 200
         data_reg = data_to_send & ((1<<200)-1)
@@ -69,33 +83,30 @@ class MIC4Config():
         self.s.sendall(cmdstr)
 
         # read back
-        ret = 0
+        ret_all = None
         if read:
-            nWord = 7
-            time.sleep(0.2)
+            nWord = 6
+            time.sleep(1)
             cmdstr = ""
             cmdstr += self.cmd.read_datafifo(nWord)
             self.s.sendall(cmdstr)
 
-            retw = s.recv(4*nWord, socket.MSG_WAITALL)
+            nByte = 4*(nWord+1)
+            retw = self.s.recv(nByte)
             print([hex(ord(w)) for w in retw])
             print(len(retw))
 
-            for i in xrange(nWord):
-                ret = ret | ( int(ord(retw[i*4+2])) << ((nWord+1-i) * 16 + 8) |
-                              int(ord(retw[i*4+3])) << ((nWord+1-i) * 16))
-            ret = ret & ((1<<200)-1) 
-        return ret
+            ret_all = 0
+            for i in range(len(retw)):
+                ret_all |= ord(retw[i])<<(nByte-i)*8
+            
+            print("Sent: %x" % data_to_send)
+            print("Get : %x" % ret_all)
+            c = data_to_send^ret_all
+            if c!=0: print("Diff: %x" % c)
+            else: print("Get == Sent")
 
-        ret_all = 0
-        for i in xrange(7):
-            ret_all = ret_all | int(ord(retw[i*4+2])) << ((10-i) * 16 + 8) | int(ord(retw[i*4+3])) << ((10-i) * 16)
-        ret = ret_all & ((1<<200)-1)
-        valid = (ret_all & (1 <<200)) >> 200
-        print("%x" % data_to_send)
-        print("%x" % ret)
-        print(valid)
-        return valid
+        return ret_all
 
     def testReg(self, div=None, info=None, read=True):
         '''Test writing the register configure file'''
@@ -161,6 +172,7 @@ class MIC4Config():
         cmdStr += self.dac.set_voltage(4, 0.8) # VPULSE_LOW
         #cmdStr += self.dac.set_voltage(6, 1.63) # DAC_REF
         cmdStr += self.dac.set_voltage(6, 1.2) # DAC_REF
+#         cmdStr += self.dac.set_voltage(6, 0.6) # DAC_REF
 #        cmdStr += self.dac.set_voltage(0, 2.5)
 #        cmdStr += self.dac.set_voltage(1, 0)
 #        cmdStr += self.dac.set_voltage(2, 0)
@@ -218,6 +230,7 @@ class bitSet():
         for i in bits: self.mask |= 1<<i
 
     def parse(self, v):
+        '''Set own value to v, using own bit map'''
         self.value0 = v
         self.value = 0
         nBits = len(self.bits)
@@ -229,6 +242,7 @@ class bitSet():
             self.value |= v1<<self.bits[j]
 
     def setTo(self, r):
+        '''Set own value to the variable r, and return the new value of r'''
 #         print(r, self.mask, self.value)
         return (r & ~self.mask)|(self.value & self.mask)
     def setValueTo(self, v, r):
@@ -284,8 +298,10 @@ class MIC4Reg(object):
     def selectVolDAC(self, chan):
         if chan>5:
             print("only 6 channels avaliable. Your input:", chan)
+            return False
             ## raise error
         self.value = self.vChanbits.setValueTo((1<<chan)&0x3f, self.value)
+        return True
     def selectCurDAC(self, chan):
         self.value = self.cChanbits.setValueTo((1<<chan)&0x3f, self.value)
     def selectCol(self, n):
@@ -367,6 +383,10 @@ class MIC4Reg(object):
         mask = 0xf<<n
         self.value = (self.value & ~mask)|((v<<n) & mask)
 
+    def useVolDAC(self, i, val):
+        if self.selectVolDAC(i):
+            self.setPar(self.VList[i][1], val)
+
     def useAllZero(self):
         self.value =  0
         self.setLVDS_TEST(0b1000)
@@ -401,6 +421,7 @@ class MIC4Reg(object):
         self.setPar('VCASN',0b0100010001)
         self.setPar('VCASP',0b1011101110)
         self.setPar('VRef',0b0100010001)
+#         self.setPar('VRef',0b0000010001)
         self.setPar('IBIAS',0x80)
         self.setPar('IDB',0x80)
         self.setPar('ITHR',0x80)
