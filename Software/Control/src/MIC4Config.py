@@ -93,7 +93,6 @@ class MIC4Config():
 
             nByte = 4*(nWord+1)
             retw = self.s.recv(nByte)
-
             print([hex(ord(w)) for w in retw])
             print(len(retw))
 
@@ -359,10 +358,13 @@ class MIC4Reg(object):
             print(e)
             sys.exit(1)
 
-    def setPar(self, parname, v):
+    def setPar(self, parname, v, refValue=None, refCode=None):
         try:
             x = getattr(self, parname+'Bits')
             if x:
+                if refValue is not None:
+                    c0 = (1<<len(x.bits))-1 if refCode is None else refCode
+                    v = int(v*c0/refValue)
                 self.value = x.setValueTo(v, self.value)
         except AttributeError as e:
             print(e)
@@ -656,8 +658,7 @@ def shift_register_rw(s, data_to_send, clk_div):
     print("Return: 0x%0x, valid: %d" % (ret, valid))
     return ret
 
-if __name__ == "__main__":
-
+def mainTest():
     host = '192.168.2.3'
     port = 1024
     s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -713,3 +714,14 @@ if __name__ == "__main__":
     shift_register_rw(s, (data_to_send), div)
 
     s.close()
+
+def testReg():
+    r1 = MIC4Reg()
+#     r1.setPar('VRef',0xfe)
+#     r1.setPar('VRef',1.4,1.5)
+    r1.setPar('VRef',1.4,2.,0xff)
+    r1.show()
+
+if __name__ == "__main__":
+    testReg()
+

@@ -32,6 +32,23 @@ def plot(x_range,y_range,ch1_offset,timebase_position,x_unit):
 #========================================================#
 ## main function: sent oscilloscope commands and fetch data
 #
+
+def captureScreen(filename='testing.png'):
+    '''Capture screen from remote PC
+    Ref: https://community.keysight.com/thread/18792
+    Not tested!!
+    '''
+    ss.send(":MMEM:STORE:SCR \'D:\\exa_screen.png\';*WAI")
+    ss.send(":MMEM:DATA? \'D:\\exa_screen.png\'")
+
+    owp = ss.recv(4096)
+    with open(filename,'w') as f1:
+        f1.write(owp)
+    ss.send(":MMEM:DEL \'D:\\exa_screen.png\'")
+    ss.send("*CLS")
+
+    pass
+
 def captureWaveform():
     with open("./data_output.dat",'w') as outfile:
         Timebase_scale = 0
