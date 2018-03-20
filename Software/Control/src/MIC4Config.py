@@ -304,7 +304,7 @@ class MIC4Reg(object):
         self.value = self.vChanbits.setValueTo((1<<chan)&0x3f, self.value)
         return True
     def selectCurDAC(self, chan):
-        self.value = self.cChanbits.setValueTo((1<<chan)&0x3f, self.value)
+        self.value = self.cChanbits.setValueTo((1<<chan)&0x7f, self.value)
     def selectCol(self, n):
         self.value = self.selColbits.setValueTo((1<<n)&0xffffffffffffffff, self.value)
 
@@ -411,14 +411,14 @@ class MIC4Reg(object):
         self.setLVDS_TEST(0b1000)
         self.setTRX16(0b1000)
         self.setTRX15_serializer(0b1000)
-        self.setPDB(0)
+        self.setPDB(1)
         self.setTEST(0)
         self.setPar('VCLIP',0b0000101001)
         self.setPar('VReset',0b0101010101)
         self.setPar('VCASN2',0b0110011001)
         self.setPar('VCASN',0b0100010001)
         self.setPar('VCASP',0b1011101110)
-        self.setPar('VRef',0b0100010001)
+        self.setPar('VRef',0b100011111)
 #         self.setPar('VRef',0b0000010001)
         self.setPar('IBIAS',0x80)
         self.setPar('IDB',0x80)
@@ -427,7 +427,7 @@ class MIC4Reg(object):
         self.setPar('IDB2',0x80)
         # self.setPar('XYZ',0x80) ### test the exception handling
         self.selectVolDAC(0)
-        self.selectCurDAC(0)
+#         self.selectCurDAC(0)
 
     def getConf(self):
         ### if it's not clear what does this class is supposed to provide
