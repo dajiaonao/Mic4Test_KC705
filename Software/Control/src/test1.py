@@ -18,10 +18,11 @@ if __name__ == '__main__':
 #     sys.exit(0)
 
     mc1.connect()
+    print(mc1.T())
     #mc1.test()
-#     mc1.setClocks(1,10,10)
+#     mc1.setClocks(1,1,1)
 #     mc1.test_DAC8568_config()
-#     sys.exit(0)
+    sys.exit(0)
 
 #     mc1.empty_fifo()
 #     sys.exit(0)
@@ -38,11 +39,11 @@ if __name__ == '__main__':
 #     mc1.sReg.value = 1<<124
     mc1.sReg.value = 0
     mc1.sReg.useDefault()
-    mc1.sReg.setPar('IBIAS' ,0xff)
-    mc1.sReg.setPar('IDB'   ,0xff)
-    mc1.sReg.setPar('ITHR'  ,0xff)
-    mc1.sReg.setPar('IRESET',0xff)
-    mc1.sReg.setPar('IDB2'  ,0xff)
+#     mc1.sReg.setPar('IBIAS' ,0xff)
+#     mc1.sReg.setPar('IDB'   ,0xff)
+#     mc1.sReg.setPar('ITHR'  ,0xff)
+#     mc1.sReg.setPar('IRESET',0xff)
+#     mc1.sReg.setPar('IDB2'  ,0xff)
 #     mc1.sReg.selectCurDAC(5)
 #     mc1.sReg.setLVDS_TEST(0b1000)
 #     mc1.sReg.setTRX16(0b1000)
@@ -82,7 +83,6 @@ if __name__ == '__main__':
     #sys.exit(0)
 
     
-    #print(mc1.T())
     #for i in range(1):
     #    print mc1.T()
 #     bs1 = bitSet()

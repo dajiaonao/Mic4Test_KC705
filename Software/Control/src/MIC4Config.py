@@ -131,10 +131,18 @@ class MIC4Config():
         print("string:",[ord(x) for x in cmdStr])
 
         self.s.sendall(cmdStr)
-        retw = self.s.recv(4)
+#         retw = self.s.recv(4)
+        time.sleep(3)
+        retw = self.s.recv(100)
         #retw = ord(self.s.recv(50))
         #retw = 0
         print("read (",len(retw),'):', [ord(x) for x in retw])
+
+        ret = 0
+        nword = len(retw)
+        for i in range(nword):
+            ret |= ord(retw[i])<<((nword-1-i)*8)
+        print('N clock:', ret)
 
         return retw
 
@@ -429,7 +437,7 @@ class MIC4Reg(object):
         self.setPar('IDB2',0x80)
         # self.setPar('XYZ',0x80) ### test the exception handling
         self.selectVolDAC(0)
-#         self.selectCurDAC(0)
+        self.selectCurDAC(0)
 
     def getConf(self):
         ### if it's not clear what does this class is supposed to provide
