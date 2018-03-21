@@ -469,7 +469,82 @@ class MIC4Reg(object):
                 print(j,':',i)
                 j+=1
 
+
 class PixelConfig():
+    '''For pixel config'''
+    def __init__(self, cmd, s):
+        self.cmd = cmd
+        self.s = s
+        self.clk_div = 0
+        self.pixels = [] ##(row[15:8], col[7:2], mask[1], pulse[0])
+        self.isTest = False
+
+    def setPixel(self, row, col, pulse, mask):
+        pass
+
+    def getConfList(self, list0=None):
+        list1 = list0
+        if list0 is None: list1 = self.pixels
+        print("List1:", list1)
+
+        listA = []
+        w = None
+        for x in list1:
+            if w is None:
+                w = ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|((x[3]<<1)&0x1)
+                w = w << 16
+            else:
+                w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|((x[3]<<1)&0x1)
+                w = None
+                listA.append(w)
+        if w is not None:
+            x = list1[-1]
+            w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|((x[3]<<1)&0x1)
+            listA.append(w)
+            w = None
+
+        if self.isTest:
+            for w in listA: print(bin(w))
+            return
+        return listA
+
+    def setAll(self, mask, pulse):
+        listA = []
+        w = None
+        for row in range(128):
+            for col in range(64):
+                ### do something
+                if w is None:
+                    w = ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|((pulse<<1)&0x1)
+                    w = w << 16
+                else:
+                    w |= ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|((pulse<<1)&0x1)
+                    listA.append(w)
+                    w = None
+        if self.isTest:
+            print(listA[:10])
+            return
+        self.applyConfig(listA)
+
+    def applyConfig(self, confList=None):
+        confList1 = self.getConfList() if confList is None else confList
+
+        data0 = (self.clk_div & 0x3f)
+        addr = 0
+        pls = 1<<2
+        pls = 0xffff & pls
+
+        cmdStr =''
+        cmdStr += self.cmd.write_register(0, data0)
+        cmdStr += self.cmd.write_memory(addr, confList1)
+        self.s.sendall(cmdStr)
+        time.sleep(1)
+        cmdStr = ''
+        cmdStr += cmd.send_pulse(pls)
+        self.s.sendall(cmdStr)
+
+
+class PixelConfig0():
     '''Auxilary class for pxiel config.'''
     def __init__(self, cmd, s):
         self.cmd = cmd
@@ -486,6 +561,13 @@ class PixelConfig():
     def setPixel(self, x, y, pulse, mask):
         self.pixels.append((x+(y<<6),pulse+(mask<<1)))
 
+    def setAll(self, pulse, mask):
+        confList = []
+        for i in range(128):
+            for j in range(64):
+                data1 =0 
+
+
     def getConfigVector(self, clk_div):
         ### address + config
         data0 = 0
@@ -494,8 +576,8 @@ class PixelConfig():
         n = 0
         data1 = 0
         if self.allAre is not None:
-            for i in range():
-                for j in range():
+            for i in range(128):
+                for j in range(64):
                     data1 = data1<<16
 
         cmdStr = ''
@@ -730,6 +812,16 @@ def testReg():
     r1.setPar('VRef',1.4,2.,0xff)
     r1.show()
 
+def testPConf():
+    c1 = PixelConfig(None, None)
+    c1.isTest = True
+#     c1.setAll(1,0)
+    c1.pixels.append((127,0,1,0))
+    print(c1.pixels)
+    c1.getConfList()
+#     c1.applyConfig()
+
 if __name__ == "__main__":
-    testReg()
+#     testReg()
+    testPConf()
 

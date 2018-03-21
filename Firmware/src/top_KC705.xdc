@@ -11,10 +11,10 @@ create_clock -period 8.000 -name sgmii_clock [get_ports SGMIICLK_Q0_P]
 
 # PadFunction: IO_L12P_T1_MRCC_33
 set_property VCCAUX_IO DONTCARE [get_ports SYS_CLK_P]
-set_property IOSTANDARD DIFF_SSTL15 [get_ports SYS_CLK_P]
+set_property IOSTANDARD LVDS [get_ports SYS_CLK_P]
 
 # PadFunction: IO_L12N_T1_MRCC_33
-set_property IOSTANDARD DIFF_SSTL15 [get_ports SYS_CLK_N]
+set_property IOSTANDARD LVDS [get_ports SYS_CLK_N]
 set_property PACKAGE_PIN AD12 [get_ports SYS_CLK_P]
 set_property PACKAGE_PIN AD11 [get_ports SYS_CLK_N]
 
@@ -76,45 +76,45 @@ set_property PACKAGE_PIN AB9 [get_ports {LED8Bit[3]}]
 # Bank: - GPIO_LED_4_LS
 set_property DRIVE 12 [get_ports {LED8Bit[4]}]
 set_property SLEW SLOW [get_ports {LED8Bit[4]}]
-set_property IOSTANDARD LVCMOS18 [get_ports {LED8Bit[4]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {LED8Bit[4]}]
 set_property PACKAGE_PIN AE26 [get_ports {LED8Bit[4]}]
 
 # Bank: - GPIO_LED_5_LS
 set_property DRIVE 12 [get_ports {LED8Bit[5]}]
 set_property SLEW SLOW [get_ports {LED8Bit[5]}]
-set_property IOSTANDARD LVCMOS18 [get_ports {LED8Bit[5]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {LED8Bit[5]}]
 set_property PACKAGE_PIN G19 [get_ports {LED8Bit[5]}]
 
 # Bank: - GPIO_LED_6_LS
 set_property DRIVE 12 [get_ports {LED8Bit[6]}]
 set_property SLEW SLOW [get_ports {LED8Bit[6]}]
-set_property IOSTANDARD LVCMOS18 [get_ports {LED8Bit[6]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {LED8Bit[6]}]
 set_property PACKAGE_PIN E18 [get_ports {LED8Bit[6]}]
 
 # Bank: - GPIO_LED_7_LS
 set_property DRIVE 12 [get_ports {LED8Bit[7]}]
 set_property SLEW SLOW [get_ports {LED8Bit[7]}]
-set_property IOSTANDARD LVCMOS18 [get_ports {LED8Bit[7]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {LED8Bit[7]}]
 set_property PACKAGE_PIN F16 [get_ports {LED8Bit[7]}]
 
 # GPIO_DIP_SW0
 set_property SLEW SLOW [get_ports {DIPSw4Bit[0]}]
-set_property IOSTANDARD LVCMOS18 [get_ports {DIPSw4Bit[0]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {DIPSw4Bit[0]}]
 set_property PACKAGE_PIN Y29 [get_ports {DIPSw4Bit[0]}]
 
 # GPIO_DIP_SW1
 set_property SLEW SLOW [get_ports {DIPSw4Bit[1]}]
-set_property IOSTANDARD LVCMOS18 [get_ports {DIPSw4Bit[1]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {DIPSw4Bit[1]}]
 set_property PACKAGE_PIN W29 [get_ports {DIPSw4Bit[1]}]
 
 # GPIO_DIP_SW2
 set_property SLEW SLOW [get_ports {DIPSw4Bit[2]}]
-set_property IOSTANDARD LVCMOS18 [get_ports {DIPSw4Bit[2]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {DIPSw4Bit[2]}]
 set_property PACKAGE_PIN AA28 [get_ports {DIPSw4Bit[2]}]
 
 # GPIO_DIP_SW3
 set_property SLEW SLOW [get_ports {DIPSw4Bit[3]}]
-set_property IOSTANDARD LVCMOS18 [get_ports {DIPSw4Bit[3]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {DIPSw4Bit[3]}]
 set_property PACKAGE_PIN Y28 [get_ports {DIPSw4Bit[3]}]
 
 # GPIO_SW_N : SW2
@@ -134,7 +134,7 @@ set_property PACKAGE_PIN AB12 [get_ports {BTN5Bit[2]}]
 
 # GPIO_SW_C : SW5
 set_property SLEW SLOW [get_ports {BTN5Bit[3]}]
-set_property IOSTANDARD LVCMOS18 [get_ports {BTN5Bit[3]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {BTN5Bit[3]}]
 set_property PACKAGE_PIN G12 [get_ports {BTN5Bit[3]}]
 
 # GPIO_SW_W : SW6
@@ -167,6 +167,10 @@ set_property IOSTANDARD LVCMOS25 [get_ports USB_TX]
 #<-- control interface --<
 
 set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sConfigReg_reg[*]}] -filter {NAME =~ *C}]
+set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sPulseReg_reg[*]}] -filter {NAME =~ *C}]
+set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sPulseReg_reg[*]}] -filter {NAME =~ *C}]
+set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sPulseReg_reg[*]}] -filter {NAME =~ *C}]
+set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sPulseReg_reg[*]}] -filter {NAME =~ *C}]
 set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sPulseReg_reg[*]}] -filter {NAME =~ *C}]
 set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sPulseReg_reg[*]}] -filter {NAME =~ *C}]
 set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sPulseReg_reg[*]}] -filter {NAME =~ *C}]
@@ -285,4 +289,5 @@ set_property IOSTANDARD LVCMOS25 [get_ports I2C_SDA]
 
 set_property IOSTANDARD LVCMOS25 [get_ports USER_CLK_N]
 set_property IOSTANDARD LVCMOS25 [get_ports USER_CLK_P]
+
 
