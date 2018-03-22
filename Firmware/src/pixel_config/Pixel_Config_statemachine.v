@@ -22,6 +22,7 @@ module Pixel_Config_statemachine #(parameter DATA_WIDTH=15, //% @param Width of 
   input BUSY, //% MIC4 chip's busy signal
   input EMPTY, //% FIFO's empty flag
   output S_CLK, //% clock signal send to MIC4 chip
+//  output reg S_CLK, //% clock signal send to MIC4 chip
   output reg S_DATA, //% serial data send to MIC4 chip
   output reg RD_FIFO //% read request send to FIFO
     );
@@ -30,6 +31,7 @@ reg [5:0] c_state, n_state;
 reg [CNT_WIDTH-1:0] count;
 reg [DATA_WIDTH-1:0] data_reg;
 reg clk_trig;
+reg clk_trig_1;
 parameter s0=6'b000001;
 parameter s1=6'b000010;
 parameter s2=6'b000100;
@@ -49,21 +51,21 @@ always@(c_state or RESET or START or BUSY or count or EMPTY)
   else
    begin
     case(c_state)
-     s0:
+     s0: /// idol
        begin
          if(START) begin n_state=s1; end
          else begin n_state=s0; end
        end
-     s1:
+     s1: /// waiting
        begin
          if(EMPTY) begin n_state=s0; end
          else if(!BUSY) begin n_state=s2; end
          else begin n_state=s1; end
        end
-     s2: begin n_state=s3; end
-     s3: begin n_state=s4; end
-     s4: begin n_state=s5; end
-     s5:
+     s2: begin n_state=s3; end /// wait for 1 clock period 
+     s3: begin n_state=s4; end /// wait for another clock period
+     s4: begin n_state=s5; end /// the third one
+     s5: /// transport. Go to waiting if it's done
        begin
          if(count==DATA_WIDTH) begin n_state=s1; end
          else begin n_state=s5; end
@@ -73,11 +75,38 @@ always@(c_state or RESET or START or BUSY or count or EMPTY)
    end
  end
 
+always@(posedge CLK_IN)
+ begin
+  case(n_state)
+   s5:
+     begin
+     clk_trig <= 1'b1;
+     end
+   default:
+     begin
+     clk_trig <= 1'b0;
+     end
+  endcase
+ end
+ 
+ always@(negedge CLK_IN)
+  begin
+   case(n_state)
+    s4,s5:
+      begin
+      clk_trig_1 <= 1'b1;
+      end
+    default:
+      begin
+      clk_trig_1 <= 1'b0;
+      end
+   endcase
+  end
+
 always@(posedge CLK_IN or posedge RESET)
  begin
   if(RESET)
    begin
-   clk_trig<=0;
    S_DATA<=0;
    RD_FIFO<=0;
    count<=4'b0000;
@@ -88,7 +117,7 @@ always@(posedge CLK_IN or posedge RESET)
     case(n_state)
      s0:
         begin
-        clk_trig<=0;
+ //       clk_trig<=0;
         S_DATA<=0;
         RD_FIFO<=0;
         count<=4'b0000;
@@ -96,7 +125,7 @@ always@(posedge CLK_IN or posedge RESET)
         end
      s1:
         begin
-        clk_trig<=0;
+ //       clk_trig<=0;
         S_DATA<=0;
         RD_FIFO<=0;
         count<=4'b0000;
@@ -104,7 +133,7 @@ always@(posedge CLK_IN or posedge RESET)
         end
      s2:
         begin
-        clk_trig<=0;
+//        clk_trig<=0;
         S_DATA<=0;
         RD_FIFO<=1;
         count<=4'b0000;
@@ -112,7 +141,7 @@ always@(posedge CLK_IN or posedge RESET)
         end
      s3:
         begin
-        clk_trig<=0;
+ //       clk_trig<=0;
         S_DATA<=0;
         RD_FIFO<=0;
         count<=4'b0000;
@@ -120,7 +149,7 @@ always@(posedge CLK_IN or posedge RESET)
         end
      s4:
         begin
-        clk_trig<=0;
+ //       clk_trig<=0;
         S_DATA<=0;
         RD_FIFO<=0;
         count<=4'b0000;
@@ -128,7 +157,7 @@ always@(posedge CLK_IN or posedge RESET)
         end              
      s5:
         begin
-        clk_trig<=1;
+ //       clk_trig<=1;
         RD_FIFO<=0;
         count<=count+1'b1;
         if(SHIFT_DIRECTION)
@@ -144,7 +173,7 @@ always@(posedge CLK_IN or posedge RESET)
         end
      default:
         begin
-        clk_trig<=0;
+ //       clk_trig<=0;
         S_DATA<=0;
         RD_FIFO<=0;
         count<=4'b0000;
@@ -152,7 +181,18 @@ always@(posedge CLK_IN or posedge RESET)
     endcase
    end
  end
-
-assign S_CLK=(clk_trig==1)?(~CLK_IN):1'b1;
-
+/*
+always@(posedge CLK_IN or negedge CLK_IN)
+ begin
+  if(clk_trig==1) begin
+    S_CLK <= ~CLK_IN;
+   end
+   else begin
+    S_CLK <= 1'b1;
+   end
+ end
+//
+*/
+assign S_CLK=(clk_trig & clk_trig_1)?(~CLK_IN):1'b1;
+//assign S_CLK=clk_trig & clk_trig_1;
 endmodule

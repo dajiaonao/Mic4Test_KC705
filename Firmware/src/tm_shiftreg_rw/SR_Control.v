@@ -24,14 +24,16 @@ module SR_Control #(
 reg [4:0] current_state_out, next_state_out;
 reg [CNT_WIDTH-1:0] count;
 reg en_clk, en_clk_1;
+wire clk_sr;
 parameter s0=5'b00001;
 parameter s1=5'b00010;
 parameter s2=5'b00100;
 parameter s3=5'b01000;
 parameter s4=5'b10000;
 
-assign clk_sr=(en_clk==1'b1)?~clk:1;    
-
+assign clk_sr=(en_clk & en_clk_1)?~clk:1;
+//assign clk_sr=en_clk_1&en_clk;  
+/*
 always@(posedge clk or posedge rst)
  begin
   if(rst)
@@ -43,6 +45,7 @@ always@(posedge clk or posedge rst)
    en_clk_1<=en_clk;
    end
  end  
+*/
 
 //state machine 1, used to send signals to SR
 always@(posedge clk or posedge rst)
@@ -56,7 +59,7 @@ always@(posedge clk or posedge rst)
    current_state_out<=next_state_out;
    end
  end  
-  
+ 
 always@(current_state_out or rst or start or count)
  begin
   if(rst)
@@ -96,6 +99,35 @@ always@(current_state_out or rst or start or count)
    end
  end
 
+/// Set the clock
+always@(posedge clk)
+ begin
+  case(next_state_out)
+    s1,s2:
+      begin
+        en_clk <= 1'b1;
+      end
+    default:
+      begin
+        en_clk <= 1'b0;
+      end
+  endcase
+ end
+ 
+ always@(negedge clk)
+  begin
+   case(next_state_out)
+     s0,s1,s2:
+       begin
+         en_clk_1 <= 1'b1;
+       end
+     default:
+       begin
+         en_clk_1 <= 1'b0;
+       end
+   endcase
+  end
+
 always@(posedge clk or posedge rst)
 begin
  if(rst)
@@ -104,7 +136,7 @@ begin
   count_delay<=0;
   data_out<=1'b0;
   load_sr<=1'b0;
-  en_clk<=1'b0;
+//  en_clk<=1'b0;
   end
  else
   begin
@@ -115,7 +147,7 @@ begin
       count_delay<=0;
       data_out<=1'b0;
       load_sr<=1'b0;
-      en_clk<=1'b0;
+//      en_clk<=1'b0;
       end
 //    s1:
 //      begin
@@ -136,7 +168,7 @@ begin
         data_out<=din[count];
         end
        load_sr<=1'b0;
-       en_clk<=1'b1;
+//       en_clk<=1'b1;
       end
     s3:
       begin
@@ -144,7 +176,7 @@ begin
       count_delay<=count_delay+1'b1;
       data_out<=1'b0;
       load_sr<=1'b1;
-      en_clk<=1'b0;
+//      en_clk<=1'b0;
       end
     s4:
       begin
@@ -152,7 +184,7 @@ begin
       count_delay<=0;
       data_out<=1'b0;
       load_sr<=1'b0;
-      en_clk<=1'b0;
+//      en_clk<=1'b0;
       end
     default:
       begin
@@ -160,7 +192,7 @@ begin
       count_delay<=0;
       data_out<=1'b0;
       load_sr<=1'b0;
-      en_clk<=1'b0;
+//      en_clk<=1'b0;
       end
    endcase
   end
