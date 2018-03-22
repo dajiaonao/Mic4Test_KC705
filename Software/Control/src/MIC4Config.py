@@ -99,6 +99,7 @@ class MIC4Config():
             ret_all = 0
             for i in range(len(retw)):
                 ret_all |= ord(retw[i])<<(nByte-i)*8
+            ret_all = ret_all>>8
             
             print("Sent: %x" % data_to_send)
             print("Get : %x" % ret_all)
@@ -175,9 +176,9 @@ class MIC4Config():
         #for i in range(8):
         #    cmdStr += self.dac.set_voltage(i, val)
         cmdStr += self.dac.set_voltage(0, 1.2) # LT_VREF
-        cmdStr += self.dac.set_voltage(2, 1.4) # VPLUSE_HIGH
+        cmdStr += self.dac.set_voltage(2, 1.8) # VPLUSE_HIGH
         cmdStr += self.dac.set_voltage(3, 1.2) # LVDS_REF
-        cmdStr += self.dac.set_voltage(4, 0.8) # VPULSE_LOW
+        cmdStr += self.dac.set_voltage(4, 0.5) # VPULSE_LOW
         #cmdStr += self.dac.set_voltage(6, 1.63) # DAC_REF
         cmdStr += self.dac.set_voltage(6, 1.2) # DAC_REF
 #         cmdStr += self.dac.set_voltage(6, 0.6) # DAC_REF
@@ -418,17 +419,17 @@ class MIC4Reg(object):
 
     def useDefault(self):
         self.value =  0
-        self.setLVDS_TEST(0b1000)
+        self.setLVDS_TEST(0b0000)
         self.setTRX16(0b1000)
         self.setTRX15_serializer(0b1000)
-        self.setPDB(1)
+        self.setPDB(0)
         self.setTEST(0)
-        self.setPar('VCLIP',0b0000101001)
-        self.setPar('VReset',0b0101010101)
-        self.setPar('VCASN2',0b0110011001)
-        self.setPar('VCASN',0b0100010001)
-        self.setPar('VCASP',0b1011101110)
-        self.setPar('VRef',0b100011111)
+        self.setPar('VCLIP',0,0.075,0b0000101001)
+        self.setPar('VReset',0.5, 0.484,0b0101010101)
+        self.setPar('VCASN2',0.6, 0.57, 0b0110011001)
+        self.setPar('VCASN',0.4, 0.381,0b0100010001)
+        self.setPar('VCASP',1.1,1.040,0b1011101110)
+        self.setPar('VRef',0.4, 0.4, 0b100011111)
 #         self.setPar('VRef',0b0000010001)
         self.setPar('IBIAS',0x80)
         self.setPar('IDB',0x80)
@@ -436,7 +437,7 @@ class MIC4Reg(object):
         self.setPar('IRESET',0x80)
         self.setPar('IDB2',0x80)
         # self.setPar('XYZ',0x80) ### test the exception handling
-        self.selectVolDAC(0)
+        self.selectVolDAC(5)
         self.selectCurDAC(0)
 
     def getConf(self):
@@ -490,23 +491,44 @@ class PixelConfig():
         listA = []
         w = None
         for x in list1:
+            print(x)
             if w is None:
-                w = ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|((x[3]<<1)&0x1)
+                w = ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
                 w = w << 16
             else:
-                w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|((x[3]<<1)&0x1)
-                w = None
+                w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
                 listA.append(w)
+                w = None
         if w is not None:
             x = list1[-1]
-            w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|((x[3]<<1)&0x1)
+            w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
             listA.append(w)
             w = None
 
         if self.isTest:
             for w in listA: print(bin(w))
             return
+        print(listA)
         return listA
+
+
+    def setAll2(self, mask, pulse):
+        w = None
+        for row in range(128):
+            listA = []
+            for col in range(64):
+                ### do something
+                if w is None:
+                    w = ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
+                    w = w << 16
+                else:
+                    w |= ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
+                    listA.append(w)
+                    w = None
+            if self.isTest:
+                print(listA[:10])
+                continue
+            self.applyConfig(listA)
 
     def setAll(self, mask, pulse):
         listA = []
@@ -515,10 +537,10 @@ class PixelConfig():
             for col in range(64):
                 ### do something
                 if w is None:
-                    w = ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|((pulse<<1)&0x1)
+                    w = ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
                     w = w << 16
                 else:
-                    w |= ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|((pulse<<1)&0x1)
+                    w |= ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
                     listA.append(w)
                     w = None
         if self.isTest:
@@ -528,19 +550,22 @@ class PixelConfig():
 
     def applyConfig(self, confList=None):
         confList1 = self.getConfList() if confList is None else confList
+        print(confList1)
 
         data0 = (self.clk_div & 0x3f)
         addr = 0
         pls = 1<<2
         pls = 0xffff & pls
 
+        print("Sending the configuration signal")
         cmdStr =''
         cmdStr += self.cmd.write_register(0, data0)
         cmdStr += self.cmd.write_memory(addr, confList1)
         self.s.sendall(cmdStr)
         time.sleep(1)
+        print("Sending the load signal")
         cmdStr = ''
-        cmdStr += cmd.send_pulse(pls)
+        cmdStr += self.cmd.send_pulse(pls)
         self.s.sendall(cmdStr)
 
 
