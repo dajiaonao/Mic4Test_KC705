@@ -31,32 +31,6 @@ class MIC4Config():
         port = 1024
         self.s.connect((host,port))
 
-    def configReg(self):
-        div = 1
-        fifo_out = 1
-        dxc = self.sReg.getConf()
-        print('{0:x}'.format(dxc))
-
-        cmdStr = ''
-        for i in range(13):
-            din = 0xffff & dxc
-            cmdStr += self.cmd.write_register(0, din)
-            cmdStr += self.cmd.send_pulse(3)
-
-            ### shift dxc
-            dxc = dxc>>16
-            print('{1:d} {0:x} {2:x}'.format(dxc, i, din))
-
-        ### send data to register and read them back
-        cmdStr += self.cmd.write_register(1, (div<<1)+fifo_out)
-        cmdStr += self.cmd.send_pulse(0)
-        cmdStr += self.cmd.read_datafifo(200)
-        self.s.sendall(cmdStr)
-
-        ### read back
-        rw = self.s.recv(25, socket.MSG_WAITALL)
-        return rw
-
     def empty_fifo(self):
         nWord = 1
         time.sleep(0.5)
@@ -68,7 +42,6 @@ class MIC4Config():
 
         print([hex(ord(w)) for w in retw])
         print(len(retw))
-
 
 
     def shift_register_rw(self, data_to_send, clk_div, read=True):
@@ -153,7 +126,7 @@ class MIC4Config():
         wd |= (lt_div&0x3f) << 6
         wd |= (clk_div&0x3f)
         print(bin(wd))
-        self.s.sendall(self.cmd.write_register(2, wd))
+        self.s.sendall(self.cmd.write_register(18, wd))
 
     def sendGRST_B(self):
         self.s.sendall(self.cmd.send_pulse(0x20))
@@ -192,39 +165,6 @@ class MIC4Config():
         self.s.sendall(cmdStr)
         ### 
 
-
-    def test(self):
-        print("testing...")
-
-        div = 1
-        fifo_out = 1
-        dx = 0xabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde
-        dxc = dx
-        print('{0:x}'.format(dxc))
-
-        cmdStr = ''
-        for i in range(13):
-            din = 0xffff & dxc
-            cmdStr += self.cmd.write_register(0, din)
-            cmdStr += self.cmd.send_pulse(3)
-
-            ### shift dxc
-            dxc = dxc>>16
-            print('{1:d} {0:x} {2:x}'.format(dxc, i, din))
-
-        ### send data to register and read them back
-        cmdStr += self.cmd.write_register(1, (div<<1)+fifo_out)
-        cmdStr += self.cmd.send_pulse(0)
-#        cmdStr += self.cmd.read_datafifo(200)
-
-        print([ord(x) for x in cmdStr])
-        print(len([ord(x) for x in cmdStr]))
-        print(cmdStr)
-        self.s.sendall(cmdStr)
-
-        ### read back
-#         ret = self.s.recv(25, socket.MSG_WAITALL)
-#         print rw
 
 class bitSet():
     def __init__(self,bits=[], reverse=False):
@@ -559,7 +499,7 @@ class PixelConfig():
 
         print("Sending the configuration signal")
         cmdStr =''
-        cmdStr += self.cmd.write_register(0, data0)
+        cmdStr += self.cmd.write_register(17, data0)
         cmdStr += self.cmd.write_memory(addr, confList1)
         self.s.sendall(cmdStr)
         time.sleep(1)
@@ -567,141 +507,6 @@ class PixelConfig():
         cmdStr = ''
         cmdStr += self.cmd.send_pulse(pls)
         self.s.sendall(cmdStr)
-
-
-class PixelConfig0():
-    '''Auxilary class for pxiel config.'''
-    def __init__(self, cmd, s):
-        self.cmd = cmd
-        self.s = s
-        self.allAre = None
-
-    def reset(self, state=None):
-        self.allAre = state
-        self.Pixels = []
-
-        cmdStr = self.getConfigVector()
-        self.s.sendall()
-
-    def setPixel(self, x, y, pulse, mask):
-        self.pixels.append((x+(y<<6),pulse+(mask<<1)))
-
-    def setAll(self, pulse, mask):
-        confList = []
-        for i in range(128):
-            for j in range(64):
-                data1 =0 
-
-
-    def getConfigVector(self, clk_div):
-        ### address + config
-        data0 = 0
-        data0 |= (clk_div & 0x3f)
-
-        n = 0
-        data1 = 0
-        if self.allAre is not None:
-            for i in range(128):
-                for j in range(64):
-                    data1 = data1<<16
-
-        cmdStr = ''
-        cmdStr += self.cmd.write_register(0, data0)
-        cmdStr += self.cmd.write_memory(0, data1, n)
-        cmdStr += self.cmd.send_pulse(0x4)
-    def get_test_vector(self):
-        clk_div = 7
-        data0 = 0
-        data0 |= (clk_div & 0x3f)
- 
-        data1 = [i&0xffff for i in range(10)]
-        print(data1)
-
-        cmdStr = ''
-        cmdStr += self.cmd.write_register(0, data0)
-        cmdStr += self.cmd.write_memory(0, data1)
-        print(cmdStr)
-
-        self.s.sendall(cmdStr)
-
-        cmdStr = ''
-        time.sleep(1)
-        cmdStr += self.cmd.send_pulse(0x4)
-        print(cmdStr)
-        self.s.sendall(cmdStr)
-        return cmdStr
-        
-
-class MIC4Reg0(object):
-    ## @var _defaultRegMap default register values
-    _defaultRegMap = {
-        'DAC'    : [0x75c3, 0x8444, 0x7bbb, 0x7375, 0x86d4, 0xe4b2], # from DAC1 to DAC6
-        'PD'     : [1, 1, 1, 1], # from PD1 to PD4, 1 means powered down
-        'K'      : [1, 0, 1, 0, 1, 0, 0, 0, 0, 0], # from K1 to K10, 1 means closed (conducting)
-        'vref'   : 0x8,
-        'vcasp'  : 0x8,
-        'vcasn'  : 0x8,
-        'vbiasp' : 0x8,
-        'vbiasn' : 0x8
-    }
-    ## @var register map local to the class
-    _regMap = {}
-
-    def __init__(self):
-        self._regMap = copy.deepcopy(self._defaultRegMap)
-
-    def set_dac(self, i, val):
-        self._regMap['DAC'][i] = 0xffff & val
-
-    def set_power_down(self, i, onoff):
-        self._regMap['PD'][i] = 0x1 & onoff
-
-    def set_k(self, i, onoff):
-        self._regMap['K'][i] = 0x1 & onoff
-
-    def set_vref(self, val):
-        self._regMap['vref'] = val & 0xf
-
-    def set_vcasp(self, val):
-        self._regMap['vcasp'] = val & 0xf
-
-    def set_vcasn(self, val):
-        self._regMap['vcasn'] = val & 0xf
-
-    def set_vbiasp(self, val):
-        self._regMap['vbiasp'] = val & 0xf
-
-    def set_vbiasn(self, val):
-        self._regMap['vbiasn'] = val & 0xf
-
-    ## Get long-integer variable
-    def get_config_vector(self):
-        ret = ( self._regMap['vbiasn'] << 126 |
-                self._regMap['vbiasp'] << 122 |
-                self._regMap['vcasn']  << 118 |
-                self._regMap['vcasp']  << 114 |
-                self._regMap['vref']   << 110 )
-        for i in xrange(len(self._regMap['K'])):
-            ret |= self._regMap['K'][i] << (len(self._regMap['K']) - i) + 99
-        for i in xrange(len(self._regMap['PD'])):
-            ret |= self._regMap['PD'][i] << (len(self._regMap['PD']) - i) + 95
-        for i in xrange(len(self._regMap['DAC'])):
-            ret |= self._regMap['DAC'][i] << (len(self._regMap['DAC'])-1 - i)*16
-        return ret
-
-    dac_fit_a = 4.35861E-5
-    dac_fit_b = 0.0349427
-    def dac_volt2code(self, v):
-
-        c = int((v - self.dac_fit_b) / self.dac_fit_a)
-        if c < 0:     c = 0
-        if c > 65535: c = 65535
-        return c
-
-    def dac_code2volt(self, c):
-        v = c * self.dac_fit_a + self.dac_fit_b
-        return v
-
 
 ## Command generator for controlling DAC8568
 #
@@ -719,9 +524,9 @@ class DAC8568(object):
     def write_spi(self, val):
         print(bin(val))
         ret = ""          # 32 bits, send two times, each for a half, starting with the higher one
-        ret += self.cmd.write_register(0, (val >> 16) & 0xffff)
+        ret += self.cmd.write_register(16, (val >> 16) & 0xffff)
         ret += self.cmd.send_pulse(0x2)
-        ret += self.cmd.write_register(0, val & 0xffff)
+        ret += self.cmd.write_register(16, val & 0xffff)
         ret += self.cmd.send_pulse(0x2)
         return ret
     def turn_on_2V5_ref(self):
@@ -731,48 +536,6 @@ class DAC8568(object):
         # There is some issues, might overwrite some values in the current way. FIXME!
         return self.write_spi((0x03 << 24) | ((ch&0xf) << 20) | (self.DACVolt(v) << 4))
  
-## Shift_register write and read function.
-#
-# @param[in] s Socket that is already open and connected to the FPGA board.
-# @param[in] data_to_send 130-bit value to be sent to the external SR.
-# @param[in] clk_div Clock frequency division factor: (/2**clk_div).  6-bit wide.
-# @return Value stored in the external SR that is read back.
-# @return valid signal shows that the value stored in external SR is read back.
-def shift_register_rw(s, data_to_send, clk_div):
-    div_reg = (clk_div & 0x3f) << 130
-    data_reg = data_to_send & 0x3ffffffffffffffffffffffffffffffff
-
-    cmd = Cmd()
-
-    val = div_reg | data_reg
-    cmdstr = ""
-    for i in xrange(9):
-        cmdstr += cmd.write_register(i, (val >> i*16) & 0xffff)
-
-    cmdstr += cmd.send_pulse(0x01)
-
-#    print([hex(ord(w)) for w in cmdstr])
-
-    s.sendall(cmdstr)
-
-    time.sleep(0.5)
-
-    # read back
-    cmdstr = ""
-    for i in xrange(9):
-        cmdstr += cmd.read_status(8-i)
-    s.sendall(cmdstr)
-    retw = s.recv(4*9)
-#    print([hex(ord(w)) for w in retw])
-    ret_all = 0
-    for i in xrange(9):
-        ret_all = ret_all | ( int(ord(retw[i*4+2])) << ((8-i) * 16 + 8) |
-                              int(ord(retw[i*4+3])) << ((8-i) * 16))
-    ret = ret_all & 0x3ffffffffffffffffffffffffffffffff
-    valid = (ret_all & (1 << 130)) >> 130
-    print("Return: 0x%0x, valid: %d" % (ret, valid))
-    return ret
-
 def mainTest():
     host = '192.168.2.3'
     port = 1024
