@@ -9,6 +9,59 @@ def testRegister(mc1):
     mc1.sReg.test()
     mc1.configReg()
 
+def lvds_test(mc1):
+    mc1.test_DAC8568_config()
+    mc1.sReg.value = 0
+    mc1.sReg.setLVDS_TEST(0b1000)
+    mc1.sReg.setTRX16(0b1000)
+    mc1.sReg.setTRX15_serializer(0b1000)
+    mc1.sReg.show()
+    mc1.testReg(read=True)
+    mc1.setClocks(1,6,6)
+
+def checkDefaultDACinChip(mc1):
+    mc1.sReg.value = 0
+    mc1.sReg.useDefault()
+    mc1.sReg.selectVolDAC(0)
+    mc1.sReg.show()
+    mc1.testReg(read=True)
+
+
+def checkSysCLKchange(mc1):
+    mc1.setClocks(1,6,6)
+    mc1.sReg.value = 1
+    mc1.sReg.show()
+    mc1.testReg(read=True)
+#     mc1.setClocks(1,10,10)
+
+def test_DOUT(mc1):
+    mc1.test_DAC8568_config()
+    mc1.sReg.value = 0
+    mc1.sReg.setTRX16(0b1000)
+    mc1.sReg.setTRX15_serializer(0b1000)
+    mc1.sReg.show()
+    mc1.testReg(read=True)
+    mc1.setClocks(1,6,6)
+
+    time.sleep(1)
+    mc1.sendD_PULSE()
+
+
+def checkCol(mc1):
+    i = 0 if len(sys.argv)<2 else int(sys.argv[1])
+    if i<32:
+        mc1.sReg.useDefault()
+    else:
+        mc1.sReg.useDefaultIHEP()
+    mc1.sReg.selectCol(i)
+    mc1.sReg.setPDB(0)
+    mc1.sReg.show()
+    mc1.testReg(read=True)
+
+    time.sleep(1)
+    mc1.sendA_PULSE()
+    time.sleep(2)
+
 
 def loopCol(mc1):
     for i in range(32):
@@ -21,22 +74,35 @@ def loopCol(mc1):
         mc1.sendA_PULSE()
         time.sleep(2)
 
-def testPixels(mc1):
-#     mc1.setClocks(1,5,5)
-#     mc1.test_DAC8568_config()
-#     mc1.sReg.value = 0
-# #     mc1.sReg.value = 1
-#     mc1.sReg.useDefault()
-#     mc1.sReg.selectCol(1)
-# # 
-#     mc1.sReg.show()
-# #     mc1.sReg.value = mc1.sReg.value >> 1
-#     mc1.testReg(read=True)
+def busySigal(mc1):
+    mc1.setClocks(1,8,8) # from 250 MHz clock
+    mc1.test_DAC8568_config()
+    mc1.pCfg.clk_div = 18 # from 100 MHz clock
+    mc1.pCfg.pixels = [(127,0,0,1)]# for i in range(64)]
+    mc1.pCfg.applyConfig()
 
-    mc1.pCfg.clk_div = 10
+def testPixels(mc1):
+    mc1.test_DAC8568_config()
+    sys.exit(1)
+# #     mc1.sReg.value = 0
+#     mc1.sReg.value = 1
+    mc1.sReg.useDefault()
+#     mc1.sReg.selectCol(0)
+    mc1.sReg.setPDB(0)
+    mc1.sReg.setTEST(1)
+#  
+# #     mc1.sReg.value |= (0x1<<199)
+    mc1.sReg.show()
+#     sys.exit(1)
+# #     mc1.sReg.value = mc1.sReg.value >> 1
+    mc1.testReg(read=True)
+    mc1.setClocks(1,6,6)
+    sys.exit(1)
+# 
+    mc1.pCfg.clk_div = 5
 #     mc1.pCfg.setAll(1,0)
-#     mc1.pCfg.pixels = [(127,0,0,1)]# for i in range(64)]
-    mc1.pCfg.pixels = [(127,i,0,1) for i in range(64)]
+    mc1.pCfg.pixels = [(127,0,0,1)]# for i in range(64)]
+#     mc1.pCfg.pixels = [(127,i,0,1) for i in range(64)]
     mc1.pCfg.applyConfig()
 #     mc1.sendA_PULSE()
 
@@ -107,7 +173,7 @@ def testA(mc1):
 #     mc1.sReg.value = test_valueBit.setValueTo(mc1.sReg.value, mc1.sReg.value)
 
     print bin(mc1.sReg.value)
-    for i,j in enumerate(reversed(bin(mc1.sReg.value)[2:])):
+    for i,j in enumerate(reversed(bin(mc1.sReg.value))[2:]):
         if int(j)!=0: print i,j, 199-i
     mc1.sReg.show()
 #     mc1.sReg.value = mc1.sReg.value >> 1
@@ -133,5 +199,11 @@ if __name__ == '__main__':
     mc1.connect()
 #     testA(mc1)
 #     testPixels(mc1)
-    loopCol(mc1)
+#     lvds_test(mc1)
+#     test_DOUT(mc1)
+    busySigal(mc1)
+#     checkDefaultDACinChip(mc1)
+#     checkSysCLKchange(mc1)
+#     loopCol(mc1)
+#     checkCol(mc1)
 
