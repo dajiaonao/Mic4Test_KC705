@@ -502,8 +502,7 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------< Mic4 temperature sensor
   COMPONENT Temp_Sensor
     GENERIC (
-      TS_COUNT_WIDTH : positive := 32;
-      PLS_LOW : positive := 100000000 --> 1s = 100 000 000 * 10 ns
+      TS_COUNT_WIDTH : positive := 32
     );
     PORT (
       clk_100MHz : IN std_logic;
@@ -1362,7 +1361,7 @@ BEGIN
       RESET    => reset,                -- reset
       -- input data interface
       WR_CLK   => control_clk,          -- FIFO write clock
-      DINFIFO  => config_reg(15 DOWNTO 0),
+      DINFIFO  => config_reg(16*16+15 DOWNTO 16*16),
       WR_EN    => '0',
       WR_PULSE => pulse_reg(1),  -- one pulse writes one word, regardless of pulse duration
       FULL     => OPEN,
@@ -1378,7 +1377,7 @@ BEGIN
     );
   ---------------------------------------------> shiftreg driver for DAC8568
   ---------------------------------------------< Mic4 pixel config
-  mic_pc_div <= config_reg(5 DOWNTO 0);
+  mic_pc_div <= config_reg(16*17+5 DOWNTO 16*17);
   Pixel_Config_inst : Pixel_Config
     GENERIC MAP(
       DIV_WIDTH       => 6,
@@ -1402,8 +1401,7 @@ BEGIN
   ---------------------------------------------< Mic4 temperature sensor
   Temp_Sensor_inst : Temp_Sensor
     GENERIC MAP(
-      TS_COUNT_WIDTH => 32,
-      PLS_LOW => 100000000
+      TS_COUNT_WIDTH => 32
     )
     PORT MAP (
       clk_100MHz => control_clk,
@@ -1414,9 +1412,9 @@ BEGIN
    );
   ---------------------------------------------> Mic4 temperature sensor
   ---------------------------------------------< Mic4 control
-  div0_mc <= config_reg(37 DOWNTO 32);
-  div1_mc <= config_reg(43 DOWNTO 38);
-  FMC_HPC_LA_P(30) <= config_reg(44); --STROBE
+  div0_mc <= config_reg(16*18+5 DOWNTO 16*18);
+  div1_mc <= config_reg(16*18+11 DOWNTO 16*18+6);
+  FMC_HPC_LA_P(30) <= config_reg(16*18+12); --STROBE
   FMC_HPC_LA_P(32) <= reset; --RESET
   Mic4_Cntrl_inst : Mic4_Cntrl
     GENERIC MAP(
