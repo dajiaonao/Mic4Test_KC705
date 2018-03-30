@@ -38,6 +38,9 @@ def captureScreen(filename='testing.png'):
     Ref: https://community.keysight.com/thread/18792
     Not tested!!
     '''
+    ss.send("*IDN?;")                           #read back device ID
+    print "Instrument ID: %s"%ss.recv(128)   
+
     ss.send(":MMEM:STORE:SCR \'D:\\exa_screen.png\';*WAI")
     ss.send(":MMEM:DATA? \'D:\\exa_screen.png\'")
 
@@ -165,5 +168,5 @@ if __name__ == '__main__':
     ss = socket.socket(socket.AF_INET,socket.SOCK_STREAM)       #init local socket handle
     ss.connect((hostname,port))                                 #connect to the server
 #     saveWaveform()
-    saveWaveform()
+    captureScreen()
     ss.close()
