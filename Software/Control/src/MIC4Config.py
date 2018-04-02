@@ -149,9 +149,9 @@ class MIC4Config():
         #for i in range(8):
         #    cmdStr += self.dac.set_voltage(i, val)
         cmdStr += self.dac.set_voltage(0, 1.2) # LT_VREF
-        cmdStr += self.dac.set_voltage(2, 1.8) # VPLUSE_HIGH
+        cmdStr += self.dac.set_voltage(2, 1.7) # VPLUSE_HIGH
         cmdStr += self.dac.set_voltage(3, 1.2) # LVDS_REF
-        cmdStr += self.dac.set_voltage(4, 0.5) # VPULSE_LOW
+        cmdStr += self.dac.set_voltage(4, 0.1) # VPULSE_LOW
         #cmdStr += self.dac.set_voltage(6, 1.63) # DAC_REF
         cmdStr += self.dac.set_voltage(6, 1.2) # DAC_REF
 #         cmdStr += self.dac.set_voltage(6, 0.6) # DAC_REF
@@ -297,6 +297,10 @@ class MIC4Reg(object):
         print('TRX16    :',(self.value>>13)&0xf)
         print('LVDS_Test:',(self.value>>9)&0xf)
 
+        # show bits that are set to 1
+        for i in range(200):
+            if (self.value >> i)&0x1 != 0: print(i)
+
     def getPar(self,parname, vMax=None, vMin=None):
         try:
             x = getattr(self, parname+'Bits')
@@ -357,6 +361,29 @@ class MIC4Reg(object):
         self.selectVolDAC(0)
         self.selectCurDAC(0)
 
+    def useDefaultIHEP(self):
+        self.value =  0
+        self.setLVDS_TEST(0b0000)
+        self.setTRX16(0b1000)
+        self.setTRX15_serializer(0b1000)
+        self.setPDB(0)
+        self.setTEST(0)
+        self.setPar('VCLIP',0,0.075,0b0000101001)
+        self.setPar('VReset',1.1, 0.484,0b0101010101)
+        self.setPar('VCASN2',0.5, 0.57, 0b0110011001)
+        self.setPar('VCASN',0.49, 0.381,0b0100010001)
+        self.setPar('VCASP',0.37,1.040,0b1011101110)
+        self.setPar('VRef',0.4, 0.4, 0b100011111)
+#         self.setPar('VRef',0b0000010001)
+        self.setPar('IBIAS',0x80)
+        self.setPar('IDB',0x80)
+        self.setPar('ITHR',0x80)
+        self.setPar('IRESET',0x80)
+        self.setPar('IDB2',0x80)
+        # self.setPar('XYZ',0x80) ### test the exception handling
+        self.selectVolDAC(5)
+        self.selectCurDAC(0)
+
     def useDefault(self):
         self.value =  0
         self.setLVDS_TEST(0b0000)
@@ -365,10 +392,10 @@ class MIC4Reg(object):
         self.setPDB(0)
         self.setTEST(0)
         self.setPar('VCLIP',0,0.075,0b0000101001)
-        self.setPar('VReset',0.5, 0.484,0b0101010101)
-        self.setPar('VCASN2',0.6, 0.57, 0b0110011001)
+        self.setPar('VReset',1.1, 0.484,0b0101010101)
+        self.setPar('VCASN2',0.5, 0.57, 0b0110011001)
         self.setPar('VCASN',0.4, 0.381,0b0100010001)
-        self.setPar('VCASP',1.1,1.040,0b1011101110)
+        self.setPar('VCASP',0.6,1.040,0b1011101110)
         self.setPar('VRef',0.4, 0.4, 0b100011111)
 #         self.setPar('VRef',0b0000010001)
         self.setPar('IBIAS',0x80)
