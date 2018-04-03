@@ -72,30 +72,87 @@ def test_AOUT_IHEP(mc1):
     mc1.sendA_PULSE()
 
 
+def test_AOUT_loop(mc1):
+
+    for i in range(32):
+        mc1.sReg.value =  0
+        mc1.sReg.setPDB(0)
+        mc1.sReg.setPar('VCLIP' ,0.1,  0.833, 0b1001011001)
+        mc1.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
+        mc1.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000)
+        mc1.sReg.setPar('VReset',1.1,  1.084, 0b1100000111)
+        mc1.sReg.setPar('VCASN2',0.5,  0.502, 0b101100110)
+        mc1.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+        mc1.sReg.setPar('IBIAS' ,0xff)
+        mc1.sReg.setPar('IDB'   ,0x80)
+        mc1.sReg.setPar('ITHR'  ,0xff)
+        mc1.sReg.setPar('IRESET',0x80)
+        mc1.sReg.setPar('IDB2'  ,0x80)
+        mc1.sReg.selectVolDAC(5)
+        mc1.sReg.selectCurDAC(6)
+        mc1.sReg.selectCol(i)
+
+        mc1.sReg.show()
+        mc1.testReg(read=True)
+
+        print "On pixel", i
+        time.sleep(1)
+        mc1.sendA_PULSE()
+
+def test_AOUT_IHEP_loop(mc1):
+    for i in range(32,64):
+        mc1.sReg.value =  0
+        mc1.sReg.setPDB(0)
+        mc1.sReg.setPar('VCLIP',0,0.075,0b0000101001)
+        mc1.sReg.setPar('VReset',1.1, 0.484,0b0101010101)
+        mc1.sReg.setPar('VCASN2',0.5, 0.57, 0b0110011001)
+        mc1.sReg.setPar('VCASN',0.49, 0.381,0b0100010001)
+        mc1.sReg.setPar('VCASP',0.37,1.040,0b1011101110)
+        mc1.sReg.setPar('VRef',0.4, 0.4, 0b100011111)
+        mc1.sReg.setPar('IBIAS',0x80)
+        mc1.sReg.setPar('IDB',0x80)
+        mc1.sReg.setPar('ITHR',0x80)
+        mc1.sReg.setPar('IRESET',0x80)
+        mc1.sReg.setPar('IDB2',0x80)
+        mc1.sReg.selectVolDAC(5)
+        mc1.sReg.selectCurDAC(6)
+        mc1.sReg.selectCol(i)
+
+        mc1.sReg.show()
+        mc1.testReg(read=True)
+
+        print "On pixel", i
+        time.sleep(1)
+        mc1.sendA_PULSE()
+
 def test_AOUT(mc1):
+    mc1.setClocks(1,8,8)
+    sys.exit(1)
 #     mc1.test_DAC8568_config()
-#     mc1.sReg.useDefault()
+# # #     mc1.sReg.useDefault()
     mc1.sReg.value =  0
     mc1.sReg.setPDB(0)
-    mc1.sReg.setPar('VCLIP',0.1,0.075,0b0000101001)
-    mc1.sReg.setPar('VReset',1.1, 0.484,0b0101010101)
-    mc1.sReg.setPar('VCASN2',0.5, 0.57, 0b0110011001)
-    mc1.sReg.setPar('VCASN',0.4, 0.381,0b0100010001)
-    mc1.sReg.setPar('VCASP',0.6,1.040,0b1011101110)
-    mc1.sReg.setPar('VRef',0.4, 0.4, 0b100011111)
-    mc1.sReg.setPar('IBIAS',0x80)
-    mc1.sReg.setPar('IDB',0x80)
-    mc1.sReg.setPar('ITHR',0x80)
+    mc1.sReg.setPar('VCLIP' ,0.1,  0.833, 0b1001011001)
+    mc1.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
+    mc1.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000)
+    mc1.sReg.setPar('VReset',1.1,  1.084, 0b1100000111)
+    mc1.sReg.setPar('VCASN2',0.5,  0.502, 0b101100110)
+    mc1.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+    mc1.sReg.setPar('IBIAS' ,0xff)
+    mc1.sReg.setPar('IDB'   ,0x80)
+    mc1.sReg.setPar('ITHR'  ,0xff)
     mc1.sReg.setPar('IRESET',0x80)
-    mc1.sReg.setPar('IDB2',0x80)
+    mc1.sReg.setPar('IDB2'  ,0x80)
+    mc1.sReg.selectVolDAC(5)
+    mc1.sReg.selectCurDAC(6)
     mc1.sReg.selectCol(0)
 
     mc1.sReg.show()
     mc1.testReg(read=True)
-#     mc1.setClocks(1,6,6)
+# #     mc1.setClocks(1,6,6)
 
-    time.sleep(1)
-    mc1.sendA_PULSE()
+#     time.sleep(1)
+#     mc1.sendA_PULSE()
 
 def test_DOUT(mc1):
     mc1.setClocks(1,5,5)
@@ -149,6 +206,15 @@ def loopCol(mc1):
         mc1.sendA_PULSE()
         time.sleep(2)
 
+def turnOffAllPixels(mc1):
+    mc1.setClocks(1,8,8) # from 250 MHz clock
+    mc1.test_DAC8568_config()
+    mc1.pCfg.clk_div = 18 # from 100 MHz clock
+    for r in range(128):
+        print "turning off row", r
+        mc1.pCfg.pixels = [(r,i,0,0) for i in range(64)]
+        mc1.pCfg.applyConfig()
+
 def setLastRow(mc1):
     mc1.setClocks(1,8,8) # from 250 MHz clock
     mc1.test_DAC8568_config()
@@ -160,7 +226,7 @@ def busySigal(mc1):
     mc1.setClocks(1,8,8) # from 250 MHz clock
     mc1.test_DAC8568_config()
     mc1.pCfg.clk_div = 18 # from 100 MHz clock
-    mc1.pCfg.pixels = [(127,0,0,1),(127,1,0,1)]# for i in range(64)]
+    mc1.pCfg.pixels = [(127,0,0,0),(127,0,0,1),(127,0,1,1),(127,0,1,0)]# for i in range(64)]
     mc1.pCfg.applyConfig()
 
 def testPixels(mc1):
@@ -282,7 +348,7 @@ if __name__ == '__main__':
 #     mc1.empty_fifo()
 #     testA(mc1)
 #     testPixels(mc1)
-    lvds_test(mc1)
+#     lvds_test(mc1)
 #     test_DOUT(mc1)
 #     CheckValid(mc1)
 #     busySigal(mc1)
@@ -291,7 +357,8 @@ if __name__ == '__main__':
 #     checkSysCLKchange(mc1)
 #     loopCol(mc1)
 #     checkCol(mc1)
-#     test_AOUT(mc1)
+    test_AOUT_IHEP_loop(mc1)
+#     turnOffAllPixels(mc1)
 #     test_AOUT_IHEP(mc1)
 #     testRegister(mc1)
 #     mc1.empty_fifo()
