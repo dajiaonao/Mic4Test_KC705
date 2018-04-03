@@ -1415,12 +1415,12 @@ BEGIN
   div0_mc <= config_reg(16*18+5 DOWNTO 16*18);
   div1_mc <= config_reg(16*18+11 DOWNTO 16*18+6);
   FMC_HPC_LA_P(30) <= config_reg(16*18+12); --STROBE
-  FMC_HPC_LA_P(32) <= reset; --RESET
+  FMC_HPC_LA_P(32) <= NOT reset; --RESET: the modules work with high voltage in the chip.
   Mic4_Cntrl_inst : Mic4_Cntrl
     GENERIC MAP(
       DIV_WIDTH     => 6,
       COUNT_WIDTH   => 64,
-      APULSE_LENGTH => 100,
+      APULSE_LENGTH => 1000,
       DPULSE_LENGTH => 300,
       GRST_LENGTH   => 5
     )
@@ -1439,7 +1439,8 @@ BEGIN
       d_pulse_out => FMC_HPC_LA_P(24),
       grst_n_out => FMC_HPC_LA_P(28)
     );
-
+--  FMC_HPC_LA_P(21) <= '1';
+  
   clkmc_obufds_inst : OBUFDS
     GENERIC MAP (
       IOSTANDARD => "LVDS"

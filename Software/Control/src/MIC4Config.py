@@ -460,15 +460,18 @@ class PixelConfig():
         for x in list1:
             print(x)
             if w is None:
-                w = ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
-                w = w << 16
+#                 w = ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
+#                 w = w << 16
+                w = self.getCode(x) << 16
             else:
-                w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
+#                 w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
+                w |= self.getCode(x) 
                 listA.append(w)
                 w = None
         if w is not None:
             x = list1[-1]
-            w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
+#             w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
+            w |= self.getCode(x) 
             listA.append(w)
             w = None
 
@@ -478,6 +481,8 @@ class PixelConfig():
         print(listA)
         return listA
 
+    def getCode(self, x):
+        return (x[0]&0x7ff)|((x[1]&0x3ff)<<7)|((x[2]&0x1)<<14)|((x[3]&0x1)<<13)
 
     def setAll2(self, mask, pulse):
         w = None
@@ -486,10 +491,12 @@ class PixelConfig():
             for col in range(64):
                 ### do something
                 if w is None:
-                    w = ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
-                    w = w << 16
+                    w = self.getCode((row,col,mask, pulse)) << 16
+#                     w = ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
+#                     w = w << 16
                 else:
-                    w |= ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
+#                     w |= ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
+                    w |= self.getCode((row,col,mask, pulse))
                     listA.append(w)
                     w = None
             if self.isTest:
