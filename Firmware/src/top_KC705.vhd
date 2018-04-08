@@ -784,7 +784,16 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL  clk_out_mc : std_logic;
   SIGNAL  lt_out_mc : std_logic;
   ---------------------------------------------> Mic4 control
-
+  SIGNAL  fd_out0 : std_logic; 
+  SIGNAL  fd_out1 : std_logic;
+  SIGNAL  fd_out2 : std_logic;
+  SIGNAL  fd_out3 : std_logic;
+  SIGNAL  fd_out4 : std_logic;
+  SIGNAL  fd_out5 : std_logic;
+  SIGNAL  fd_out6 : std_logic;
+  SIGNAL  fd_out7 : std_logic;
+  ---------------------------------------------> FDOUT
+  
 BEGIN
   ---------------------------------------------< Clock
   global_clock_reset_inst : global_clock_reset
@@ -1460,6 +1469,104 @@ BEGIN
       OB => FMC_HPC_LA_N(19),  -- Diff_n output (connect directly to top-level port)
       I  => lt_out_mc
    );
-  ---------------------------------------------> Mic4 control
+
+
+
+   -- IBUFDS: Differential Input Buffer
+   --         Kintex-7
+   -- Xilinx HDL Language Template, version 2015.4
+   FD0_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out0,  -- Buffer output
+      I => I,  -- Diff_p buffer input (connect directly to top-level port)
+      IB => IB -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+
+   FD1_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out1,  -- Buffer output
+      I => I,  -- Diff_p buffer input (connect directly to top-level port)
+      IB => IB -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD2_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out2,  -- Buffer output
+      I => I,  -- Diff_p buffer input (connect directly to top-level port)
+      IB => IB -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD3_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out3,  -- Buffer output
+      I => I,  -- Diff_p buffer input (connect directly to top-level port)
+      IB => IB -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD4_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out4,  -- Buffer output
+      I => I,  -- Diff_p buffer input (connect directly to top-level port)
+      IB => IB -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD5_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out5,  -- Buffer output
+      I => I,  -- Diff_p buffer input (connect directly to top-level port)
+      IB => IB -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD6_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out6,  -- Buffer output
+      I => I,  -- Diff_p buffer input (connect directly to top-level port)
+      IB => IB -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD7_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out7,  -- Buffer output
+      I => I,  -- Diff_p buffer input (connect directly to top-level port)
+      IB => IB -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+  --- The convert module
+
+
+  ---------------------------------------------> FDOUT
 
 END Behavioral;
