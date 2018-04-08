@@ -149,9 +149,9 @@ class MIC4Config():
         #for i in range(8):
         #    cmdStr += self.dac.set_voltage(i, val)
         cmdStr += self.dac.set_voltage(0, 1.2) # LT_VREF
-        cmdStr += self.dac.set_voltage(2, 1.7) # VPLUSE_HIGH
+        cmdStr += self.dac.set_voltage(2, 1.5) # VPLUSE_HIGH
         cmdStr += self.dac.set_voltage(3, 1.2) # LVDS_REF
-        cmdStr += self.dac.set_voltage(4, 0.1) # VPULSE_LOW
+        cmdStr += self.dac.set_voltage(4, 0.5) # VPULSE_LOW
         #cmdStr += self.dac.set_voltage(6, 1.63) # DAC_REF
         cmdStr += self.dac.set_voltage(6, 1.2) # DAC_REF
 #         cmdStr += self.dac.set_voltage(6, 0.6) # DAC_REF
@@ -298,8 +298,8 @@ class MIC4Reg(object):
         print('LVDS_Test:',(self.value>>9)&0xf)
 
         # show bits that are set to 1
-        for i in range(200):
-            if (self.value >> i)&0x1 != 0: print(i)
+        temp_bits = [str(i) for i in range(200) if (self.value >> i)&0x1 != 0]
+        print(','.join(temp_bits))
 
     def getPar(self,parname, vMax=None, vMin=None):
         try:
