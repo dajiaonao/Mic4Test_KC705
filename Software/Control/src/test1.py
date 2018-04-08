@@ -126,8 +126,8 @@ def test_AOUT_IHEP_loop(mc1):
         mc1.sendA_PULSE()
 
 def test_AOUT(mc1):
-    mc1.setClocks(1,8,8)
-    sys.exit(1)
+#     mc1.setClocks(1,8,8)
+#     sys.exit(1)
 #     mc1.test_DAC8568_config()
 # # #     mc1.sReg.useDefault()
     mc1.sReg.value =  0
@@ -145,14 +145,14 @@ def test_AOUT(mc1):
     mc1.sReg.setPar('IDB2'  ,0x80)
     mc1.sReg.selectVolDAC(5)
     mc1.sReg.selectCurDAC(6)
-    mc1.sReg.selectCol(0)
+#     mc1.sReg.selectCol(0)
 
     mc1.sReg.show()
     mc1.testReg(read=True)
 # #     mc1.setClocks(1,6,6)
 
-#     time.sleep(1)
-#     mc1.sendA_PULSE()
+    time.sleep(1)
+    mc1.sendA_PULSE()
 
 def test_DOUT(mc1):
     mc1.setClocks(1,5,5)
@@ -226,7 +226,8 @@ def busySigal(mc1):
     mc1.setClocks(1,8,8) # from 250 MHz clock
     mc1.test_DAC8568_config()
     mc1.pCfg.clk_div = 18 # from 100 MHz clock
-    mc1.pCfg.pixels = [(127,0,0,0),(127,0,0,1),(127,0,1,1),(127,0,1,0)]# for i in range(64)]
+    mc1.pCfg.pixels = [(127,0,0,1)]# for i in range(64)]
+#     mc1.pCfg.pixels = [(127,0,0,0),(127,0,0,1),(127,0,1,1),(127,0,1,0)]# for i in range(64)]
     mc1.pCfg.applyConfig()
 
 def testPixels(mc1):
@@ -357,7 +358,8 @@ if __name__ == '__main__':
 #     checkSysCLKchange(mc1)
 #     loopCol(mc1)
 #     checkCol(mc1)
-    test_AOUT_IHEP_loop(mc1)
+#     test_AOUT_IHEP_loop(mc1)
+    test_AOUT(mc1)
 #     turnOffAllPixels(mc1)
 #     test_AOUT_IHEP(mc1)
 #     testRegister(mc1)
