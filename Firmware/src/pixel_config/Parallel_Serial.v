@@ -9,9 +9,10 @@
 //
 `timescale 1ns / 1ps
 
-module Parallel_Serial #( parameter NDATA=100, //% number of data to be saved
+module Parallel_Serial #( parameter NDATA=9, //% 2**NDATA number of data to be saved
                           parameter FIFO_WIDTH=36, //% Width of fifo that data_out sent to
-                          parameter NUM_WIDTH=2
+                          parameter NUM_WIDTH=2,
+			  parameter FRAME_WIDTH=48
   )(
   input clk,
   input rst, //% system reset
@@ -29,12 +30,20 @@ module Parallel_Serial #( parameter NDATA=100, //% number of data to be saved
    output reg [FIFO_WIDTH-1:0] data_out //% data pass to fifo
   );
 reg valid;
-reg [NUM_WIDTH-1:0] counter;
+reg [NUM_WIDTH-1:0] counter; /// for number of words
+reg [NDATA-1:0] counter1; /// for number of data
+reg [4:0] counter2; /// number of words in a frame: 8+23*16+8=48*8, reserve 64 words
 
+reg in_mission;
+reg ready;
+
+wire [7:0] t_data;
+wire in_header;
 reg [3:0] current_state, next_state;
+reg [FIFO_WIDTH-1:0] data_out_temp; /// to save the data before it's ready
 //% state machine:
-//% s0: idle
-//% s1: start, search for header
+//% s0: idle, track the headers, get ready to start
+//% s1: start, find the next header
 //% s2: doing the work
 //% s3: finishing
 
@@ -42,6 +51,10 @@ parameter s0=3'b001;
 parameter s1=3'b010;
 parameter s2=3'b100;
 parameter s3=3'b000;
+
+/// current data at the ports
+assign t_data = {fd7,fd6,fd5,fd4,fd3,fd2,fd1,fd0};
+assign in_header = (t_data == 8'b10111100) 
 
 ///% move to next state
 always@(negedge clk or posedge rst)
@@ -83,6 +96,18 @@ begin
       begin
       counter = 0;
       valid = 1'b1;
+
+      if(in_header) //% K28.5 header
+        begin //% check it
+	  if(counter2 == FRAME_WIDTH) begin
+              ready <=1'b1;
+	    end
+          else if(counter2 > FRAME_WIDTH) //% lost track
+            begin
+              counter2 <=1;
+	      ready <=0'b0;
+            end
+	end
       end
     s1,s2,s3:
       begin

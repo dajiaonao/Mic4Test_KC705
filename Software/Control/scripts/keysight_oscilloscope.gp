@@ -24,7 +24,8 @@ if (x_unit == 2) set xlabel "Time [ms]" font "Helvetica,15"
 if (x_unit == 3) set xlabel "Time [us]" font "Helvetica,15" 
 if (x_unit == 4) set xlabel "Time [ns]" font "Helvetica,15" 
 set y2label "Voltage [V]" font "Helvetica,15"
-plot './data_output.dat' u 1:2 w l axes x1y2 lw 0.5 lc 6 t'' 
+if (!exists("filename")) filename='./data_output.dat'
+plot filename u 1:2 w l axes x1y2 lw 0.5 lc 6 t'' 
 #--------------------------------------------------------------------------#
 unset multiplot
 unset output
