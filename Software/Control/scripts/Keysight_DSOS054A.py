@@ -26,7 +26,7 @@ def plot(x_range,y_range,ch1_offset,timebase_position,x_unit):
    subprocess.call("gnuplot -e %s -e %s -e %s -e %s -e %s keysight_oscilloscope.gp"%(XRange,YRange,CH1offset,Timebase_Position,X_Unit), shell = True)
 #    subprocess.call("eps2png -resolution 400 keysight_oscilloscope.eps", shell = True)
    #subprocess.call("convert keysight_oscilloscope.eps keysight_oscilloscope.png", shell = True)
-   subprocess.call("convert -density 400 -colorspace rgb keysight_oscilloscope.eps -transparent white keysight_oscilloscope.png", shell = True)
+   subprocess.call("convert -flatten -density 400 -colorspace rgb keysight_oscilloscope.eps keysight_oscilloscope.png", shell = True)
    subprocess.call("xdg-open keysight_oscilloscope.png", shell = True)
    print "OK"
 #========================================================#
@@ -38,6 +38,9 @@ def captureScreen(filename='testing.png'):
     Ref: https://community.keysight.com/thread/18792
     Not tested!!
     '''
+    ss.send("*IDN?;")                           #read back device ID
+    print "Instrument ID: %s"%ss.recv(128)   
+
     ss.send(":MMEM:STORE:SCR \'D:\\exa_screen.png\';*WAI")
     ss.send(":MMEM:DATA? \'D:\\exa_screen.png\'")
 
@@ -164,6 +167,6 @@ def saveWaveform():
 if __name__ == '__main__':
     ss = socket.socket(socket.AF_INET,socket.SOCK_STREAM)       #init local socket handle
     ss.connect((hostname,port))                                 #connect to the server
-#     saveWaveform()
     saveWaveform()
+#     captureScreen()
     ss.close()

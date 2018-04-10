@@ -502,8 +502,7 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------< Mic4 temperature sensor
   COMPONENT Temp_Sensor
     GENERIC (
-      TS_COUNT_WIDTH : positive := 32;
-      PLS_LOW : positive := 100000000 --> 1s = 100 000 000 * 10 ns
+      TS_COUNT_WIDTH : positive := 32
     );
     PORT (
       clk_100MHz : IN std_logic;
@@ -540,7 +539,33 @@ ARCHITECTURE Behavioral OF top IS
     );
   END COMPONENT;
   ---------------------------------------------> Mic4 control
-    
+  ---------------------------------------------< FDOUT
+  COMPONENT Parallel_Serial_top
+    GENERIC (
+      NDATA        : positive := 20;
+      FIFO_WIDTH   : positive := 36;
+      NUM_WIDTH    : positive := 2;
+      FRAME_WIDTH  : positive := 48
+    );
+    PORT (
+      rst        : IN  std_logic;
+      start      : IN  std_logic;
+      fd0        : IN  std_logic;
+      fd1        : IN  std_logic;
+      fd2        : IN  std_logic;
+      fd3        : IN  std_logic;
+      fd4        : IN  std_logic;
+      fd5        : IN  std_logic;
+      fd6        : IN  std_logic;
+      fd7        : IN  std_logic;
+      mode       : IN  std_logic;
+      fifo_rd_en : IN  std_logic;
+      fifo_empty : OUT std_logic;
+      fifo_q     : OUT std_logic_Vector(FIFO_WIDTH-1 DOWNTO 0)
+  );
+  END COMPONENT;
+  ---------------------------------------------> FDOUT
+     
   -- Signals
   SIGNAL reset                             : std_logic;  
   SIGNAL sys_clk                           : std_logic;
@@ -758,7 +783,9 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL div                               : std_logic_vector(5 DOWNTO 0);
   SIGNAL din                               : std_logic_vector(199 DOWNTO 0);
   SIGNAL clk_sr_contr                      : std_logic;
-  SIGNAL fifo_q                            : std_logic_vector(35 DOWNTO 0);
+  SIGNAL fifo_q1                           : std_logic_vector(35 DOWNTO 0);
+  SIGNAL fifo_rden1  : std_logic;
+  SIGNAL fifo_empty1 : std_logic;
   ---------------------------------------------> TOP_SR
   ---------------------------------------------< PULSE_SYNCHRONISE
   SIGNAL pulse_in                          : std_logic;
@@ -785,7 +812,20 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL  clk_out_mc : std_logic;
   SIGNAL  lt_out_mc : std_logic;
   ---------------------------------------------> Mic4 control
-
+  SIGNAL  fd_out0 : std_logic; 
+  SIGNAL  fd_out1 : std_logic;
+  SIGNAL  fd_out2 : std_logic;
+  SIGNAL  fd_out3 : std_logic;
+  SIGNAL  fd_out4 : std_logic;
+  SIGNAL  fd_out5 : std_logic;
+  SIGNAL  fd_out6 : std_logic;
+  SIGNAL  fd_out7 : std_logic;
+  SIGNAL pulse10_out : std_logic;
+  SIGNAL fifo_rden2  : std_logic;
+  SIGNAL fifo_empty2 : std_logic;
+  SIGNAL fifo_q2                           : std_logic_vector(35 DOWNTO 0);
+  ---------------------------------------------> FDOUT
+  
 BEGIN
   ---------------------------------------------< Clock
   global_clock_reset_inst : global_clock_reset
@@ -1303,9 +1343,11 @@ BEGIN
   --LED8Bit(5 DOWNTO 1) <= (OTHERS => '0');
 
   ---------------------------------------------< TOP_SR
-  div <= config_reg(205 DOWNTO 200);
-  din <= config_reg(199 DOWNTO 0);
-  idata_data_fifo_dout <= fifo_q(31 DOWNTO 0) WHEN config_reg(206)= '1'  ELSE x"00000000"; -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
+  div <= config_reg(5 DOWNTO 0);
+  din <= config_reg(207 DOWNTO 8);
+  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1'  ELSE fifo_q2(31 DOWNTO 0); -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
+  idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1'  ELSE fifo_empty2; -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
+  idata_data_fifo_rden <= fifo_rden1 WHEN config_reg(6)= '1'  ELSE fifo_rden2; -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
   Top_SR_0 : Top_SR
     GENERIC MAP (
       WIDTH           => 200,
@@ -1327,13 +1369,13 @@ BEGIN
       din        => din,
       data_in    => FMC_HPC_HA_P(9) ,
       div        => div,
-      fifo_rd_en => idata_data_fifo_rden,
+      fifo_rd_en => fifo_rden1,
       clk        => clk_sr_contr,
       clk_sr     => FMC_HPC_LA_P(20),
       data_out   => FMC_HPC_LA_P(33),
       load_sr    => FMC_HPC_LA_P(31),
-      fifo_empty => idata_data_fifo_empty,
-      fifo_q     => fifo_q
+      fifo_empty => fifo_empty1,
+      fifo_q     => fifo_q1
     );
   ---------------------------------------------> TOP_SR
   ---------------------------------------------< PULSE_SYNCHRONISE
@@ -1362,7 +1404,7 @@ BEGIN
       RESET    => reset,                -- reset
       -- input data interface
       WR_CLK   => control_clk,          -- FIFO write clock
-      DINFIFO  => config_reg(15 DOWNTO 0),
+      DINFIFO  => config_reg(16*16+15 DOWNTO 16*16),
       WR_EN    => '0',
       WR_PULSE => pulse_reg(1),  -- one pulse writes one word, regardless of pulse duration
       FULL     => OPEN,
@@ -1378,7 +1420,7 @@ BEGIN
     );
   ---------------------------------------------> shiftreg driver for DAC8568
   ---------------------------------------------< Mic4 pixel config
-  mic_pc_div <= config_reg(5 DOWNTO 0);
+  mic_pc_div <= config_reg(16*17+5 DOWNTO 16*17);
   Pixel_Config_inst : Pixel_Config
     GENERIC MAP(
       DIV_WIDTH       => 6,
@@ -1402,8 +1444,7 @@ BEGIN
   ---------------------------------------------< Mic4 temperature sensor
   Temp_Sensor_inst : Temp_Sensor
     GENERIC MAP(
-      TS_COUNT_WIDTH => 32,
-      PLS_LOW => 100000000
+      TS_COUNT_WIDTH => 32
     )
     PORT MAP (
       clk_100MHz => control_clk,
@@ -1414,15 +1455,15 @@ BEGIN
    );
   ---------------------------------------------> Mic4 temperature sensor
   ---------------------------------------------< Mic4 control
-  div0_mc <= config_reg(37 DOWNTO 32);
-  div1_mc <= config_reg(43 DOWNTO 38);
-  FMC_HPC_LA_P(30) <= config_reg(44); --STROBE
-  FMC_HPC_LA_P(32) <= reset; --RESET
+  div0_mc <= config_reg(16*18+5 DOWNTO 16*18);
+  div1_mc <= config_reg(16*18+11 DOWNTO 16*18+6);
+  FMC_HPC_LA_P(30) <= config_reg(16*18+12); --STROBE
+  FMC_HPC_LA_P(32) <= NOT reset; --RESET: the modules work with high voltage in the chip.
   Mic4_Cntrl_inst : Mic4_Cntrl
     GENERIC MAP(
       DIV_WIDTH     => 6,
       COUNT_WIDTH   => 64,
-      APULSE_LENGTH => 100,
+      APULSE_LENGTH => 1000,
       DPULSE_LENGTH => 300,
       GRST_LENGTH   => 5
     )
@@ -1441,7 +1482,8 @@ BEGIN
       d_pulse_out => FMC_HPC_LA_P(24),
       grst_n_out => FMC_HPC_LA_P(28)
     );
-
+--  FMC_HPC_LA_P(21) <= '1';
+  
   clkmc_obufds_inst : OBUFDS
     GENERIC MAP (
       IOSTANDARD => "LVDS"
@@ -1461,6 +1503,138 @@ BEGIN
       OB => FMC_HPC_LA_N(19),  -- Diff_n output (connect directly to top-level port)
       I  => lt_out_mc
    );
-  ---------------------------------------------> Mic4 control
+  ---------------------------------------------< Mic4 control
+  ---------------------------------------------< FDOUT
+  Parallel_Serial_top_inst0: Parallel_Serial_top
+    GENERIC MAP (
+      NDATA       => 20,
+      FIFO_WIDTH  => 36,
+      NUM_WIDTH   => 2 ,
+      FRAME_WIDTH => 48
+    )
+    PORT MAP(
+      rst       => reset,
+      start     => pulse10_out,
+      fd0       =>fd_out0,
+      fd1       =>fd_out1,
+      fd2       =>fd_out2,
+      fd3       =>fd_out3,
+      fd4       =>fd_out4,
+      fd5       =>fd_out5,
+      fd6       =>fd_out6,
+      fd7       =>fd_out7,
+      mode      => '1',
+      fifo_rd_en => fifo_rden2,
+      fifo_empty => fifo_empty2,
+      fifo_q     => fifo_q2
+  );
+  ---------------------------------------------> FDOUT
+ 
+
+   -- IBUFDS: Differential Input Buffer
+   --         Kintex-7
+   -- Xilinx HDL Language Template, version 2015.4
+   FD0_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out0,  -- Buffer output
+      I =>  FMC_HPC_HA_P(11),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(11) -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD1_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out1,  -- Buffer output
+      I =>  FMC_HPC_HA_P(14),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(14) -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD2_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out2,  -- Buffer output
+      I =>  FMC_HPC_HA_P(18),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(18) -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD3_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out3,  -- Buffer output
+      I =>  FMC_HPC_HA_P(22),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(22) -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD4_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out4,  -- Buffer output
+      I =>  FMC_HPC_HA_P(02),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(02) -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD5_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out5,  -- Buffer output
+      I =>  FMC_HPC_HA_P(06),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(06) -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD6_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out6,  -- Buffer output
+      I =>  FMC_HPC_HA_P(10),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(10) -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+   FD7_inst : IBUFDS
+   generic map (
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => fd_out7,  -- Buffer output
+      I =>  FMC_HPC_HA_P(17),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(17) -- Diff_n buffer input (connect directly to top-level port)
+   );
+
+  --- The convert module
+  ---------------------------------------------< PULSE_SYNCHRONISE
+  pulse_synchronise_10 : pulse_synchronise
+    PORT MAP (
+      pulse_in  => pulse_reg(10),
+      clk_in    => control_clk,
+      clk_out   => clk_out_mc,
+      rst       => reset,
+      pulse_out => pulse10_out
+    );
+  ---------------------------------------------> PULSE_SYNCHRONISE
+ 
+
+  ---------------------------------------------> FDOUT
 
 END Behavioral;

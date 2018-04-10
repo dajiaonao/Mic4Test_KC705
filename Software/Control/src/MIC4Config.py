@@ -31,32 +31,6 @@ class MIC4Config():
         port = 1024
         self.s.connect((host,port))
 
-    def configReg(self):
-        div = 1
-        fifo_out = 1
-        dxc = self.sReg.getConf()
-        print('{0:x}'.format(dxc))
-
-        cmdStr = ''
-        for i in range(13):
-            din = 0xffff & dxc
-            cmdStr += self.cmd.write_register(0, din)
-            cmdStr += self.cmd.send_pulse(3)
-
-            ### shift dxc
-            dxc = dxc>>16
-            print('{1:d} {0:x} {2:x}'.format(dxc, i, din))
-
-        ### send data to register and read them back
-        cmdStr += self.cmd.write_register(1, (div<<1)+fifo_out)
-        cmdStr += self.cmd.send_pulse(0)
-        cmdStr += self.cmd.read_datafifo(200)
-        self.s.sendall(cmdStr)
-
-        ### read back
-        rw = self.s.recv(25, socket.MSG_WAITALL)
-        return rw
-
     def empty_fifo(self):
         nWord = 1
         time.sleep(0.5)
@@ -70,12 +44,11 @@ class MIC4Config():
         print(len(retw))
 
 
-
     def shift_register_rw(self, data_to_send, clk_div, read=True):
-        div_reg = ((clk_div & 0x3f) | (1<<6)) << 200
+        div_reg = (clk_div & 0x3f) | (1<<6)
         data_reg = data_to_send & ((1<<200)-1)
 
-        val = div_reg | data_reg
+        val = div_reg | (data_reg<<7)
         cmdstr = ""
         for i in xrange(13):
             cmdstr += self.cmd.write_register(i, (val >> i*16) & 0xffff)
@@ -108,6 +81,29 @@ class MIC4Config():
             else: print("Get == Sent")
 
         return ret_all
+
+    def readFD(self):
+        cmdstr = ''
+        cmdstr += self.cmd.write_register(i, (val >> i*16) & 0xffff)
+        cmdstr += self.cmd.send_pulse(1<<10)
+        self.s.sendall(cmdstr)
+
+        nWord = 10
+        time.sleep(1)
+        cmdstr = ""
+        cmdstr += self.cmd.read_datafifo(nWord)
+        self.s.sendall(cmdstr)
+
+        nByte = 4*(nWord+1)
+        retw = self.s.recv(nByte)
+        print([hex(ord(w)) for w in retw])
+        print(len(retw))
+
+        ret_all = 0
+        for i in range(len(retw)):
+            print bin(ord(retw[i]))
+            ret_all |= ord(retw[i])<<(nByte-i)*8
+        print ret_all
 
     def testReg(self, div=None, info=None, read=True):
         '''Test writing the register configure file'''
@@ -153,7 +149,7 @@ class MIC4Config():
         wd |= (lt_div&0x3f) << 6
         wd |= (clk_div&0x3f)
         print(bin(wd))
-        self.s.sendall(self.cmd.write_register(2, wd))
+        self.s.sendall(self.cmd.write_register(18, wd))
 
     def sendGRST_B(self):
         self.s.sendall(self.cmd.send_pulse(0x20))
@@ -176,7 +172,7 @@ class MIC4Config():
         #for i in range(8):
         #    cmdStr += self.dac.set_voltage(i, val)
         cmdStr += self.dac.set_voltage(0, 1.2) # LT_VREF
-        cmdStr += self.dac.set_voltage(2, 1.8) # VPLUSE_HIGH
+        cmdStr += self.dac.set_voltage(2, 1.5) # VPLUSE_HIGH
         cmdStr += self.dac.set_voltage(3, 1.2) # LVDS_REF
         cmdStr += self.dac.set_voltage(4, 0.5) # VPULSE_LOW
         #cmdStr += self.dac.set_voltage(6, 1.63) # DAC_REF
@@ -192,39 +188,6 @@ class MIC4Config():
         self.s.sendall(cmdStr)
         ### 
 
-
-    def test(self):
-        print("testing...")
-
-        div = 1
-        fifo_out = 1
-        dx = 0xabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde
-        dxc = dx
-        print('{0:x}'.format(dxc))
-
-        cmdStr = ''
-        for i in range(13):
-            din = 0xffff & dxc
-            cmdStr += self.cmd.write_register(0, din)
-            cmdStr += self.cmd.send_pulse(3)
-
-            ### shift dxc
-            dxc = dxc>>16
-            print('{1:d} {0:x} {2:x}'.format(dxc, i, din))
-
-        ### send data to register and read them back
-        cmdStr += self.cmd.write_register(1, (div<<1)+fifo_out)
-        cmdStr += self.cmd.send_pulse(0)
-#        cmdStr += self.cmd.read_datafifo(200)
-
-        print([ord(x) for x in cmdStr])
-        print(len([ord(x) for x in cmdStr]))
-        print(cmdStr)
-        self.s.sendall(cmdStr)
-
-        ### read back
-#         ret = self.s.recv(25, socket.MSG_WAITALL)
-#         print rw
 
 class bitSet():
     def __init__(self,bits=[], reverse=False):
@@ -357,6 +320,10 @@ class MIC4Reg(object):
         print('TRX16    :',(self.value>>13)&0xf)
         print('LVDS_Test:',(self.value>>9)&0xf)
 
+        # show bits that are set to 1
+        temp_bits = [str(i) for i in range(200) if (self.value >> i)&0x1 != 0]
+        print(','.join(temp_bits))
+
     def getPar(self,parname, vMax=None, vMin=None):
         try:
             x = getattr(self, parname+'Bits')
@@ -417,6 +384,29 @@ class MIC4Reg(object):
         self.selectVolDAC(0)
         self.selectCurDAC(0)
 
+    def useDefaultIHEP(self):
+        self.value =  0
+        self.setLVDS_TEST(0b0000)
+        self.setTRX16(0b1000)
+        self.setTRX15_serializer(0b1000)
+        self.setPDB(0)
+        self.setTEST(0)
+        self.setPar('VCLIP',0,0.075,0b0000101001)
+        self.setPar('VReset',1.1, 0.484,0b0101010101)
+        self.setPar('VCASN2',0.5, 0.57, 0b0110011001)
+        self.setPar('VCASN',0.49, 0.381,0b0100010001)
+        self.setPar('VCASP',0.37,1.040,0b1011101110)
+        self.setPar('VRef',0.4, 0.4, 0b100011111)
+#         self.setPar('VRef',0b0000010001)
+        self.setPar('IBIAS',0x80)
+        self.setPar('IDB',0x80)
+        self.setPar('ITHR',0x80)
+        self.setPar('IRESET',0x80)
+        self.setPar('IDB2',0x80)
+        # self.setPar('XYZ',0x80) ### test the exception handling
+        self.selectVolDAC(5)
+        self.selectCurDAC(0)
+
     def useDefault(self):
         self.value =  0
         self.setLVDS_TEST(0b0000)
@@ -425,10 +415,10 @@ class MIC4Reg(object):
         self.setPDB(0)
         self.setTEST(0)
         self.setPar('VCLIP',0,0.075,0b0000101001)
-        self.setPar('VReset',0.5, 0.484,0b0101010101)
-        self.setPar('VCASN2',0.6, 0.57, 0b0110011001)
+        self.setPar('VReset',1.1, 0.484,0b0101010101)
+        self.setPar('VCASN2',0.5, 0.57, 0b0110011001)
         self.setPar('VCASN',0.4, 0.381,0b0100010001)
-        self.setPar('VCASP',1.1,1.040,0b1011101110)
+        self.setPar('VCASP',0.6,1.040,0b1011101110)
         self.setPar('VRef',0.4, 0.4, 0b100011111)
 #         self.setPar('VRef',0b0000010001)
         self.setPar('IBIAS',0x80)
@@ -493,15 +483,18 @@ class PixelConfig():
         for x in list1:
             print(x)
             if w is None:
-                w = ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
-                w = w << 16
+#                 w = ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
+#                 w = w << 16
+                w = self.getCode(x) << 16
             else:
-                w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
+#                 w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
+                w |= self.getCode(x) 
                 listA.append(w)
                 w = None
         if w is not None:
             x = list1[-1]
-            w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
+#             w |= ((x[0]&0x7ff)<<8)|((x[1]&0x3ff)<<2)|((x[2]&0x1)<<1)|(x[3]&0x1)
+            w |= self.getCode(x) 
             listA.append(w)
             w = None
 
@@ -511,6 +504,8 @@ class PixelConfig():
         print(listA)
         return listA
 
+    def getCode(self, x):
+        return (x[0]&0x7ff)|((x[1]&0x3ff)<<7)|((x[2]&0x1)<<14)|((x[3]&0x1)<<13)
 
     def setAll2(self, mask, pulse):
         w = None
@@ -519,10 +514,12 @@ class PixelConfig():
             for col in range(64):
                 ### do something
                 if w is None:
-                    w = ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
-                    w = w << 16
+                    w = self.getCode((row,col,mask, pulse)) << 16
+#                     w = ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
+#                     w = w << 16
                 else:
-                    w |= ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
+#                     w |= ((row&0x7ff)<<8)|((col&0x3ff)<<2)|((mask&0x1)<<1)|(pulse&0x1)
+                    w |= self.getCode((row,col,mask, pulse))
                     listA.append(w)
                     w = None
             if self.isTest:
@@ -559,7 +556,7 @@ class PixelConfig():
 
         print("Sending the configuration signal")
         cmdStr =''
-        cmdStr += self.cmd.write_register(0, data0)
+        cmdStr += self.cmd.write_register(17, data0)
         cmdStr += self.cmd.write_memory(addr, confList1)
         self.s.sendall(cmdStr)
         time.sleep(1)
@@ -567,141 +564,6 @@ class PixelConfig():
         cmdStr = ''
         cmdStr += self.cmd.send_pulse(pls)
         self.s.sendall(cmdStr)
-
-
-class PixelConfig0():
-    '''Auxilary class for pxiel config.'''
-    def __init__(self, cmd, s):
-        self.cmd = cmd
-        self.s = s
-        self.allAre = None
-
-    def reset(self, state=None):
-        self.allAre = state
-        self.Pixels = []
-
-        cmdStr = self.getConfigVector()
-        self.s.sendall()
-
-    def setPixel(self, x, y, pulse, mask):
-        self.pixels.append((x+(y<<6),pulse+(mask<<1)))
-
-    def setAll(self, pulse, mask):
-        confList = []
-        for i in range(128):
-            for j in range(64):
-                data1 =0 
-
-
-    def getConfigVector(self, clk_div):
-        ### address + config
-        data0 = 0
-        data0 |= (clk_div & 0x3f)
-
-        n = 0
-        data1 = 0
-        if self.allAre is not None:
-            for i in range(128):
-                for j in range(64):
-                    data1 = data1<<16
-
-        cmdStr = ''
-        cmdStr += self.cmd.write_register(0, data0)
-        cmdStr += self.cmd.write_memory(0, data1, n)
-        cmdStr += self.cmd.send_pulse(0x4)
-    def get_test_vector(self):
-        clk_div = 7
-        data0 = 0
-        data0 |= (clk_div & 0x3f)
- 
-        data1 = [i&0xffff for i in range(10)]
-        print(data1)
-
-        cmdStr = ''
-        cmdStr += self.cmd.write_register(0, data0)
-        cmdStr += self.cmd.write_memory(0, data1)
-        print(cmdStr)
-
-        self.s.sendall(cmdStr)
-
-        cmdStr = ''
-        time.sleep(1)
-        cmdStr += self.cmd.send_pulse(0x4)
-        print(cmdStr)
-        self.s.sendall(cmdStr)
-        return cmdStr
-        
-
-class MIC4Reg0(object):
-    ## @var _defaultRegMap default register values
-    _defaultRegMap = {
-        'DAC'    : [0x75c3, 0x8444, 0x7bbb, 0x7375, 0x86d4, 0xe4b2], # from DAC1 to DAC6
-        'PD'     : [1, 1, 1, 1], # from PD1 to PD4, 1 means powered down
-        'K'      : [1, 0, 1, 0, 1, 0, 0, 0, 0, 0], # from K1 to K10, 1 means closed (conducting)
-        'vref'   : 0x8,
-        'vcasp'  : 0x8,
-        'vcasn'  : 0x8,
-        'vbiasp' : 0x8,
-        'vbiasn' : 0x8
-    }
-    ## @var register map local to the class
-    _regMap = {}
-
-    def __init__(self):
-        self._regMap = copy.deepcopy(self._defaultRegMap)
-
-    def set_dac(self, i, val):
-        self._regMap['DAC'][i] = 0xffff & val
-
-    def set_power_down(self, i, onoff):
-        self._regMap['PD'][i] = 0x1 & onoff
-
-    def set_k(self, i, onoff):
-        self._regMap['K'][i] = 0x1 & onoff
-
-    def set_vref(self, val):
-        self._regMap['vref'] = val & 0xf
-
-    def set_vcasp(self, val):
-        self._regMap['vcasp'] = val & 0xf
-
-    def set_vcasn(self, val):
-        self._regMap['vcasn'] = val & 0xf
-
-    def set_vbiasp(self, val):
-        self._regMap['vbiasp'] = val & 0xf
-
-    def set_vbiasn(self, val):
-        self._regMap['vbiasn'] = val & 0xf
-
-    ## Get long-integer variable
-    def get_config_vector(self):
-        ret = ( self._regMap['vbiasn'] << 126 |
-                self._regMap['vbiasp'] << 122 |
-                self._regMap['vcasn']  << 118 |
-                self._regMap['vcasp']  << 114 |
-                self._regMap['vref']   << 110 )
-        for i in xrange(len(self._regMap['K'])):
-            ret |= self._regMap['K'][i] << (len(self._regMap['K']) - i) + 99
-        for i in xrange(len(self._regMap['PD'])):
-            ret |= self._regMap['PD'][i] << (len(self._regMap['PD']) - i) + 95
-        for i in xrange(len(self._regMap['DAC'])):
-            ret |= self._regMap['DAC'][i] << (len(self._regMap['DAC'])-1 - i)*16
-        return ret
-
-    dac_fit_a = 4.35861E-5
-    dac_fit_b = 0.0349427
-    def dac_volt2code(self, v):
-
-        c = int((v - self.dac_fit_b) / self.dac_fit_a)
-        if c < 0:     c = 0
-        if c > 65535: c = 65535
-        return c
-
-    def dac_code2volt(self, c):
-        v = c * self.dac_fit_a + self.dac_fit_b
-        return v
-
 
 ## Command generator for controlling DAC8568
 #
@@ -719,9 +581,9 @@ class DAC8568(object):
     def write_spi(self, val):
         print(bin(val))
         ret = ""          # 32 bits, send two times, each for a half, starting with the higher one
-        ret += self.cmd.write_register(0, (val >> 16) & 0xffff)
+        ret += self.cmd.write_register(16, (val >> 16) & 0xffff)
         ret += self.cmd.send_pulse(0x2)
-        ret += self.cmd.write_register(0, val & 0xffff)
+        ret += self.cmd.write_register(16, val & 0xffff)
         ret += self.cmd.send_pulse(0x2)
         return ret
     def turn_on_2V5_ref(self):
@@ -731,48 +593,6 @@ class DAC8568(object):
         # There is some issues, might overwrite some values in the current way. FIXME!
         return self.write_spi((0x03 << 24) | ((ch&0xf) << 20) | (self.DACVolt(v) << 4))
  
-## Shift_register write and read function.
-#
-# @param[in] s Socket that is already open and connected to the FPGA board.
-# @param[in] data_to_send 130-bit value to be sent to the external SR.
-# @param[in] clk_div Clock frequency division factor: (/2**clk_div).  6-bit wide.
-# @return Value stored in the external SR that is read back.
-# @return valid signal shows that the value stored in external SR is read back.
-def shift_register_rw(s, data_to_send, clk_div):
-    div_reg = (clk_div & 0x3f) << 130
-    data_reg = data_to_send & 0x3ffffffffffffffffffffffffffffffff
-
-    cmd = Cmd()
-
-    val = div_reg | data_reg
-    cmdstr = ""
-    for i in xrange(9):
-        cmdstr += cmd.write_register(i, (val >> i*16) & 0xffff)
-
-    cmdstr += cmd.send_pulse(0x01)
-
-#    print([hex(ord(w)) for w in cmdstr])
-
-    s.sendall(cmdstr)
-
-    time.sleep(0.5)
-
-    # read back
-    cmdstr = ""
-    for i in xrange(9):
-        cmdstr += cmd.read_status(8-i)
-    s.sendall(cmdstr)
-    retw = s.recv(4*9)
-#    print([hex(ord(w)) for w in retw])
-    ret_all = 0
-    for i in xrange(9):
-        ret_all = ret_all | ( int(ord(retw[i*4+2])) << ((8-i) * 16 + 8) |
-                              int(ord(retw[i*4+3])) << ((8-i) * 16))
-    ret = ret_all & 0x3ffffffffffffffffffffffffffffffff
-    valid = (ret_all & (1 << 130)) >> 130
-    print("Return: 0x%0x, valid: %d" % (ret, valid))
-    return ret
-
 def mainTest():
     host = '192.168.2.3'
     port = 1024
