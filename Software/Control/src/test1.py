@@ -125,31 +125,65 @@ def test_AOUT_IHEP_loop(mc1):
         time.sleep(1)
         mc1.sendA_PULSE()
 
+def test_AOUT_loopVreset(mc1):
+    mc1.setClocks(1,6,6)
+    mc1.test_DAC8568_config()
+
+    for i in range(21):
+        val = 0.9+0.01*i
+        print val
+
+        mc1.sReg.value =  0
+        mc1.sReg.setPDB(0)
+        mc1.sReg.setPar('VCLIP' ,0.1,  0.833, 0b1001011001)
+        mc1.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
+        mc1.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000)
+        mc1.sReg.setPar('VReset',val,  1.084, 0b1100000111)
+        mc1.sReg.setPar('VCASN2',0.5,  0.502, 0b101100110)
+        mc1.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+        mc1.sReg.setPar('IBIAS' ,0xff)
+        mc1.sReg.setPar('IDB'   ,0x80)
+        mc1.sReg.setPar('ITHR'  ,0x40)
+        mc1.sReg.setPar('IRESET',0x80)
+        mc1.sReg.setPar('IDB2'  ,0x80)
+        mc1.sReg.selectVolDAC(2)
+        mc1.sReg.selectCurDAC(5)
+        mc1.sReg.selectCol(0)
+
+        mc1.sReg.show()
+        mc1.testReg(read=True)
+
+        time.sleep(1)
+        mc1.sendA_PULSE()
+
 def test_AOUT(mc1):
-#     mc1.setClocks(1,8,8)
+#     mc1.setClocks(1,0,0)
 #     sys.exit(1)
-#     mc1.test_DAC8568_config()
+    mc1.test_DAC8568_config()
 # # #     mc1.sReg.useDefault()
     mc1.sReg.value =  0
     mc1.sReg.setPDB(0)
-    mc1.sReg.setPar('VCLIP' ,0.1,  0.833, 0b1001011001)
+    mc1.sReg.setPar('VCLIP' ,0,  0.833, 0b1001011001)
+#     mc1.sReg.setPar('VCASN' ,0.,  0.384, 0b100011110)
     mc1.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
     mc1.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000)
     mc1.sReg.setPar('VReset',1.1,  1.084, 0b1100000111)
     mc1.sReg.setPar('VCASN2',0.5,  0.502, 0b101100110)
     mc1.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
-    mc1.sReg.setPar('IBIAS' ,0xff)
+    mc1.sReg.setPar('IBIAS' ,0xc9) ## Chip 4: 0xc9->0.600 V.
+#     mc1.sReg.setPar('IBIAS' ,0x0) ## Chip 4: 0xc9->0.600 V.
     mc1.sReg.setPar('IDB'   ,0x80)
-    mc1.sReg.setPar('ITHR'  ,0xff)
+    mc1.sReg.setPar('ITHR'  ,0xc8) ## Chip 4: 0xc8->0.010 V
+#     mc1.sReg.setPar('ITHR'  ,0x0) ## Chip 4: 0xc8->0.010 V
     mc1.sReg.setPar('IRESET',0x80)
     mc1.sReg.setPar('IDB2'  ,0x80)
-    mc1.sReg.selectVolDAC(5)
-    mc1.sReg.selectCurDAC(6)
-#     mc1.sReg.selectCol(0)
+    mc1.sReg.selectVolDAC(4)
+    mc1.sReg.selectCurDAC(5)
+    mc1.sReg.selectCol(0)
 
     mc1.sReg.show()
     mc1.testReg(read=True)
-# #     mc1.setClocks(1,6,6)
+#     mc1.setClocks(1,6,6)
 
     time.sleep(1)
     mc1.sendA_PULSE()
@@ -359,8 +393,9 @@ if __name__ == '__main__':
 #     loopCol(mc1)
 #     checkCol(mc1)
 #     test_AOUT_IHEP_loop(mc1)
-    test_AOUT(mc1)
+#     test_AOUT(mc1)
+#     test_AOUT_loopVreset(mc1)
 #     turnOffAllPixels(mc1)
 #     test_AOUT_IHEP(mc1)
-#     testRegister(mc1)
+    testRegister(mc1)
 #     mc1.empty_fifo()
