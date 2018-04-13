@@ -47,6 +47,7 @@ class MIC4Config():
     def shift_register_rw(self, data_to_send, clk_div, read=True):
         div_reg = (clk_div & 0x3f) | (1<<6)
         data_reg = data_to_send & ((1<<200)-1)
+        print(bin(div_reg))
 
         val = div_reg | (data_reg<<8)
         cmdstr = ""
@@ -82,11 +83,44 @@ class MIC4Config():
 
         return ret_all
 
+    def readFIFO_test(self, nWord=6):
+        cmdstr = ""
+        cmdstr += self.cmd.read_datafifo(nWord)
+        self.s.sendall(cmdstr)
+
+        nByte = 4*(nWord+1)
+        retw = self.s.recv(nByte)
+        print([hex(ord(w)) for w in retw])
+        print(len(retw))
+
+        ret_all = 0
+        for i in range(len(retw)):
+            ret_all |= ord(retw[i])<<(nByte-i)*8
+        ret_all = ret_all>>8
+        
+        print("Get : %x" % ret_all)
+        return ret_all
+
+
+    def checkLastReg(self):
+        cmdstr = ''
+        cmdstr += self.cmd.read_register(0)
+        self.s.sendall(cmdstr)
+        retw = self.s.recv(4)
+        print([hex(ord(w)) for w in retw])
+
     def readFD(self):
         cmdstr = ''
-        cmdstr += self.cmd.write_register(0, 0)
+        cmdstr += self.cmd.write_register(0, 0x1)
+        self.s.sendall(cmdstr)
+
+        cmdstr = ''
+        cmdstr += self.cmd.read_register(0)
         cmdstr += self.cmd.send_pulse(1<<10)
         self.s.sendall(cmdstr)
+        retw = self.s.recv(6)
+        print([hex(ord(w)) for w in retw])
+#         return 0
 
         nWord = 10
         time.sleep(1)
