@@ -182,10 +182,10 @@ def test_AOUT(mc1):
 
     ### Chip #5
     mc1.sReg.setPar('VCLIP' ,0  , 0.689, 0x200)
-    mc1.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
-    mc1.sReg.setPar('VCASP' ,0.6, 0.694, 0x200)
     mc1.sReg.setPar('VReset',1.1, 0.703, 0x200)
     mc1.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
+    mc1.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
+    mc1.sReg.setPar('VCASP' ,0.6, 0.694, 0x200)
     mc1.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
     mc1.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
     mc1.sReg.setPar('IDB'   ,0xf0)
