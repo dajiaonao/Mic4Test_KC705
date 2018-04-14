@@ -1346,8 +1346,8 @@ BEGIN
   div <= config_reg(5 DOWNTO 0);
   din <= config_reg(207 DOWNTO 8);
   idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1'  ELSE fifo_q2(31 DOWNTO 0); -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
-  idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1'  ELSE fifo_empty2; -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
-  idata_data_fifo_rden <= fifo_rden1 WHEN config_reg(6)= '1'  ELSE fifo_rden2; -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
+  idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1'  ELSE fifo_empty2; 
+  idata_data_fifo_rden <= fifo_rden1 WHEN config_reg(6)= '1'  ELSE fifo_rden2; 
   Top_SR_0 : Top_SR
     GENERIC MAP (
       WIDTH           => 200,

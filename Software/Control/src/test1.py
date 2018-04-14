@@ -175,6 +175,23 @@ def test_DOUT(mc1):
 #     time.sleep(1)
 #     mc1.sendD_PULSE()
 
+def setupDOUT(mc1):
+#     mc1.setClocks(1,6,6)
+#     mc1.test_DAC8568_config()
+#     mc1.sReg.value =  0x1f
+# #     mc1.sReg.setTRX16(0b1000)
+# #     mc1.sReg.setTRX15_serializer(0b1000)
+#     mc1.sReg.show()
+#     mc1.testReg(read=True)
+# 
+#     mc1.checkLastReg()
+    for i in range(100):
+        print i
+        mc1.readFIFO_test(6)
+
+#     sys.exit(1)
+#     mc1.readFD()
+
 def checkCol(mc1):
     i = 0 if len(sys.argv)<2 else int(sys.argv[1])
     if i<32:
@@ -359,8 +376,10 @@ if __name__ == '__main__':
 #     loopCol(mc1)
 #     checkCol(mc1)
 #     test_AOUT_IHEP_loop(mc1)
-    test_AOUT(mc1)
+#     test_AOUT(mc1)
 #     turnOffAllPixels(mc1)
 #     test_AOUT_IHEP(mc1)
 #     testRegister(mc1)
 #     mc1.empty_fifo()
+    setupDOUT(mc1)
+
