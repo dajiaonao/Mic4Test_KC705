@@ -1345,9 +1345,9 @@ BEGIN
   ---------------------------------------------< TOP_SR
   div <= config_reg(5 DOWNTO 0);
   din <= config_reg(207 DOWNTO 8);
-  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1'  ELSE fifo_q2(31 DOWNTO 0); -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
-  idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1'  ELSE fifo_empty2; 
-  idata_data_fifo_rden <= fifo_rden1 WHEN config_reg(6)= '1'  ELSE fifo_rden2; 
+  idata_data_fifo_dout  <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE fifo_q2(31 DOWNTO 0); -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
+  idata_data_fifo_empty <= fifo_empty1          WHEN config_reg(6)= '1' ELSE fifo_empty2; 
+  idata_data_fifo_rden  <= fifo_rden1           WHEN config_reg(6)= '1' ELSE fifo_rden2; 
   Top_SR_0 : Top_SR
     GENERIC MAP (
       WIDTH           => 200,
@@ -1515,14 +1515,14 @@ BEGIN
     PORT MAP(
       rst       => reset,
       start     => pulse10_out,
-      fd0       =>fd_out0,
-      fd1       =>fd_out1,
-      fd2       =>fd_out2,
-      fd3       =>fd_out3,
-      fd4       =>fd_out4,
-      fd5       =>fd_out5,
-      fd6       =>fd_out6,
-      fd7       =>fd_out7,
+      fd0       => fd_out0,
+      fd1       => fd_out1,
+      fd2       => fd_out2,
+      fd3       => fd_out3,
+      fd4       => fd_out4,
+      fd5       => fd_out5,
+      fd6       => fd_out6,
+      fd7       => fd_out7,
       mode      => '1',
       fifo_rd_en => fifo_rden2,
       fifo_empty => fifo_empty2,
@@ -1536,7 +1536,7 @@ BEGIN
    -- Xilinx HDL Language Template, version 2015.4
    FD0_inst : IBUFDS
    generic map (
-      DIFF_TERM => FALSE, -- Differential Termination 
+      DIFF_TERM => TRUE, -- Differential Termination 
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
@@ -1547,7 +1547,7 @@ BEGIN
 
    FD1_inst : IBUFDS
    generic map (
-      DIFF_TERM => FALSE, -- Differential Termination 
+      DIFF_TERM => TRUE, -- Differential Termination 
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
@@ -1558,7 +1558,7 @@ BEGIN
 
    FD2_inst : IBUFDS
    generic map (
-      DIFF_TERM => FALSE, -- Differential Termination 
+      DIFF_TERM => TRUE, -- Differential Termination 
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
@@ -1569,7 +1569,7 @@ BEGIN
 
    FD3_inst : IBUFDS
    generic map (
-      DIFF_TERM => FALSE, -- Differential Termination 
+      DIFF_TERM => TRUE, -- Differential Termination 
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
@@ -1580,7 +1580,7 @@ BEGIN
 
    FD4_inst : IBUFDS
    generic map (
-      DIFF_TERM => FALSE, -- Differential Termination 
+      DIFF_TERM => TRUE, -- Differential Termination 
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
@@ -1591,7 +1591,7 @@ BEGIN
 
    FD5_inst : IBUFDS
    generic map (
-      DIFF_TERM => FALSE, -- Differential Termination 
+      DIFF_TERM => TRUE, -- Differential Termination 
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
@@ -1602,7 +1602,7 @@ BEGIN
 
    FD6_inst : IBUFDS
    generic map (
-      DIFF_TERM => FALSE, -- Differential Termination 
+      DIFF_TERM => TRUE, -- Differential Termination 
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
@@ -1613,7 +1613,7 @@ BEGIN
 
    FD7_inst : IBUFDS
    generic map (
-      DIFF_TERM => FALSE, -- Differential Termination 
+      DIFF_TERM => TRUE, -- Differential Termination 
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
