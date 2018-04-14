@@ -84,7 +84,7 @@ class MIC4Config():
 
     def readFD(self):
         cmdstr = ''
-        cmdstr += self.cmd.write_register(i, (val >> i*16) & 0xffff)
+        cmdstr += self.cmd.write_register(0, 0)
         cmdstr += self.cmd.send_pulse(1<<10)
         self.s.sendall(cmdstr)
 
