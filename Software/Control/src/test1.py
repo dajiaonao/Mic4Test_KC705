@@ -5,15 +5,15 @@ from MIC4Config import MIC4Config, bitSet
 
 def testRegister(mc1):
     mc1.setClocks(1,6,6)
-    mc1.sReg.value = 0b101
+    mc1.test_DAC8568_config()
+    mc1.sReg.value =0b101
 #     mc1.sReg.value =0b101
-#     mc1.sReg.value =0b101
-    mc1.sReg.value |= (1<<198)
+    mc1.sReg.value |= (1<<199)
 #     mc1.sReg.useDefault() 
 #     mc1.sReg.selectVolDAC(1)
 #     mc1.sReg.useVolDAC(1, 0x3ff)
-#     mc1.sReg.setTRX16(0b1000)
-#     mc1.sReg.setTRX15_serializer(0b1000)
+    mc1.sReg.setTRX16(0b1000)
+    mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
     mc1.testReg(read=True)
 
@@ -180,21 +180,37 @@ def test_AOUT(mc1):
 #     mc1.sReg.setPar('IRESET',0x80)
 #     mc1.sReg.setPar('IDB2'  ,0x80)
 
-    ### Chip #5
+#     ### Chip #5
+#     mc1.sReg.setPar('VCLIP' ,0  , 0.689, 0x200)
+#     mc1.sReg.setPar('VReset',1.1, 0.703, 0x200)
+#     mc1.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
+#     mc1.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
+#     mc1.sReg.setPar('VCASP' ,0.6, 0.694, 0x200)
+#     mc1.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
+#     mc1.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
+#     mc1.sReg.setPar('IDB'   ,0xf0)
+#     mc1.sReg.setPar('ITHR'  ,0x80)
+#     mc1.sReg.setPar('IRESET',0x80)
+#     mc1.sReg.setPar('IDB2'  ,0x80)
+#     mc1.sReg.selectVolDAC(0)
+#     mc1.sReg.selectCurDAC(5)
+#     mc1.sReg.selectCol(11)
+
+    ### Chip #6
     mc1.sReg.setPar('VCLIP' ,0  , 0.689, 0x200)
     mc1.sReg.setPar('VReset',1.1, 0.703, 0x200)
     mc1.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
     mc1.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
     mc1.sReg.setPar('VCASP' ,0.6, 0.694, 0x200)
-    mc1.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
+    mc1.sReg.setPar('VRef'  ,0.5, 0.701, 0x200)
     mc1.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
     mc1.sReg.setPar('IDB'   ,0xf0)
     mc1.sReg.setPar('ITHR'  ,0x80)
     mc1.sReg.setPar('IRESET',0x80)
     mc1.sReg.setPar('IDB2'  ,0x80)
     mc1.sReg.selectVolDAC(0)
-    mc1.sReg.selectCurDAC(5)
-    mc1.sReg.selectCol(11)
+    mc1.sReg.selectCurDAC(4)
+    mc1.sReg.selectCol(45)
 
     mc1.sReg.show()
     mc1.testReg(read=True)
