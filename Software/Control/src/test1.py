@@ -5,10 +5,10 @@ from MIC4Config import MIC4Config, bitSet
 
 def testRegister(mc1):
     mc1.setClocks(1,6,6)
-    mc1.sReg.value = 1
+    mc1.sReg.value = 0b101
 #     mc1.sReg.value =0b101
 #     mc1.sReg.value =0b101
-    mc1.sReg.value |= (1<<199)
+    mc1.sReg.value |= (1<<198)
 #     mc1.sReg.useDefault() 
 #     mc1.sReg.selectVolDAC(1)
 #     mc1.sReg.useVolDAC(1, 0x3ff)
@@ -408,9 +408,9 @@ if __name__ == '__main__':
 #     loopCol(mc1)
 #     checkCol(mc1)
 #     test_AOUT_IHEP_loop(mc1)
-    test_AOUT(mc1)
+#     test_AOUT(mc1)
 #     test_AOUT_loopVreset(mc1)
 #     turnOffAllPixels(mc1)
 #     test_AOUT_IHEP(mc1)
-#     testRegister(mc1)
+    testRegister(mc1)
 #     mc1.empty_fifo()

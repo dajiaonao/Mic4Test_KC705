@@ -5,7 +5,7 @@ import socket
 import time
 import numpy as nm
 
-isDebug = False
+isDebug = True
 
 class WaveFormGetter:
     def __init__(self):
@@ -110,9 +110,10 @@ class WaveFormGetter:
 
 
 class dataTaker:
-    def __init__(self):
+    def __init__(self,outFileName=None):
         self.mic4 = MIC4Config()
         self.wave = WaveFormGetter()
+        self.outFileName = outFileName
 
     def connect(self):
         self.mic4.connect()
@@ -136,10 +137,7 @@ class dataTaker:
 
 class DeltaUScanner(dataTaker):
     def __init__(self,outFileName=None):
-#         super(DeltaUScanner,self).__init__()
-        dataTaker.__init__(self)
-#         super().__init__()
-        self.outFileName = outFileName
+        dataTaker.__init__(self,outFileName)
 
     def setup(self):
         self.connect()
@@ -207,21 +205,22 @@ def test_DeltaUScanner():
 #     t1.run()
 
 
-class Tuner:
-    def __init__(self):
+class Tuner(dataTaker):
+    def __init__(self,outFileName=None):
+        dataTaker.__init__(self,outFileName)
+
         self.Col = 0
         self.VolDAC = 0
         self.CurDAC = 0
         self.atBounds = None
         self.atMaxIters = 100
-        self.mic4 = MIC4Config()
-        self.wave = WaveFormGetter()
+        self.fout = None
+        self.N = 10
 
     def setup(self):
-        self.mic4.connect()
+        self.connect()
         self.mic4.test_DAC8568_config()
-        self.wave.connect()
-#         self.wave.saveDataToFile = open('temp_data.dat','w')
+        if self.outFileName: self.fout = open(self.outFileName,'w')
 
     def tune(self):
         de = DE(self.auto_tune_fun, self.atBounds, maxiters=self.atMaxIters)
@@ -230,16 +229,16 @@ class Tuner:
 
     def auto_tune_fun(self,x):
         '''The function that takes the parameters and return the score'''
-        val = 0.
         ### send the 200 bit reg to setup DAC -- DAC8568 should already have been set
         self.mic4.sReg.value =  0
         self.mic4.sReg.setPDB(0)
-        self.mic4.sReg.setPar('VCLIP'   ,x[0], 0.075,0b0000101001)
-        self.mic4.sReg.setPar('VReset'  ,x[1], 0.484,0b0101010101)
-        self.mic4.sReg.setPar('VCASN2'  ,x[2], 0.57, 0b0110011001)
-        self.mic4.sReg.setPar('VCASN'   ,x[3], 0.381,0b0100010001)
-        self.mic4.sReg.setPar('VCASP'   ,x[4],1.040,0b1011101110)
-        self.mic4.sReg.setPar('VRef'    ,0.4 , 0.4, 0b100011111)
+        ## chip-5
+        self.mic4.sReg.setPar('VCLIP'   ,x[0],0.689, 0x200)
+        self.mic4.sReg.setPar('VReset'  ,x[1],0.703, 0x200)
+        self.mic4.sReg.setPar('VCASN2'  ,x[2],0.693, 0x200)
+        self.mic4.sReg.setPar('VCASN'   ,x[3],0.689, 0x200)
+        self.mic4.sReg.setPar('VCASP'   ,x[4],0.694, 0x200)
+        self.mic4.sReg.setPar('VRef'    ,0.4 ,0.701, 0x200)
         self.mic4.sReg.setPar('IBIAS'   ,int(x[5]))
         self.mic4.sReg.setPar('IDB'     ,int(x[6]))
         self.mic4.sReg.setPar('ITHR'    ,int(x[7]))
@@ -252,18 +251,30 @@ class Tuner:
         self.mic4.sReg.show()
         self.mic4.testReg(read=True)
 
-        time.sleep(1)
-        self.mic4.sendA_PULSE()
+        ### average of 10 measurements
+        vals = []
+        for k in range(self.N):
+            time.sleep(1)
+            self.mic4.sendA_PULSE()
+            time.sleep(1)
+            sample = self.wave.getData()
+            v = self.analysis(sample)
+            vals.append(v)
+        mean = nm.mean(vals)
+        err  = nm.std(vals)
+        if isDebug:
+            print vals
+            print x, mean, err
+        if self.fout:
+            vs = [str(a) for a in vals]
+            print vs
+            self.fout.write('#Val:'+','.join([str(a) for a in vals])+'\n')
+            self.fout.write(' '.join([str(a) for a in x])+' '+str(mean)+' '+str(err)+'\n')
 
-        time.sleep(1)
-        ### get the waveform and analysis it
-        sample = self.wave.getData()
-#         print sample
+        print "return value:", -mean
+        return -mean
 
-        val = self.analysis(sample)
-        return val
-
-    def analysis(self, sample):
+    def analysis2(self, sample):
         '''Use the first half for background study and the second half for signal extraction'''
         Nhalf = len(sample)/2
         ## The the average and RMS of the first half
@@ -277,19 +288,19 @@ class Tuner:
         mean2 = nm.mean(sample2[max(maxI2-150,0):maxI2+150])
         if isDebug: print mean1,mean2,maxI2, max2
 
-        return mean2
+        return -mean2
 
     def setUpTest(self):
         self.atBounds = [(-10,10)]
 
 def runTune():
-    t1 = Tuner()
+    t1 = Tuner("tune_out2.dat")
     t1.setup()
 #     t1.auto_tune_fun([0,1.1,0.5,0.4,0.6, 0xff, 0xf0, 0x80])
 #     t1.setUpTest()
-    t1.atBounds = [(0,1.5),(0,1.5),(0,1.5),(0,1.5),(0,1.5),(0,0xff),(0,0xff),(0,0xff)]
+    t1.atBounds = [(0,0.5),(0.5,1.49),(0.2,1.4),(0.3,1.0),(0.2,1.4),(0,0xff),(0,0xff),(0,0xff)]
     t1.tune()
 
 if __name__ == '__main__':
-#     runTune()
-    test_DeltaUScanner()
+    runTune()
+#     test_DeltaUScanner()
