@@ -47,7 +47,7 @@ initial begin
      fifo_full = 1'b0;
      
      #10 start=1'b1;
-     #3 start=1'b0;
+     #1 start=1'b0;
      #28 fd3 = 1'b0;
      #100 $finish;
  end

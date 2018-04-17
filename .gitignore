@@ -34,3 +34,6 @@
 
 # Python
 *.pyc
+
+# Other
+Firmware/ipcore_dir/*
