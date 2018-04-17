@@ -53,7 +53,7 @@ module pulse_synchronise_tb();
  end
  
  initial begin
- rst=1;
+ rst=0;
  #50 rst=0;
  end
  

@@ -548,8 +548,10 @@ ARCHITECTURE Behavioral OF top IS
       FRAME_WIDTH  : positive := 48
     );
     PORT (
+      clk_in     : IN  std_logic;
+      clk_control: IN  std_logic;
       rst        : IN  std_logic;
-      start      : IN  std_logic;
+      start_pulse: IN  std_logic;
       fd0        : IN  std_logic;
       fd1        : IN  std_logic;
       fd2        : IN  std_logic;
@@ -820,10 +822,10 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL  fd_out5 : std_logic;
   SIGNAL  fd_out6 : std_logic;
   SIGNAL  fd_out7 : std_logic;
-  SIGNAL pulse10_out : std_logic;
-  SIGNAL fifo_rden2  : std_logic;
-  SIGNAL fifo_empty2 : std_logic;
-  SIGNAL fifo_q2                           : std_logic_vector(35 DOWNTO 0);
+  SIGNAL  pulse10_out : std_logic;
+  SIGNAL  fifo_rden2  : std_logic;
+  SIGNAL  fifo_empty2 : std_logic;
+  SIGNAL  fifo_q2     : std_logic_vector(35 DOWNTO 0);
   ---------------------------------------------> FDOUT
   
 BEGIN
@@ -1345,9 +1347,25 @@ BEGIN
   ---------------------------------------------< TOP_SR
   div <= config_reg(5 DOWNTO 0);
   din <= config_reg(207 DOWNTO 8);
-  idata_data_fifo_dout  <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE fifo_q2(31 DOWNTO 0); -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
-  idata_data_fifo_empty <= fifo_empty1          WHEN config_reg(6)= '1' ELSE fifo_empty2; 
-  idata_data_fifo_rden  <= fifo_rden1           WHEN config_reg(6)= '1' ELSE fifo_rden2; 
+--  idata_data_fifo_dout  <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)='1' ELSE fifo_q2(31 DOWNTO 0); -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
+--  idata_data_fifo_empty <= fifo_empty1          WHEN config_reg(6)='1' ELSE fifo_empty2; 
+
+   idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE
+                           fifo_q2(31 DOWNTO 0) WHEN config_reg(6)= '0';
+   idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1' ELSE
+                            fifo_empty2 WHEN config_reg(6)= '0';
+   idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE
+                            fifo_rden2 WHEN config_reg(6)= '0';
+--  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0);
+--  idata_data_fifo_empty <= fifo_empty1;
+--  idata_data_fifo_rden  <= fifo_rden1;
+
+--  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
+--  idata_data_fifo_empty <= fifo_empty2;
+--  idata_data_fifo_rden  <= fifo_rden2;
+--   idata_data_fifo_dout  <= x"1234" WHEN config_reg(6)='1' ELSE x"abcd"; -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
+--   idata_data_fifo_empty <= '0'; 
+--  idata_data_fifo_rden  <= fifo_rden1           WHEN config_reg(6)='1' ELSE fifo_rden2; 
   Top_SR_0 : Top_SR
     GENERIC MAP (
       WIDTH           => 200,
@@ -1362,7 +1380,7 @@ BEGIN
       READ_DELAY      => 1
     )
     PORT MAP (
-      clk_in     => clk_100MHz,
+      clk_in     => control_clk,
       rst        => reset,
       start      => pulse_out,
 --      wr_en      => pulse_reg(3),
@@ -1370,11 +1388,13 @@ BEGIN
       data_in    => FMC_HPC_HA_P(9) ,
       div        => div,
       fifo_rd_en => fifo_rden1,
+--      fifo_rd_en => idata_data_fifo_rden,
       clk        => clk_sr_contr,
       clk_sr     => FMC_HPC_LA_P(20),
       data_out   => FMC_HPC_LA_P(33),
       load_sr    => FMC_HPC_LA_P(31),
       fifo_empty => fifo_empty1,
+--      fifo_empty => idata_data_fifo_empty,
       fifo_q     => fifo_q1
     );
   ---------------------------------------------> TOP_SR
@@ -1447,7 +1467,7 @@ BEGIN
       TS_COUNT_WIDTH => 32
     )
     PORT MAP (
-      clk_100MHz => control_clk,
+      clk_100MHz => clk_100MHz,
       RESET      => reset,
       pulse_in   => pulse_reg(4),
       ts_data    => FMC_HPC_HA_P(21),
@@ -1478,7 +1498,8 @@ BEGIN
       pulse_d => pulse_reg(7),
       clk_out => clk_out_mc, -- CLK_IN of mic4
       lt_out => lt_out_mc, --LT_IN of mic4
-      a_pulse_out => FMC_HPC_LA_P(21),
+--       a_pulse_out => FMC_HPC_LA_P(21),
+      a_pulse_out => OPEN,
       d_pulse_out => FMC_HPC_LA_P(24),
       grst_n_out => FMC_HPC_LA_P(28)
     );
@@ -1513,20 +1534,22 @@ BEGIN
       FRAME_WIDTH => 48
     )
     PORT MAP(
-      rst       => reset,
-      start     => pulse10_out,
-      fd0       => fd_out0,
-      fd1       => fd_out1,
-      fd2       => fd_out2,
-      fd3       => fd_out3,
-      fd4       => fd_out4,
-      fd5       => fd_out5,
-      fd6       => fd_out6,
-      fd7       => fd_out7,
-      mode      => '1',
-      fifo_rd_en => fifo_rden2,
-      fifo_empty => fifo_empty2,
-      fifo_q     => fifo_q2
+      clk_in      => clk_out_mc,
+      clk_control => control_clk,
+      rst         => reset,
+      start_pulse => pulse_reg(10),
+      fd0         => fd_out0,
+      fd1         => fd_out1,
+      fd2         => fd_out2,
+      fd3         => fd_out3,
+      fd4         => fd_out4,
+      fd5         => fd_out5,
+      fd6         => fd_out6,
+      fd7         => fd_out7,
+      mode        => '1',
+      fifo_rd_en  => fifo_rden2,
+      fifo_empty  => fifo_empty2,
+      fifo_q      => fifo_q2
   );
   ---------------------------------------------> FDOUT
  
@@ -1596,8 +1619,10 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out5,  -- Buffer output
-      I =>  FMC_HPC_HA_P(06),  -- Diff_p buffer input (connect directly to top-level port)
-      IB => FMC_HPC_HA_N(06) -- Diff_n buffer input (connect directly to top-level port)
+      I => '1',
+      IB => '0'
+--      I =>  FMC_HPC_HA_P(06),  -- Diff_p buffer input (connect directly to top-level port)
+--      IB => FMC_HPC_HA_N(06) -- Diff_n buffer input (connect directly to top-level port)
    );
 
    FD6_inst : IBUFDS
@@ -1611,28 +1636,30 @@ BEGIN
       IB => FMC_HPC_HA_N(10) -- Diff_n buffer input (connect directly to top-level port)
    );
 
+ --  fd_out7 => FMC_HPC_LA_P(21); -- FIXME, redirecting this signal to a pin for debug
    FD7_inst : IBUFDS
    generic map (
       DIFF_TERM => TRUE, -- Differential Termination 
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
-      O => fd_out7,  -- Buffer output
+--      O => fd_out7,  -- Buffer output
+      O =>  FMC_HPC_LA_P(21),
       I =>  FMC_HPC_HA_P(17),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(17) -- Diff_n buffer input (connect directly to top-level port)
    );
 
   --- The convert module
-  ---------------------------------------------< PULSE_SYNCHRONISE
-  pulse_synchronise_10 : pulse_synchronise
-    PORT MAP (
-      pulse_in  => pulse_reg(10),
-      clk_in    => control_clk,
-      clk_out   => clk_out_mc,
-      rst       => reset,
-      pulse_out => pulse10_out
-    );
-  ---------------------------------------------> PULSE_SYNCHRONISE
+--   ---------------------------------------------< PULSE_SYNCHRONISE
+--   pulse_synchronise_10 : pulse_synchronise
+--     PORT MAP (
+--       pulse_in  => pulse_reg(10),
+--       clk_in    => control_clk,
+--       clk_out   => clk_out_mc,
+--       rst       => reset,
+--       pulse_out => pulse10_out
+--     );
+--   ---------------------------------------------> PULSE_SYNCHRONISE
  
 
   ---------------------------------------------> FDOUT
