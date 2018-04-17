@@ -45,7 +45,8 @@ class MIC4Config():
 
 
     def shift_register_rw(self, data_to_send, clk_div, read=True):
-        div_reg = (clk_div & 0x3f) | (1<<6)
+#         div_reg = (clk_div & 0x3f) | (1<<6)
+        div_reg = 0xff
         data_reg = data_to_send & ((1<<200)-1)
         print(bin(div_reg))
 
@@ -122,7 +123,7 @@ class MIC4Config():
         print([hex(ord(w)) for w in retw])
 #         return 0
 
-        nWord = 10
+        nWord = 500
         time.sleep(1)
         cmdstr = ""
         cmdstr += self.cmd.read_datafifo(nWord)
@@ -130,14 +131,15 @@ class MIC4Config():
 
         nByte = 4*(nWord+1)
         retw = self.s.recv(nByte)
-        print([hex(ord(w)) for w in retw])
-        print(len(retw))
+#         print([hex(ord(w)) for w in retw])
+#         print(len(retw))
 
         ret_all = 0
         for i in range(len(retw)):
-            print(bin(ord(retw[i])))
+#             print(bin(ord(retw[i])))
             ret_all |= ord(retw[i])<<(nByte-i)*8
-        print(ret_all)
+#         print(ret_all)
+        return ret_all
 
     def testReg(self, div=None, info=None, read=True):
         '''Test writing the register configure file'''

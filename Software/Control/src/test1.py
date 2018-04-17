@@ -6,7 +6,7 @@ from MIC4Config import MIC4Config, bitSet
 def testRegister(mc1):
     mc1.setClocks(1,6,6)
 #     mc1.sReg.value = 1
-    mc1.sReg.value =0b101
+    mc1.sReg.value =0b10101
 #     mc1.sReg.useDefault() 
 #     mc1.sReg.selectVolDAC(1)
 #     mc1.sReg.useVolDAC(1, 0x3ff)
@@ -176,21 +176,23 @@ def test_DOUT(mc1):
 #     mc1.sendD_PULSE()
 
 def setupDOUT(mc1):
-#     mc1.setClocks(1,6,6)
-#     mc1.test_DAC8568_config()
+    mc1.setClocks(1,6,6)
+    mc1.test_DAC8568_config()
+    mc1.sReg.useDefault()
 #     mc1.sReg.value =  0x1f
 # #     mc1.sReg.setTRX16(0b1000)
 # #     mc1.sReg.setTRX15_serializer(0b1000)
-#     mc1.sReg.show()
-#     mc1.testReg(read=True)
+    mc1.sReg.show()
+    mc1.testReg(read=True)
 # 
-#     mc1.checkLastReg()
-    for i in range(100):
-        print i
-        mc1.readFIFO_test(6)
+    mc1.checkLastReg()
+#     for i in range(100):
+#         print i
+#         mc1.readFIFO_test(6)
 
 #     sys.exit(1)
-#     mc1.readFD()
+    mc1.readFD()
+    mc1.checkLastReg()
 
 def checkCol(mc1):
     i = 0 if len(sys.argv)<2 else int(sys.argv[1])
@@ -380,6 +382,13 @@ if __name__ == '__main__':
 #     turnOffAllPixels(mc1)
 #     test_AOUT_IHEP(mc1)
 #     testRegister(mc1)
-#     mc1.empty_fifo()
+#     mc1.checkLastReg()
+#     mc1.readFIFO_test()
+#     mc1.checkLastReg()
+#     mc1.readFD()
+#     a = 0
+#     while a==0:
+#         a = mc1.readFIFO_test()
+#         mc1.empty_fifo()
     setupDOUT(mc1)
 
