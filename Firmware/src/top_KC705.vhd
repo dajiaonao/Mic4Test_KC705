@@ -1595,11 +1595,12 @@ BEGIN
 
    FD3_inst : IBUFDS
    generic map (
-      DIFF_TERM => TRUE, -- Differential Termination 
-      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      DIFF_TERM => FALSE, -- Differential Termination 
+      IBUF_LOW_PWR => FALSE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out3,  -- Buffer output
+--      O =>  FMC_HPC_LA_P(21),
       I =>  FMC_HPC_HA_P(22),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(22) -- Diff_n buffer input (connect directly to top-level port)
    );
@@ -1610,7 +1611,8 @@ BEGIN
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
-      O => fd_out4,  -- Buffer output
+--      O => fd_out4,  -- Buffer output
+      O =>  FMC_HPC_LA_P(21),
       I =>  FMC_HPC_HA_P(02),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(02) -- Diff_n buffer input (connect directly to top-level port)
    );
