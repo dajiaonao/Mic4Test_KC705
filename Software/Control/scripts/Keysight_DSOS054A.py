@@ -66,13 +66,6 @@ def takeData(channels=[1],filename='temp1.dat'):
     X_Range = float(ss.recv(128)[1:])
     print "XRange:%f"%X_Range
 
-    ss.send(":WAVeform:YRANge?;")               #Query Y-axis range
-    Y_Range = float(ss.recv(128)[1:])   
-    print "YRange:%f"%Y_Range
-    #Y_Factor = Y_Range/980.0
-    Y_Factor = Y_Range/62712.0
-    #print Y_Factor
-
     ss.send(":ACQuire:POINts:ANALog?;")         #Query analog store depth
     Sample_point = int(ss.recv(128)[1:]) - 3   
     print "Sample Point:%d"%Sample_point
@@ -83,10 +76,6 @@ def takeData(channels=[1],filename='temp1.dat'):
     ss.send(":WAVeform:YUNits?;")               #Query Y-axis unit 
     print "Y-axis Unit:%s"%(ss.recv(128)[1:])   
 
-    ss.send(":CHANnel1:OFFset?;")               #Channel1 Offset 
-    CH1_Offset = float(ss.recv(128)[1:])   
-    print "Channel 1 Offset:%f"%CH1_Offset
-    print "X_Range:%f"%X_Range 
     if X_Range >= 2.0:
         Xrange = np.arange(-X_Range/2.0,X_Range/2.0,X_Range*1.0/Sample_point)
         Timebase_Poistion_X = Timebase_Poistion
@@ -109,7 +98,7 @@ def takeData(channels=[1],filename='temp1.dat'):
     ss.send(":ACQuire:SRATe:ANALog?;")          #Query sample rate
     Sample_Rate = float(ss.recv(128)[1:])   
     print "Sample rate:%.1f"%Sample_Rate
-    total_point = Sample_Rate * X_Range
+    total_point = int(Sample_Rate * X_Range)
     print total_point
 
     ### dumpt info
@@ -121,14 +110,24 @@ def takeData(channels=[1],filename='temp1.dat'):
     ss.send(":WAVeform:FORMat WORD;")           #Waveform data format
     ss.send(":WAVeform:STReaming 1;")           #Waveform streaming on
 
-    total_point = int(total_point)
     data = []
     ### get list of data
     for iChan in channels: 
         data_i = [0]*int(total_point)
 
+        ss.send(":CHANnel{0:d}:OFFset?;".format(iChan))               #Channel1 Offset 
+        CH1_Offset = float(ss.recv(128)[1:])   
+        print "Channel %d Offset:%f"%(iChan, CH1_Offset)
+
+        ss.send(":WAVeform:YRANge?;")               #Query Y-axis range
+        Y_Range = float(ss.recv(128)[1:])   
+        print "YRange:%f"%Y_Range
+        Y_Factor = Y_Range/62712.0
+        print Y_Factor
+
+
         ss.send(":WAVeform:SOURce CHANnel{0:d};".format(iChan))       #Waveform source 
-        ss.send(":WAVeform:DATA? 1,%d;"%int(total_point))         #Query waveform data with start address and length
+        ss.send(":WAVeform:DATA? 1,%d;"%total_point)         #Query waveform data with start address and length
 
         ### Why these magic numbers 2 and 3? A number contains 2 words? And there is a header with 3 words?
         n = total_point * 2 + 3
@@ -141,7 +140,7 @@ def takeData(channels=[1],filename='temp1.dat'):
             totalRecved = len(totalContent)
 #         length = len(totalContent[3:])              #print length
 
-        for i in xrange(total_point):              #store data into file
+        for i in range(total_point):              #store data into file
             ### combine two words to form the number
             digital_number = (ord(totalContent[3+i*2+1])<<8)+ord(totalContent[3+i*2])
             if (ord(totalContent[3+i*2+1]) & 0x80) == 0x80:             
@@ -154,11 +153,11 @@ def takeData(channels=[1],filename='temp1.dat'):
     with open(filename,'w') as fout:
         ### X_Range,Y_Range,CH1_Offset,Timebase_Poistion
         fout.write('# ')
-        fout.write("\n##%/-"+"x_var='%.5f'"%(X_Range))            #xrange parameter 
-        fout.write("\n##%/-"+"y_var='%.3f'"%(Y_Range))            #yrange parameter
-        fout.write("\n##%/-"+"offset='%.3f'"%(CH1_Offset))     #offset parameter
-        fout.write("\n##%/-"+"timebase_position='%.5f'"%(Timebase_Poistion))     #timebase position parameter
-        fout.write("\n##%/-"+"x_unit='%d'"%(x_unit)) 
+        fout.write("\n##%/- "+"x_var='%.5f'"%(X_Range))            #xrange parameter 
+        fout.write("\n##%/- "+"y_var='%.3f'"%(Y_Range))            #yrange parameter
+        fout.write("\n##%/- "+"offset='%.3f'"%(CH1_Offset))     #offset parameter
+        fout.write("\n##%/- "+"timebase_position='%.5f'"%(Timebase_Poistion))     #timebase position parameter
+        fout.write("\n##%/- "+"x_unit='%d'"%(x_unit)) 
  
         fout.write('\n#time '+' '.join(['chan'+str(ichan) for ichan in channels]))
         for i in range(total_point):
