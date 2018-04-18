@@ -52,6 +52,112 @@ def captureScreen(filename='testing.png'):
 
     pass
 
+def takeData(channels=[1],filename='temp1.dat'):
+    '''Loop over channels and save data to file with name filename'''
+    Timebase_scale = 0
+    ss.send("*IDN?;")                           #read back device ID
+    print "Instrument ID: %s"%ss.recv(128)   
+
+    ss.send(":TIMebase:POSition?;")             #Query X-axis timebase position 
+    Timebase_Poistion = float(ss.recv(128)[1:])
+    print "Timebase_Position:%.6f"%Timebase_Poistion
+
+    ss.send(":WAVeform:XRANge?;")               #Query X-axis range 
+    X_Range = float(ss.recv(128)[1:])
+    print "XRange:%f"%X_Range
+
+    ss.send(":WAVeform:YRANge?;")               #Query Y-axis range
+    Y_Range = float(ss.recv(128)[1:])   
+    print "YRange:%f"%Y_Range
+    #Y_Factor = Y_Range/980.0
+    Y_Factor = Y_Range/62712.0
+    #print Y_Factor
+
+    ss.send(":ACQuire:POINts:ANALog?;")         #Query analog store depth
+    Sample_point = int(ss.recv(128)[1:]) - 3   
+    print "Sample Point:%d"%Sample_point
+    
+    ss.send(":WAVeform:XUNits?;")               #Query X-axis unit 
+    print "X-axis Unit:%s"%(ss.recv(128)[1:])   
+
+    ss.send(":WAVeform:YUNits?;")               #Query Y-axis unit 
+    print "Y-axis Unit:%s"%(ss.recv(128)[1:])   
+
+    ss.send(":CHANnel1:OFFset?;")               #Channel1 Offset 
+    CH1_Offset = float(ss.recv(128)[1:])   
+    print "Channel 1 Offset:%f"%CH1_Offset
+    print "X_Range:%f"%X_Range 
+    if X_Range >= 2.0:
+        Xrange = np.arange(-X_Range/2.0,X_Range/2.0,X_Range*1.0/Sample_point)
+        Timebase_Poistion_X = Timebase_Poistion
+    elif X_Range < 2.0 and X_Range >= 0.002:
+        Xrange = np.arange((-X_Range*1000)/2.0,(X_Range*1000)/2.0,X_Range*1000.0/Sample_point)
+        Timebase_Poistion_X = Timebase_Poistion * 1000.0
+    elif X_Range < 0.002 and X_Range >= 0.000002:
+        Xrange = np.arange((-X_Range*1000000)/2.0,(X_Range*1000000)/2.0,X_Range*1000000.0/Sample_point)
+        Timebase_Poistion_X = Timebase_Poistion * 1000000.0
+    else:
+        Xrange = np.arange((-X_Range*1000000000)/2.0,(X_Range*1000000000)/2.0,X_Range*1000000000.0/Sample_point)
+        Timebase_Poistion_X = Timebase_Poistion * 1000000000.0
+    #print Xrange
+    #time.sleep(10)
+
+    ss.send(":ACQuire:SRATe:ANALog?;")          #Query sample rate
+    Sample_Rate = float(ss.recv(128)[1:])   
+    print "Sample rate:%.1f"%Sample_Rate
+    total_point = Sample_Rate * X_Range
+    print total_point
+
+    ### dumpt info
+#     X_Range,Y_Range,CH1_Offset,Timebase_Poistion
+
+
+    ss.send(":SYSTem:HEADer OFF;")              #Query analog store depth
+    ss.send(":WAVeform:BYTeorder LSBFirst;")    #Waveform data byte order
+    ss.send(":WAVeform:FORMat WORD;")           #Waveform data format
+    ss.send(":WAVeform:STReaming 1;")           #Waveform streaming on
+
+    ### get list of data
+    for iChan in channels: 
+        data_i = [0]*total_point
+
+        ss.send(":WAVeform:SOURce CHANnel{0:d};".format(iChan))       #Waveform source 
+        ss.send(":WAVeform:DATA? 1,%d;"%int(total_point))         #Query waveform data with start address and length
+
+        ### Why these magic numbers 2 and 3? A number contains 2 words? And there is a header with 3 words?
+        n = total_point * 2 + 3
+        print "n = %d"%n                            #calculate fetching data byte number
+        totalContent = ""
+        totalRecved = 0
+        while totalRecved < n:                      #fetch data
+            onceContent = ss.recv(int(n - totalRecved))
+            totalContent += onceContent
+            totalRecved = len(totalContent)
+#         length = len(totalContent[3:])              #print length
+
+        for i in xrange(total_point):              #store data into file
+            ### combine two words to form the number
+            digital_number = (ord(totalContent[3+i*2+1])<<8)+ord(totalContent[3+i*2])
+            if (ord(totalContent[3+i*2+1]) & 0x80) == 0x80:             
+                data_i[i] = (digital_number - 65535+1000)*Y_Factor + CH1_Offset
+            else:
+                data_i[i] = (digital_number+1000)*Y_Factor + CH1_Offset
+
+    #### write out: basic info, t, chanI
+    with open(filename,'w') as fout:
+        fout.write('')
+        fout.write("##%/- x_var='%.5f'"%(x_range))            #xrange parameter 
+        fout.write("##%/- y_var='%.3f'"%(y_range))            #yrange parameter
+        fout.write("##%/- offset='%.3f'"%(ch1_offset))     #offset parameter
+        fout.write("##%/- timebase_position='%.5f'"%(timebase_position))     #timebase position parameter
+        fout.write("##%/- x_unit='%d'"%(x_unit)) 
+ 
+        fout.write('#time '+' '.join(['chan'+str(ichan) for ichan in channels]))
+        for i in range(total_point):
+            text = '\n{0:g} '.format(Xrange[i] + Timebase_Poistion_X)
+            text += ' '.join(['{0:g}'.format(x[i]) for x in data_i])
+            fout.write(text)
+
 def captureWaveform():
     with open("./data_output.dat",'w') as outfile:
         Timebase_scale = 0
