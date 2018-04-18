@@ -20,9 +20,9 @@ def testRegister(mc1):
 def lvds_test(mc1):
     mc1.test_DAC8568_config()
     mc1.sReg.value = 0
-    mc1.sReg.setLVDS_TEST(0b1111)
-    mc1.sReg.setTRX16(0b1111)
-    mc1.sReg.setTRX15_serializer(0b1111)
+    mc1.sReg.setLVDS_TEST(0b1000)
+    mc1.sReg.setTRX16(0b1000)
+    mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
     mc1.testReg(read=True)
     mc1.setClocks(1,8,8)
@@ -196,34 +196,34 @@ def test_AOUT(mc1):
 #     mc1.sReg.selectCurDAC(5)
 #     mc1.sReg.selectCol(11)
 
-#     ### Chip #6
-#     mc1.sReg.setPar('VCLIP' ,0  , 0.689, 0x200)
-#     mc1.sReg.setPar('VReset',1.1, 0.703, 0x200)
-#     mc1.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
-#     mc1.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
-#     mc1.sReg.setPar('VCASP' ,0.6, 0.694, 0x200)
-#     mc1.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
-#     mc1.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
-#     mc1.sReg.setPar('IDB'   ,0xf0)
-#     mc1.sReg.setPar('ITHR'  ,0x80)
-#     mc1.sReg.setPar('IRESET',0x80)
-#     mc1.sReg.setPar('IDB2'  ,0x80)
-
-    ### Chip #6 -- IHEP
+    ### Chip #6
     mc1.sReg.setPar('VCLIP' ,0  , 0.689, 0x200)
     mc1.sReg.setPar('VReset',1.1, 0.703, 0x200)
     mc1.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
-    mc1.sReg.setPar('VCASN' ,0.47, 0.689, 0x200)
-    mc1.sReg.setPar('VCASP' ,0.36, 0.694, 0x200)
+    mc1.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
+    mc1.sReg.setPar('VCASP' ,0.6, 0.694, 0x200)
     mc1.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
     mc1.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
-    mc1.sReg.setPar('IDB'   ,0xa0)
-    mc1.sReg.setPar('ITHR'  ,0xff)
-    mc1.sReg.setPar('IRESET',0xc0)
-    mc1.sReg.setPar('IDB2'  ,0xff)
+    mc1.sReg.setPar('IDB'   ,0xf0)
+    mc1.sReg.setPar('ITHR'  ,0x80)
+    mc1.sReg.setPar('IRESET',0x80)
+    mc1.sReg.setPar('IDB2'  ,0x80)
+
+#     ### Chip #6 -- IHEP
+#     mc1.sReg.setPar('VCLIP' ,0  , 0.689, 0x200)
+#     mc1.sReg.setPar('VReset',1.1, 0.703, 0x200)
+#     mc1.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
+#     mc1.sReg.setPar('VCASN' ,0.47, 0.689, 0x200)
+#     mc1.sReg.setPar('VCASP' ,0.36, 0.694, 0x200)
+#     mc1.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
+#     mc1.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
+#     mc1.sReg.setPar('IDB'   ,0xa0)
+#     mc1.sReg.setPar('ITHR'  ,0xff)
+#     mc1.sReg.setPar('IRESET',0xc0)
+#     mc1.sReg.setPar('IDB2'  ,0xff)
     mc1.sReg.selectVolDAC(3)
     mc1.sReg.selectCurDAC(6)
-    mc1.sReg.selectCol(32)
+    mc1.sReg.selectCol(2)
 
     mc1.sReg.show()
     mc1.testReg(read=True)
@@ -427,7 +427,7 @@ if __name__ == '__main__':
 #     mc1.empty_fifo()
 #     testA(mc1)
 #     testPixels(mc1)
-#     lvds_test(mc1)
+    lvds_test(mc1)
 #     test_DOUT(mc1)
 #     CheckValid(mc1)
 #     busySigal(mc1)
@@ -437,7 +437,7 @@ if __name__ == '__main__':
 #     loopCol(mc1)
 #     checkCol(mc1)
 #     test_AOUT_IHEP_loop(mc1)
-    test_AOUT(mc1)
+#     test_AOUT(mc1)
 #     test_AOUT_loopVreset(mc1)
 #     turnOffAllPixels(mc1)
 #     test_AOUT_IHEP(mc1)
