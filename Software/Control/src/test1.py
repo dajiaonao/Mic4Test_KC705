@@ -25,7 +25,8 @@ def lvds_test(mc1):
     mc1.sReg.setTRX16(0b1000)
     mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
-    mc1.testReg(read=True)
+#     mc1.testReg(read=True)
+    mc1.testReg(read=False)
     mc1.setClocks(1,8,8)
 
 def checkDefaultDACinChip(mc1):
@@ -186,13 +187,14 @@ def setupDOUT(mc1):
 # #     mc1.sReg.setTRX16(0b1000)
 # #     mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
-    mc1.testReg(read=True)
+#     mc1.testReg(read=True)
+    mc1.testReg(read=False)
 # 
-    mc1.checkLastReg()
+#     mc1.checkLastReg()
 #     for i in range(100):
 #         print i
 #         mc1.readFIFO_test(6)
-
+# 
 #     sys.exit(1)
     mc1.readFD()
     mc1.checkLastReg()

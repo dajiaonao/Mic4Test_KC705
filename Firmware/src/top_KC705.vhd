@@ -1356,10 +1356,12 @@ BEGIN
 --                             fifo_empty2 WHEN config_reg(6)= '0';
 --    idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE
 --                             fifo_rden2 WHEN config_reg(6)= '0';
-  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE x"1234abcd";
-  idata_data_fifo_empty <= fifo_empty1;
-  idata_data_fifo_rden  <= fifo_rden1;
-
+--  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE x"1234abcd";
+--  idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1' ELSE fifo_empty2;
+--  idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE fifo_rden2;
+  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
+  idata_data_fifo_empty <= fifo_empty2;
+  idata_data_fifo_rden  <= fifo_rden2;
 --  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
 --  idata_data_fifo_empty <= fifo_empty2;
 --  idata_data_fifo_rden  <= fifo_rden2;

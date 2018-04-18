@@ -116,6 +116,8 @@ class MIC4Config():
         cmdstr += self.cmd.write_register(0, 0)
         self.s.sendall(cmdstr)
 
+        self.checkLastReg()
+
         cmdstr = ''
         cmdstr += self.cmd.read_register(0)
         cmdstr += self.cmd.send_pulse(1<<10)
