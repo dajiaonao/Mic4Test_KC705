@@ -90,15 +90,19 @@ def takeData(channels=[1],filename='temp1.dat'):
     if X_Range >= 2.0:
         Xrange = np.arange(-X_Range/2.0,X_Range/2.0,X_Range*1.0/Sample_point)
         Timebase_Poistion_X = Timebase_Poistion
+        x_unit = 1
     elif X_Range < 2.0 and X_Range >= 0.002:
         Xrange = np.arange((-X_Range*1000)/2.0,(X_Range*1000)/2.0,X_Range*1000.0/Sample_point)
         Timebase_Poistion_X = Timebase_Poistion * 1000.0
+        x_unit = 2
     elif X_Range < 0.002 and X_Range >= 0.000002:
         Xrange = np.arange((-X_Range*1000000)/2.0,(X_Range*1000000)/2.0,X_Range*1000000.0/Sample_point)
         Timebase_Poistion_X = Timebase_Poistion * 1000000.0
+        x_unit = 3
     else:
         Xrange = np.arange((-X_Range*1000000000)/2.0,(X_Range*1000000000)/2.0,X_Range*1000000000.0/Sample_point)
         Timebase_Poistion_X = Timebase_Poistion * 1000000000.0
+        x_unit = 4
     #print Xrange
     #time.sleep(10)
 
@@ -117,9 +121,11 @@ def takeData(channels=[1],filename='temp1.dat'):
     ss.send(":WAVeform:FORMat WORD;")           #Waveform data format
     ss.send(":WAVeform:STReaming 1;")           #Waveform streaming on
 
+    total_point = int(total_point)
+    data = []
     ### get list of data
     for iChan in channels: 
-        data_i = [0]*total_point
+        data_i = [0]*int(total_point)
 
         ss.send(":WAVeform:SOURce CHANnel{0:d};".format(iChan))       #Waveform source 
         ss.send(":WAVeform:DATA? 1,%d;"%int(total_point))         #Query waveform data with start address and length
@@ -142,20 +148,22 @@ def takeData(channels=[1],filename='temp1.dat'):
                 data_i[i] = (digital_number - 65535+1000)*Y_Factor + CH1_Offset
             else:
                 data_i[i] = (digital_number+1000)*Y_Factor + CH1_Offset
+        data.append(data_i)
 
     #### write out: basic info, t, chanI
     with open(filename,'w') as fout:
-        fout.write('')
-        fout.write("##%/- x_var='%.5f'"%(x_range))            #xrange parameter 
-        fout.write("##%/- y_var='%.3f'"%(y_range))            #yrange parameter
-        fout.write("##%/- offset='%.3f'"%(ch1_offset))     #offset parameter
-        fout.write("##%/- timebase_position='%.5f'"%(timebase_position))     #timebase position parameter
-        fout.write("##%/- x_unit='%d'"%(x_unit)) 
+        ### X_Range,Y_Range,CH1_Offset,Timebase_Poistion
+        fout.write('# ')
+        fout.write("\n##%/-"+"x_var='%.5f'"%(X_Range))            #xrange parameter 
+        fout.write("\n##%/-"+"y_var='%.3f'"%(Y_Range))            #yrange parameter
+        fout.write("\n##%/-"+"offset='%.3f'"%(CH1_Offset))     #offset parameter
+        fout.write("\n##%/-"+"timebase_position='%.5f'"%(Timebase_Poistion))     #timebase position parameter
+        fout.write("\n##%/-"+"x_unit='%d'"%(x_unit)) 
  
-        fout.write('#time '+' '.join(['chan'+str(ichan) for ichan in channels]))
+        fout.write('\n#time '+' '.join(['chan'+str(ichan) for ichan in channels]))
         for i in range(total_point):
             text = '\n{0:g} '.format(Xrange[i] + Timebase_Poistion_X)
-            text += ' '.join(['{0:g}'.format(x[i]) for x in data_i])
+            text += ' '.join(['{0:g}'.format(x[i]) for x in data])
             fout.write(text)
 
 def captureWaveform():
@@ -267,12 +275,19 @@ def saveWaveform():
     plot(x_range,xyrange[1]*0.5,xyrange[2],timebase_poistion,x_unit)   #plot waveform using fetched data
 
 
+def takeDataCmd():
+    chan = [int(ic) for ic in sys.argv[1].split(',')]
+    fname = 'temp.dat' if len(sys.argv)<3 else sys.argv[2]
+    takeData(chan, fname)
+
 #========================================================#
 ## if statement
 #
 if __name__ == '__main__':
     ss = socket.socket(socket.AF_INET,socket.SOCK_STREAM)       #init local socket handle
     ss.connect((hostname,port))                                 #connect to the server
-    saveWaveform()
+#     saveWaveform()
 #     captureScreen()
+#     takeData([1,2])
+    takeDataCmd()
     ss.close()

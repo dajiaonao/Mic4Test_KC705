@@ -45,8 +45,9 @@ class MIC4Config():
 
 
     def shift_register_rw(self, data_to_send, clk_div, read=True):
-#         div_reg = (clk_div & 0x3f) | (1<<6)
-        div_reg = 0xff
+        div_reg = (clk_div & 0x3f) | (1<<6)
+#         div_reg = (clk_div & 0x3f)
+#         div_reg = 0xff
         data_reg = data_to_send & ((1<<200)-1)
         print(bin(div_reg))
 
@@ -123,7 +124,7 @@ class MIC4Config():
         print([hex(ord(w)) for w in retw])
 #         return 0
 
-        nWord = 500
+        nWord = 20
         time.sleep(1)
         cmdstr = ""
         cmdstr += self.cmd.read_datafifo(nWord)

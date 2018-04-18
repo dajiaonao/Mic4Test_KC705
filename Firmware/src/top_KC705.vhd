@@ -1350,15 +1350,15 @@ BEGIN
 --  idata_data_fifo_dout  <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)='1' ELSE fifo_q2(31 DOWNTO 0); -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
 --  idata_data_fifo_empty <= fifo_empty1          WHEN config_reg(6)='1' ELSE fifo_empty2; 
 
-   idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE
-                           fifo_q2(31 DOWNTO 0) WHEN config_reg(6)= '0';
-   idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1' ELSE
-                            fifo_empty2 WHEN config_reg(6)= '0';
-   idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE
-                            fifo_rden2 WHEN config_reg(6)= '0';
---  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0);
---  idata_data_fifo_empty <= fifo_empty1;
---  idata_data_fifo_rden  <= fifo_rden1;
+--    idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE
+--                            fifo_q2(31 DOWNTO 0) WHEN config_reg(6)= '0';
+--    idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1' ELSE
+--                             fifo_empty2 WHEN config_reg(6)= '0';
+--    idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE
+--                             fifo_rden2 WHEN config_reg(6)= '0';
+  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE x"1234abcd";
+  idata_data_fifo_empty <= fifo_empty1;
+  idata_data_fifo_rden  <= fifo_rden1;
 
 --  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
 --  idata_data_fifo_empty <= fifo_empty2;
@@ -1560,10 +1560,13 @@ BEGIN
    FD0_inst : IBUFDS
    generic map (
       DIFF_TERM => TRUE, -- Differential Termination 
+--       IBUF_LOW_PWR => FALSE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
+--       IOSTANDARD => "LVDS")
    port map (
       O => fd_out0,  -- Buffer output
+--       O =>  FMC_HPC_LA_P(21),
       I =>  FMC_HPC_HA_P(11),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(11) -- Diff_n buffer input (connect directly to top-level port)
    );
@@ -1619,10 +1622,10 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out5,  -- Buffer output
-      I => '1',
-      IB => '0'
---      I =>  FMC_HPC_HA_P(06),  -- Diff_p buffer input (connect directly to top-level port)
---      IB => FMC_HPC_HA_N(06) -- Diff_n buffer input (connect directly to top-level port)
+--       I => '1',
+--       IB => '0'
+      I =>  FMC_HPC_HA_P(06),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(06) -- Diff_n buffer input (connect directly to top-level port)
    );
 
    FD6_inst : IBUFDS
@@ -1643,8 +1646,8 @@ BEGIN
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
---      O => fd_out7,  -- Buffer output
-      O =>  FMC_HPC_LA_P(21),
+      O => fd_out7,  -- Buffer output
+--       O =>  FMC_HPC_LA_P(21),
       I =>  FMC_HPC_HA_P(17),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(17) -- Diff_n buffer input (connect directly to top-level port)
    );
