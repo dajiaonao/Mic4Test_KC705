@@ -114,19 +114,21 @@ def takeData(channels=[1],filename='temp1.dat'):
     ### get list of data
     for iChan in channels: 
         data_i = [0]*int(total_point)
+        ss.send(":WAVeform:SOURce CHANnel{0:d};".format(iChan))       #Waveform source 
 
+        ## offset
         ss.send(":CHANnel{0:d}:OFFset?;".format(iChan))               #Channel1 Offset 
         CH1_Offset = float(ss.recv(128)[1:])   
         print "Channel %d Offset:%f"%(iChan, CH1_Offset)
 
+        ### Y-range
         ss.send(":WAVeform:YRANge?;")               #Query Y-axis range
         Y_Range = float(ss.recv(128)[1:])   
         print "YRange:%f"%Y_Range
         Y_Factor = Y_Range/62712.0
         print Y_Factor
 
-
-        ss.send(":WAVeform:SOURce CHANnel{0:d};".format(iChan))       #Waveform source 
+        ### get data
         ss.send(":WAVeform:DATA? 1,%d;"%total_point)         #Query waveform data with start address and length
 
         ### Why these magic numbers 2 and 3? A number contains 2 words? And there is a header with 3 words?

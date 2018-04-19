@@ -20,6 +20,7 @@ module Parallel_Serial_top #( parameter NDATA=1, //% 2**NDATA number of data to 
   input fd7,
   input mode, //! trigger mode: 1
   input fifo_rd_en, //% control_interface FIFO full signal.
+  output out_debug,
   output fifo_empty, //% FIFO empty signal sent to control_interface.
   output [FIFO_WIDTH-1:0] fifo_q //% data send to internal FIFO of control interface.
   );
@@ -32,9 +33,17 @@ wire fifo_wr_en;
 wire [FIFO_WIDTH-1:0] data_to_fifo;
 
 assign reset_fifo = rst | start; 
+//assign out_debug = clk_sub;
+assign out_debug = start_pulse;
+
+//assign  = rst | start;
+//always@(posedge clk_in) begin
+//	out_debug <= start_pulse;
+//end
 
 div_5 div_5_instx01(
      .clkin(clk_in),
+     .rst(rst),
      .clkout(clk_sub));
 
 pulse_synchronise pulse_synchronise_10(

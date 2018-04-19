@@ -15,8 +15,8 @@ def testRegister(mc1):
     mc1.sReg.setTRX16(0b1000)
     mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
-    mc1.testReg(read=True)
-#     mc1.testReg(read=False)
+#     mc1.testReg(read=True)
+    mc1.testReg(read=False)
 
 def lvds_test(mc1):
     mc1.test_DAC8568_config()
@@ -373,7 +373,7 @@ if __name__ == '__main__':
 #     mc1.empty_fifo()
 #     testA(mc1)
 #     testPixels(mc1)
-    lvds_test(mc1)
+#     lvds_test(mc1)
 #     test_DOUT(mc1)
 #     CheckValid(mc1)
 #     busySigal(mc1)
@@ -396,4 +396,5 @@ if __name__ == '__main__':
 #         a = mc1.readFIFO_test()
 #         mc1.empty_fifo()
 #     setupDOUT(mc1)
-
+#     mc1.setClocks(1,6,6)
+    mc1.readFD_debug()

@@ -23,7 +23,7 @@ USE work.utility.ALL;
 
 ENTITY top IS
   GENERIC (
-    ENABLE_DEBUG       : boolean := false;
+    ENABLE_DEBUG       : boolean := true;
     ENABLE_GIG_ETH     : boolean := true;
     ENABLE_TEN_GIG_ETH : boolean := true
   );
@@ -562,6 +562,7 @@ ARCHITECTURE Behavioral OF top IS
       fd7        : IN  std_logic;
       mode       : IN  std_logic;
       fifo_rd_en : IN  std_logic;
+      out_debug  : OUT std_logic;
       fifo_empty : OUT std_logic;
       fifo_q     : OUT std_logic_Vector(FIFO_WIDTH-1 DOWNTO 0)
   );
@@ -1550,11 +1551,13 @@ BEGIN
       fd7         => fd_out7,
       mode        => '1',
       fifo_rd_en  => fifo_rden2,
+      out_debug   => FMC_HPC_LA_P(21),
       fifo_empty  => fifo_empty2,
+--      fifo_empty  => FMC_HPC_LA_P(21),
       fifo_q      => fifo_q2
   );
   ---------------------------------------------> FDOUT
- 
+--FMC_HPC_LA_P(21) <= clk_out_mc;
 
    -- IBUFDS: Differential Input Buffer
    --         Kintex-7
@@ -1591,18 +1594,18 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out2,  -- Buffer output
+--      O =>  FMC_HPC_LA_P(21),
       I =>  FMC_HPC_HA_P(18),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(18) -- Diff_n buffer input (connect directly to top-level port)
    );
 
    FD3_inst : IBUFDS
    generic map (
-      DIFF_TERM => FALSE, -- Differential Termination 
-      IBUF_LOW_PWR => FALSE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+      DIFF_TERM => TRUE, -- Differential Termination 
+      IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out3,  -- Buffer output
---      O =>  FMC_HPC_LA_P(21),
       I =>  FMC_HPC_HA_P(22),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(22) -- Diff_n buffer input (connect directly to top-level port)
    );
@@ -1613,8 +1616,7 @@ BEGIN
       IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
       IOSTANDARD => "DEFAULT")
    port map (
---      O => fd_out4,  -- Buffer output
-      O =>  FMC_HPC_LA_P(21),
+      O => fd_out4,  -- Buffer output
       I =>  FMC_HPC_HA_P(02),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(02) -- Diff_n buffer input (connect directly to top-level port)
    );

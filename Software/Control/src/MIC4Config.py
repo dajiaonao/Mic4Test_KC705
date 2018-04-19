@@ -111,6 +111,13 @@ class MIC4Config():
         retw = self.s.recv(4)
         print([hex(ord(w)) for w in retw])
 
+    def readFD_debug(self):
+        cmdstr = ''
+        cmdstr += self.cmd.read_register(0)
+        cmdstr += self.cmd.send_pulse(1<<10)
+        self.s.sendall(cmdstr)
+
+
     def readFD(self):
         cmdstr = ''
         cmdstr += self.cmd.write_register(0, 0)
