@@ -457,6 +457,12 @@ ARCHITECTURE Behavioral OF top IS
       PROBE1 : IN std_logic_vector(15 DOWNTO 0)
     );
   END COMPONENT;
+  COMPONENT dbg_ila2
+  PORT (
+      clk : IN STD_LOGIC;
+      probe0 : IN STD_LOGIC_VECTOR(9 DOWNTO 0)
+  );
+  END COMPONENT;
   COMPONENT dbg_vio
     PORT (
       CLK        : IN  std_logic;
@@ -827,6 +833,7 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL  fifo_rden2  : std_logic;
   SIGNAL  fifo_empty2 : std_logic;
   SIGNAL  fifo_q2     : std_logic_vector(35 DOWNTO 0);
+  SIGNAL  probe0_FD   :std_logic_vector(9 DOWNTO 0);
   ---------------------------------------------> FDOUT
   
 BEGIN
@@ -881,7 +888,7 @@ BEGIN
         PROBE_IN4  => config_reg(64*5-1 DOWNTO 64*4),
         PROBE_IN5  => config_reg(64*6-1 DOWNTO 64*5),
         PROBE_IN6  => config_reg(64*7-1 DOWNTO 64*6),
-        PROBE_IN7  => x"00000000000000", -- config_reg(64*8-1 DOWNTO 64*7),
+        PROBE_IN7  => x"0000000000000000", -- config_reg(64*8-1 DOWNTO 64*7),
         PROBE_IN8  => cmd_fifo_q,
         PROBE_OUT0 => dbg_vio_probe_out0
       );
@@ -891,6 +898,11 @@ BEGIN
     --    PROBE0 => dbg_ila1_probe0,
     --    PROBE1 => dbg_ila1_probe1
     --  );
+    dbg_ila2_FD : dbg_ila2
+    PORT MAP (
+        clk => sys_clk,
+        probe0 => probe0_FD
+    );
   END GENERATE dbg_cores;
   ---------------------------------------------> debug : ILA and VIO (`Chipscope')
   ---------------------------------------------< UART/RS232
@@ -1357,12 +1369,12 @@ BEGIN
 --                             fifo_empty2 WHEN config_reg(6)= '0';
 --    idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE
 --                             fifo_rden2 WHEN config_reg(6)= '0';
---  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE x"1234abcd";
+  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE x"00000000";
 --  idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1' ELSE fifo_empty2;
 --  idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE fifo_rden2;
-  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
-  idata_data_fifo_empty <= fifo_empty2;
-  idata_data_fifo_rden  <= fifo_rden2;
+--  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
+--  idata_data_fifo_empty <= fifo_empty1;
+--  idata_data_fifo_rden  <= fifo_rden1;
 --  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
 --  idata_data_fifo_empty <= fifo_empty2;
 --  idata_data_fifo_rden  <= fifo_rden2;
@@ -1390,14 +1402,14 @@ BEGIN
       din        => din,
       data_in    => FMC_HPC_HA_P(9) ,
       div        => div,
-      fifo_rd_en => fifo_rden1,
---      fifo_rd_en => idata_data_fifo_rden,
+--      fifo_rd_en => fifo_rden1,
+      fifo_rd_en => idata_data_fifo_rden,
       clk        => clk_sr_contr,
       clk_sr     => FMC_HPC_LA_P(20),
       data_out   => FMC_HPC_LA_P(33),
       load_sr    => FMC_HPC_LA_P(31),
-      fifo_empty => fifo_empty1,
---      fifo_empty => idata_data_fifo_empty,
+--      fifo_empty => fifo_empty1,
+      fifo_empty => idata_data_fifo_empty,
       fifo_q     => fifo_q1
     );
   ---------------------------------------------> TOP_SR
@@ -1486,7 +1498,7 @@ BEGIN
     GENERIC MAP(
       DIV_WIDTH     => 6,
       COUNT_WIDTH   => 64,
-      APULSE_LENGTH => 1000,
+      APULSE_LENGTH => 200,
       DPULSE_LENGTH => 300,
       GRST_LENGTH   => 5
     )
@@ -1501,8 +1513,8 @@ BEGIN
       pulse_d => pulse_reg(7),
       clk_out => clk_out_mc, -- CLK_IN of mic4
       lt_out => lt_out_mc, --LT_IN of mic4
---       a_pulse_out => FMC_HPC_LA_P(21),
-      a_pulse_out => OPEN,
+       a_pulse_out => FMC_HPC_LA_P(21),
+--      a_pulse_out => OPEN,
       d_pulse_out => FMC_HPC_LA_P(24),
       grst_n_out => FMC_HPC_LA_P(28)
     );
@@ -1551,7 +1563,8 @@ BEGIN
       fd7         => fd_out7,
       mode        => '1',
       fifo_rd_en  => fifo_rden2,
-      out_debug   => FMC_HPC_LA_P(21),
+--      out_debug   => FMC_HPC_LA_P(21),
+      out_debug   => OPEN,
       fifo_empty  => fifo_empty2,
 --      fifo_empty  => FMC_HPC_LA_P(21),
       fifo_q      => fifo_q2
@@ -1559,6 +1572,17 @@ BEGIN
   ---------------------------------------------> FDOUT
 --FMC_HPC_LA_P(21) <= clk_out_mc;
 
+   probe0_FD(0) <= fd_out0;
+   probe0_FD(1) <= fd_out1;
+   probe0_FD(2) <= fd_out2;
+   probe0_FD(3) <= fd_out3;
+   probe0_FD(4) <= fd_out4;
+   probe0_FD(5) <= fd_out5;
+   probe0_FD(6) <= fd_out6;
+   probe0_FD(7) <= fd_out7;
+   probe0_FD(8) <= reset;
+   probe0_FD(9) <= idata_data_fifo_empty;
+   
    -- IBUFDS: Differential Input Buffer
    --         Kintex-7
    -- Xilinx HDL Language Template, version 2015.4
@@ -1571,9 +1595,10 @@ BEGIN
 --       IOSTANDARD => "LVDS")
    port map (
       O => fd_out0,  -- Buffer output
+--      O => probe0_FD(0),
 --       O =>  FMC_HPC_LA_P(21),
-      I =>  FMC_HPC_HA_P(11),  -- Diff_p buffer input (connect directly to top-level port)
-      IB => FMC_HPC_HA_N(11) -- Diff_n buffer input (connect directly to top-level port)
+      I =>  FMC_HPC_HA_P(18),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(18) -- Diff_n buffer input (connect directly to top-level port)
    );
 
    FD1_inst : IBUFDS
@@ -1583,8 +1608,9 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out1,  -- Buffer output
-      I =>  FMC_HPC_HA_P(14),  -- Diff_p buffer input (connect directly to top-level port)
-      IB => FMC_HPC_HA_N(14) -- Diff_n buffer input (connect directly to top-level port)
+--      O => probe0_FD(1),
+      I =>  FMC_HPC_HA_P(17),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(17) -- Diff_n buffer input (connect directly to top-level port)
    );
 
    FD2_inst : IBUFDS
@@ -1594,9 +1620,10 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out2,  -- Buffer output
+--      O => probe0_FD(2),
 --      O =>  FMC_HPC_LA_P(21),
-      I =>  FMC_HPC_HA_P(18),  -- Diff_p buffer input (connect directly to top-level port)
-      IB => FMC_HPC_HA_N(18) -- Diff_n buffer input (connect directly to top-level port)
+      I =>  FMC_HPC_HA_P(14),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(14) -- Diff_n buffer input (connect directly to top-level port)
    );
 
    FD3_inst : IBUFDS
@@ -1606,8 +1633,9 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out3,  -- Buffer output
-      I =>  FMC_HPC_HA_P(22),  -- Diff_p buffer input (connect directly to top-level port)
-      IB => FMC_HPC_HA_N(22) -- Diff_n buffer input (connect directly to top-level port)
+--      O => probe0_FD(3),
+      I =>  FMC_HPC_HA_P(10),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(10) -- Diff_n buffer input (connect directly to top-level port)
    );
 
    FD4_inst : IBUFDS
@@ -1617,8 +1645,9 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out4,  -- Buffer output
-      I =>  FMC_HPC_HA_P(02),  -- Diff_p buffer input (connect directly to top-level port)
-      IB => FMC_HPC_HA_N(02) -- Diff_n buffer input (connect directly to top-level port)
+--      O => probe0_FD(4),
+      I =>  FMC_HPC_HA_P(03),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(03) -- Diff_n buffer input (connect directly to top-level port)
    );
 
    FD5_inst : IBUFDS
@@ -1628,10 +1657,11 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out5,  -- Buffer output
+--      O => probe0_FD(5),
 --       I => '1',
 --       IB => '0'
-      I =>  FMC_HPC_HA_P(06),  -- Diff_p buffer input (connect directly to top-level port)
-      IB => FMC_HPC_HA_N(06) -- Diff_n buffer input (connect directly to top-level port)
+      I =>  FMC_HPC_HA_P(02),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(02) -- Diff_n buffer input (connect directly to top-level port)
    );
 
    FD6_inst : IBUFDS
@@ -1641,8 +1671,9 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out6,  -- Buffer output
-      I =>  FMC_HPC_HA_P(10),  -- Diff_p buffer input (connect directly to top-level port)
-      IB => FMC_HPC_HA_N(10) -- Diff_n buffer input (connect directly to top-level port)
+--      O => probe0_FD(6),
+      I =>  FMC_HPC_HA_P(07),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(07) -- Diff_n buffer input (connect directly to top-level port)
    );
 
  --  fd_out7 => FMC_HPC_LA_P(21); -- FIXME, redirecting this signal to a pin for debug
@@ -1653,9 +1684,10 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out7,  -- Buffer output
+--      O => probe0_FD(7),
 --       O =>  FMC_HPC_LA_P(21),
-      I =>  FMC_HPC_HA_P(17),  -- Diff_p buffer input (connect directly to top-level port)
-      IB => FMC_HPC_HA_N(17) -- Diff_n buffer input (connect directly to top-level port)
+      I =>  FMC_HPC_HA_P(06),  -- Diff_p buffer input (connect directly to top-level port)
+      IB => FMC_HPC_HA_N(06) -- Diff_n buffer input (connect directly to top-level port)
    );
 
   --- The convert module

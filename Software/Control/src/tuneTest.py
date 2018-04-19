@@ -125,7 +125,7 @@ class Tuner:
         maxI2, max2 = max(enumerate(sample2), key=lambda p:p[1])
         mean2 = nm.mean(sample2[maxI2-10, maxI2+10])
 
-        return mean2
+        return -mean2
 
     def setUpTest(self):
         self.atBounds = [(-10,10)]

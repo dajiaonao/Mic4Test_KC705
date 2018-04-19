@@ -58,13 +58,15 @@ def takeData(channels=[1],filename='temp1.dat'):
     ss.send("*IDN?;")                           #read back device ID
     print "Instrument ID: %s"%ss.recv(128)   
 
+    ss.send(":WAVeform:SOURce CHANnel1;")       #Waveform source 
+
     ss.send(":TIMebase:POSition?;")             #Query X-axis timebase position 
     Timebase_Poistion = float(ss.recv(128)[1:])
     print "Timebase_Position:%.6f"%Timebase_Poistion
 
     ss.send(":WAVeform:XRANge?;")               #Query X-axis range 
     X_Range = float(ss.recv(128)[1:])
-    print "XRange:%f"%X_Range
+    print "XRange:%g"%X_Range
 
     ss.send(":ACQuire:POINts:ANALog?;")         #Query analog store depth
     Sample_point = int(ss.recv(128)[1:]) - 3   
@@ -173,13 +175,14 @@ def captureWaveform():
         ss.send("*IDN?;")                           #read back device ID
         print "Instrument ID: %s"%ss.recv(128)   
 
+        ss.send(":WAVeform:SOURce CHANnel1;")       #Waveform source 
         ss.send(":TIMebase:POSition?;")             #Query X-axis timebase position 
         Timebase_Poistion = float(ss.recv(128)[1:])
         print "Timebase_Position:%.6f"%Timebase_Poistion
 
         ss.send(":WAVeform:XRANge?;")               #Query X-axis range 
         X_Range = float(ss.recv(128)[1:])
-        print "XRange:%f"%X_Range
+        print "XRange:%g"%X_Range
 
         ss.send(":WAVeform:YRANge?;")               #Query Y-axis range
         Y_Range = float(ss.recv(128)[1:])   
@@ -201,7 +204,7 @@ def captureWaveform():
         ss.send(":CHANnel1:OFFset?;")               #Channel1 Offset 
         CH1_Offset = float(ss.recv(128)[1:])   
         print "Channel 1 Offset:%f"%CH1_Offset
-        print "X_Range:%f"%X_Range 
+        print "X_Range:%g"%X_Range 
         if X_Range >= 2.0:
             Xrange = np.arange(-X_Range/2.0,X_Range/2.0,X_Range*1.0/Sample_point)
             Timebase_Poistion_X = Timebase_Poistion

@@ -25,11 +25,11 @@ class MIC4Config():
         self.sReg = MIC4Reg(0)
         self.dac = DAC8568(self.cmd)
         self.pCfg = PixelConfig(self.cmd, self.s)
+        self.host = '192.168.2.3'
 
     def connect(self):
-        host = '192.168.2.3'
         port = 1024
-        self.s.connect((host,port))
+        self.s.connect((self.host,port))
 
     def empty_fifo(self):
         nWord = 1
@@ -153,7 +153,7 @@ class MIC4Config():
 
     def testReg(self, div=None, info=None, read=True):
         '''Test writing the register configure file'''
-        if div is None: div = 7
+        if div is None: div = 10
         fifo_out = 1
         if info is None:
             #self.sReg.useDefault()
