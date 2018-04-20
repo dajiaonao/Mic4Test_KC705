@@ -3,9 +3,38 @@ import sys
 import time
 from MIC4Config import MIC4Config, bitSet
 
+def check_FDout(mc1, iTest=10):
+#     setAllPixels(mc1, mask=1, pulse_en=0)
+#     setAllPixels(mc1, mask=1, pulse_en=0)
+#     setPixels(mc1,[(127,0,0,1),(127,1,0,1),(127,3,0,1),(127,3,0,1)])
+#     sys.exit(0)
+
+    mc1.setClocks(0,6,6)
+    mc1.test_DAC8568_config()
+    mc1.sReg.useDefault() 
+#     mc1.sReg.setTEST(1)
+    mc1.sReg.show()
+    mc1.testReg(read=True)
+    sys.exit(0)
+
+    i = 0
+    while i!=iTest:
+        print i, 'event'
+        i += 1
+        try:
+            mc1.sendD_PULSE()
+        except KeyboardInterrupt:
+            break
+
+
+def D_signal_checks(mc1):
+    mc1.sendGRST_B()
+#     mc1.setClocks(0,6,6)
+#     mc1.sendD_PULSE()
+
 def testRegister(mc1):
     mc1.test_DAC8568_config()
-    mc1.setClocks(1,8,8)
+    mc1.setClocks(0,6,6)
 #     mc1.sReg.value = 1
 #     mc1.sReg.value =0b100101
     mc1.sReg.useDefault() 
@@ -66,7 +95,7 @@ def test_AOUT_IHEP(mc1):
     mc1.sReg.setPar('IDB2',0x80)
     mc1.sReg.selectVolDAC(5)
     mc1.sReg.selectCurDAC(0)
-    mc1.sReg.selectCol(33)
+    mc1.sReg.selectCol(0)
 
     mc1.sReg.show()
     mc1.testReg(read=True)
@@ -77,11 +106,12 @@ def test_AOUT_IHEP(mc1):
 
 
 def test_AOUT_loop(mc1):
+#     mc1.test_DAC8568_config()
 
     for i in range(32):
         mc1.sReg.value =  0
         mc1.sReg.setPDB(0)
-        mc1.sReg.setPar('VCLIP' ,0.1,  0.833, 0b1001011001)
+        mc1.sReg.setPar('VCLIP' ,1.0,  0.833, 0b1001011001)
         mc1.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
         mc1.sReg.setPar('VCASP' ,0.5,  0.603, 0b110110000)
         mc1.sReg.setPar('VReset',1.1,  1.084, 0b1100000111)
@@ -130,13 +160,13 @@ def test_AOUT_IHEP_loop(mc1):
         mc1.sendA_PULSE()
 
 def test_AOUT(mc1):
-    mc1.setClocks(1,8,8)
+    mc1.setClocks(0,6,6)
 #     sys.exit(1)
     mc1.test_DAC8568_config()
 # # #     mc1.sReg.useDefault()
     mc1.sReg.value =  0
     mc1.sReg.setPDB(0)
-    mc1.sReg.setPar('VCLIP' ,1.4,  0.833, 0b1001011001)
+    mc1.sReg.setPar('VCLIP' ,0.1,  0.833, 0b1001011001)
     mc1.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
     mc1.sReg.setPar('VCASP' ,0.5,  0.603, 0b110110000)
     mc1.sReg.setPar('VReset',1.1,  1.084, 0b1100000111)
@@ -147,16 +177,20 @@ def test_AOUT(mc1):
     mc1.sReg.setPar('ITHR'  ,0xff)
     mc1.sReg.setPar('IRESET',0x80)
     mc1.sReg.setPar('IDB2'  ,0x80)
-    mc1.sReg.selectVolDAC(5)
-    mc1.sReg.selectCurDAC(6)
-    mc1.sReg.selectCol(11)
+    mc1.sReg.selectVolDAC(3)
+    mc1.sReg.selectCurDAC(0)
+    mc1.sReg.selectCol(0)
 
     mc1.sReg.show()
     mc1.testReg(read=True)
 # #     mc1.setClocks(1,6,6)
 
-    time.sleep(1)
-    mc1.sendA_PULSE()
+#     time.sleep(1)
+#     mc1.sendA_PULSE()
+
+
+def check_DOUT(mc1):
+    mc1.setClocks(0,6,6)
 
 def test_DOUT(mc1):
     mc1.setClocks(1,5,5)
@@ -230,13 +264,20 @@ def loopCol(mc1):
         mc1.sendA_PULSE()
         time.sleep(2)
 
-def turnOffAllPixels(mc1):
+def setPixels(mc1,pxiels):
+    mc1.setClocks(1,8,8) # from 250 MHz clock
+    mc1.test_DAC8568_config()
+    mc1.pCfg.clk_div = 18 # from 100 MHz clock
+    mc1.pCfg.pixels = pxiels
+    mc1.pCfg.applyConfig()
+
+def setAllPixels(mc1,pulse_en=0, mask=0):
     mc1.setClocks(1,8,8) # from 250 MHz clock
     mc1.test_DAC8568_config()
     mc1.pCfg.clk_div = 18 # from 100 MHz clock
     for r in range(128):
         print "turning off row", r
-        mc1.pCfg.pixels = [(r,i,0,0) for i in range(64)]
+        mc1.pCfg.pixels = [(r,i,mask,pulse_en) for i in range(64)]
         mc1.pCfg.applyConfig()
 
 def setLastRow(mc1, pulse_en=1, mask=0):
@@ -370,6 +411,10 @@ def testA(mc1):
 if __name__ == '__main__':
     mc1 = MIC4Config()
     mc1.connect()
+    mc1.sendA_PULSE()
+#     setPixels(mc1, [(127,0,0,1)])
+#     setLastRow(mc1, mask=0,pulse_en=1)
+#     time.sleep(50)
 #     mc1.empty_fifo()
 #     testA(mc1)
 #     testPixels(mc1)
@@ -377,14 +422,15 @@ if __name__ == '__main__':
 #     test_DOUT(mc1)
 #     CheckValid(mc1)
 #     busySigal(mc1)
-#     setLastRow(mc1, pulse_en=1)
 #     checkDefaultDACinChip(mc1)
 #     checkSysCLKchange(mc1)
 #     loopCol(mc1)
 #     checkCol(mc1)
 #     test_AOUT_IHEP_loop(mc1)
-    test_AOUT_loop(mc1)
+#     test_AOUT_loop(mc1)
 #     test_AOUT(mc1)
+#     mc1.sendGRST_B()
+#     mc1.sendD_PULSE()
 #     turnOffAllPixels(mc1)
 #     test_AOUT_IHEP(mc1)
 #     testRegister(mc1)
@@ -399,3 +445,5 @@ if __name__ == '__main__':
 #     setupDOUT(mc1)
 #     mc1.setClocks(1,6,6)
 #     mc1.readFD_debug()
+#     D_signal_checks(mc1)
+#     check_FDout(mc1, 1)

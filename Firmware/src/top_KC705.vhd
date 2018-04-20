@@ -574,7 +574,16 @@ ARCHITECTURE Behavioral OF top IS
   );
   END COMPONENT;
   ---------------------------------------------> FDOUT
-     
+  ---------------------------------------------> DIV_5
+  COMPONENT div_5 
+    PORT (
+      clkin      : IN  std_logic;
+      rst        : IN  std_logic;
+      clkout     : IN  std_logic
+  );
+  END COMPONENT;
+  ---------------------------------------------> DIV_5 
+
   -- Signals
   SIGNAL reset                             : std_logic;  
   SIGNAL sys_clk                           : std_logic;
@@ -835,6 +844,9 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL  fifo_q2     : std_logic_vector(35 DOWNTO 0);
   SIGNAL  probe0_FD   :std_logic_vector(9 DOWNTO 0);
   ---------------------------------------------> FDOUT
+  ---------------------------------------------> DIV_5
+  SIGNAL div_5_out : std_logic;
+  ---------------------------------------------> DIV_5
   
 BEGIN
   ---------------------------------------------< Clock
@@ -1498,8 +1510,8 @@ BEGIN
     GENERIC MAP(
       DIV_WIDTH     => 6,
       COUNT_WIDTH   => 64,
-      APULSE_LENGTH => 200,
-      DPULSE_LENGTH => 300,
+      APULSE_LENGTH => 2000,
+      DPULSE_LENGTH => 3000,
       GRST_LENGTH   => 5
     )
     PORT MAP (
@@ -1513,9 +1525,10 @@ BEGIN
       pulse_d => pulse_reg(7),
       clk_out => clk_out_mc, -- CLK_IN of mic4
       lt_out => lt_out_mc, --LT_IN of mic4
-       a_pulse_out => FMC_HPC_LA_P(21),
+      a_pulse_out => FMC_HPC_LA_P(21),
 --      a_pulse_out => OPEN,
       d_pulse_out => FMC_HPC_LA_P(24),
+--      d_pulse_out => OPEN,
       grst_n_out => FMC_HPC_LA_P(28)
     );
 --  FMC_HPC_LA_P(21) <= '1';
@@ -1570,6 +1583,16 @@ BEGIN
       fifo_q      => fifo_q2
   );
   ---------------------------------------------> FDOUT
+
+--   FMC_HPC_LA_P(24) <= div_5_out; -- use d-pulse temparaily
+  ---------------------------------------------< DIV_5
+  div_5_inst0 : div_5 
+    PORT MAP (
+      clkin      => clk_out_mc,
+      rst        => reset,
+      clkout     => div_5_out
+  );
+  ---------------------------------------------< DIV_5
 --FMC_HPC_LA_P(21) <= clk_out_mc;
 
    probe0_FD(0) <= fd_out0;
@@ -1580,8 +1603,9 @@ BEGIN
    probe0_FD(5) <= fd_out5;
    probe0_FD(6) <= fd_out6;
    probe0_FD(7) <= fd_out7;
-   probe0_FD(8) <= reset;
-   probe0_FD(9) <= idata_data_fifo_empty;
+   probe0_FD(8) <= clk_out_mc;
+--    probe0_FD(9) <= div_5_out;
+   probe0_FD(9) <= reset;
    
    -- IBUFDS: Differential Input Buffer
    --         Kintex-7

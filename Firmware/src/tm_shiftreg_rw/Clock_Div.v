@@ -33,6 +33,6 @@ begin
     end
 end
 
-assign clk_out = (div==0) ? clk_in : counter[div-1];  
+assign clk_out = (div==0) ? clk_in : counter[div-1]; 
 
 endmodule
