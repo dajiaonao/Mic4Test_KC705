@@ -1605,7 +1605,7 @@ BEGIN
    probe0_FD(7) <= fd_out7;
    probe0_FD(8) <= clk_out_mc;
 --    probe0_FD(9) <= div_5_out;
-   probe0_FD(9) <= reset;
+   probe0_FD(9) <= div_5_out;
    
    -- IBUFDS: Differential Input Buffer
    --         Kintex-7

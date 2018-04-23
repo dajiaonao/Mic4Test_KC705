@@ -7,7 +7,7 @@ module div_5 (
 
 reg [2:0] step1, step2;
 
-always @(posedge clkin or rst) begin
+always @(posedge clkin or posedge rst) begin
   if(rst) begin
     step1<=3'b000;
   end
@@ -23,7 +23,7 @@ always @(posedge clkin or rst) begin
   end
 end
 
-always @(negedge clkin or rst) begin
+always @(negedge clkin or posedge rst) begin
   if(rst) begin
     step2<=3'b000;
   end
