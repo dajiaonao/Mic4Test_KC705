@@ -142,9 +142,11 @@ def takeData(channels=[1],filename='temp1.dat'):
             onceContent = ss.recv(int(n - totalRecved))
             totalContent += onceContent
             totalRecved = len(totalContent)
-#         length = len(totalContent[3:])              #print length
+        length = len(totalContent[3:])/2              #print length
+        if length != total_point:
+            print iChan, 'data length:', length, 'NOT as expected', total_point
 
-        for i in range(total_point):              #store data into file
+        for i in range(length):              #store data into file
             ### combine two words to form the number
             digital_number = (ord(totalContent[3+i*2+1])<<8)+ord(totalContent[3+i*2])
             if (ord(totalContent[3+i*2+1]) & 0x80) == 0x80:             
@@ -164,7 +166,8 @@ def takeData(channels=[1],filename='temp1.dat'):
         fout.write("\n##%/- "+"x_unit='%d'"%(x_unit)) 
  
         fout.write('\n#time '+' '.join(['chan'+str(ichan) for ichan in channels]))
-        for i in range(total_point):
+        for i in range(length-1):
+            print i
             text = '\n{0:g} '.format(Xrange[i] + Timebase_Poistion_X)
             text += ' '.join(['{0:g}'.format(x[i]) for x in data])
             fout.write(text)

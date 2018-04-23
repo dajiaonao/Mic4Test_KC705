@@ -12,6 +12,7 @@ def check_FDout(mc1, iTest=10):
     mc1.setClocks(0,6,6)
     mc1.test_DAC8568_config()
     mc1.sReg.useDefault() 
+    mc1.sReg.selectCol(0)
 #     mc1.sReg.setTEST(1)
     mc1.sReg.show()
     mc1.testReg(read=True)
@@ -35,14 +36,14 @@ def D_signal_checks(mc1):
 def testRegister(mc1):
     mc1.test_DAC8568_config()
     mc1.setClocks(0,6,6)
-#     mc1.sReg.value = 1
+    mc1.sReg.value = 0
 #     mc1.sReg.value =0b100101
-    mc1.sReg.useDefault() 
+#     mc1.sReg.useDefault() 
 #     mc1.sReg.selectVolDAC(1)
 #     mc1.sReg.useVolDAC(1, 0x3ff)
 #     mc1.sReg.setLVDS_TEST(0b1000)
 #     mc1.sReg.setTRX16(0b1000)
-#     mc1.sReg.setTRX15_serializer(0b1000)
+    mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
     mc1.testReg(read=True)
 #     mc1.testReg(read=False)
@@ -265,14 +266,14 @@ def loopCol(mc1):
         time.sleep(2)
 
 def setPixels(mc1,pxiels):
-    mc1.setClocks(1,8,8) # from 250 MHz clock
+    mc1.setClocks(0,8,8) # from 250 MHz clock
     mc1.test_DAC8568_config()
     mc1.pCfg.clk_div = 18 # from 100 MHz clock
     mc1.pCfg.pixels = pxiels
     mc1.pCfg.applyConfig()
 
 def setAllPixels(mc1,pulse_en=0, mask=0):
-    mc1.setClocks(1,8,8) # from 250 MHz clock
+    mc1.setClocks(0,8,8) # from 250 MHz clock
     mc1.test_DAC8568_config()
     mc1.pCfg.clk_div = 18 # from 100 MHz clock
     for r in range(128):
@@ -281,14 +282,14 @@ def setAllPixels(mc1,pulse_en=0, mask=0):
         mc1.pCfg.applyConfig()
 
 def setLastRow(mc1, pulse_en=1, mask=0):
-    mc1.setClocks(1,8,8) # from 250 MHz clock
+    mc1.setClocks(0,8,8) # from 250 MHz clock
     mc1.test_DAC8568_config()
     mc1.pCfg.clk_div = 18 # from 100 MHz clock
     mc1.pCfg.pixels = [(127,i,mask,pulse_en) for i in range(64)]
     mc1.pCfg.applyConfig()
 
 def busySigal(mc1):
-    mc1.setClocks(1,8,8) # from 250 MHz clock
+    mc1.setClocks(0,8,8) # from 250 MHz clock
     mc1.test_DAC8568_config()
     mc1.pCfg.clk_div = 18 # from 100 MHz clock
     mc1.pCfg.pixels = [(127,0,0,1)]# for i in range(64)]
@@ -411,7 +412,6 @@ def testA(mc1):
 if __name__ == '__main__':
     mc1 = MIC4Config()
     mc1.connect()
-    mc1.sendA_PULSE()
 #     setPixels(mc1, [(127,0,0,1)])
 #     setLastRow(mc1, mask=0,pulse_en=1)
 #     time.sleep(50)
@@ -430,7 +430,15 @@ if __name__ == '__main__':
 #     test_AOUT_loop(mc1)
 #     test_AOUT(mc1)
 #     mc1.sendGRST_B()
-#     mc1.sendD_PULSE()
+    mc1.setClocks(0,6,6)
+    while True:
+        try:
+            time.sleep(1)
+            mc1.sendD_PULSE()
+        except KeyboardInterrupt:
+            break
+
+#     setAllPixels(mc1, mask=1, pulse_en=0)
 #     turnOffAllPixels(mc1)
 #     test_AOUT_IHEP(mc1)
 #     testRegister(mc1)
@@ -443,7 +451,8 @@ if __name__ == '__main__':
 #         a = mc1.readFIFO_test()
 #         mc1.empty_fifo()
 #     setupDOUT(mc1)
-#     mc1.setClocks(1,6,6)
+#     mc1.setClocks(1,10,10)
 #     mc1.readFD_debug()
 #     D_signal_checks(mc1)
-#     check_FDout(mc1, 1)
+#     check_FDout(mc1, 0)
+#     mc1.sendA_PULSE()
