@@ -1373,7 +1373,7 @@ BEGIN
   ---------------------------------------------< TOP_SR
   div <= config_reg(5 DOWNTO 0);
   din <= config_reg(207 DOWNTO 8);
---  idata_data_fifo_dout  <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)='1' ELSE fifo_q2(31 DOWNTO 0); -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
+  idata_data_fifo_dout  <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)='1' ELSE fifo_q2(31 DOWNTO 0); -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
 --  idata_data_fifo_empty <= fifo_empty1          WHEN config_reg(6)='1' ELSE fifo_empty2; 
 
 --    idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE
@@ -1382,9 +1382,9 @@ BEGIN
 --                             fifo_empty2 WHEN config_reg(6)= '0';
 --    idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE
 --                             fifo_rden2 WHEN config_reg(6)= '0';
-  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE x"00000000";
---  idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1' ELSE fifo_empty2;
---  idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE fifo_rden2;
+--  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE x"00000000";
+  idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1' ELSE fifo_empty2;
+  idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE fifo_rden2;
 --  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
 --  idata_data_fifo_empty <= fifo_empty1;
 --  idata_data_fifo_rden  <= fifo_rden1;
@@ -1606,7 +1606,7 @@ BEGIN
    probe0_FD(6) <= fd_out6;
    probe0_FD(7) <= fd_out7;
    probe0_FD(8) <= div_5_out;
-   probe0_FD(9) <= clk_out_mc;
+   probe0_FD(9) <= fifo_empty2;
    
    -- IBUFDS: Differential Input Buffer
    --         Kintex-7
