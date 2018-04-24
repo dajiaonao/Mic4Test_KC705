@@ -1512,7 +1512,7 @@ BEGIN
       DIV_WIDTH     => 6,
       COUNT_WIDTH   => 64,
       APULSE_LENGTH => 2000,
-      DPULSE_LENGTH => 3000,
+      DPULSE_LENGTH => 5,
       GRST_LENGTH   => 5
     )
     PORT MAP (

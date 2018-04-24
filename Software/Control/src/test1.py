@@ -444,9 +444,10 @@ if __name__ == '__main__':
 #     mc1.setClocks(0,6,6)
 #     testRegister(mc1)
 #100    mc1.readFD_debug()
-    mc1.readFD()
+#     mc1.readFD()
 #     mc1.sendA_PULSE()
 #     mc1.empty_fifo(500)
+    mc1.sendD_PULSE()
     sys.exit(0)
     while True:
        try:

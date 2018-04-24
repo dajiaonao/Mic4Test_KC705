@@ -61,7 +61,7 @@ parameter s2=3'b100;
 parameter s3=3'b000;
 
 /// current data at the ports
-assign t_data = {fd7,fd6,fd5,fd4,fd3,fd2,fd1,fd0};
+assign t_data = {fd0,fd1,fd2,fd3,fd4,fd5,fd6,fd7}; //fd0 is the higher bit
 assign in_header = (t_data == 8'b10111100); 
 assign header_lost = ((in_header==1'b1) && (counter2 != FRAME_WIDTH));
 

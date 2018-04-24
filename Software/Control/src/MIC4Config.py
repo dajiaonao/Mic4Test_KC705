@@ -17,6 +17,24 @@ import sys
 # to/from long integer for I/O
 #
 
+
+def parseFD(dlist):
+    print('*'*20)
+    print(bin(dlist[0]))
+    vx = 0
+    nbit = 0
+    for dx in dlist[1:-1]:
+        vx |= dx<<nbit
+        nbit += 8
+        if nbit>=23:
+            x1 = vx & 0x7fffff
+            print(bin(x1))
+            vx >> 23
+            nbit -= 23
+    print(dlist[-1])
+    print('*'*20)
+
+
 class MIC4Config():
     cmd = Cmd()
 
@@ -115,7 +133,6 @@ class MIC4Config():
         self.s.sendall(cmdstr)
         self.checkLastReg()
 
-
     def readFD(self):
         cmdstr = ''
         cmdstr += self.cmd.write_register(0, 0)
@@ -139,12 +156,22 @@ class MIC4Config():
 
         nByte = 4*nWord
         retw = self.s.recv(nByte)
+
+#         dataLS = []
+
         dx = [ord(w) for w in retw]
         idx =0
+
+        data_t = None
         for i in dx:
-            if i==0x3d:
+            if i==0xbc:
                 print('\n',idx,': ')
                 idx+=1
+                if data_t: print(len(data_t))
+                data_t = []
+            if data_t is not None: data_t.append(i)
+            if data_t and len(data_t) == 48:
+                parseFD(data_t)
             print(hex(i),end=' ')
         print('\n')
 
