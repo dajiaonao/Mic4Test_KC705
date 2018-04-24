@@ -23,7 +23,7 @@ USE work.utility.ALL;
 
 ENTITY top IS
   GENERIC (
-    ENABLE_DEBUG       : boolean := true;
+    ENABLE_DEBUG       : boolean := false;
     ENABLE_GIG_ETH     : boolean := true;
     ENABLE_TEN_GIG_ETH : boolean := true
   );
@@ -579,7 +579,7 @@ ARCHITECTURE Behavioral OF top IS
     PORT (
       clkin      : IN  std_logic;
       rst        : IN  std_logic;
-      clkout     : IN  std_logic
+      clkout     : OUT std_logic
   );
   END COMPONENT;
   ---------------------------------------------> DIV_5 
@@ -910,12 +910,13 @@ BEGIN
     --    PROBE0 => dbg_ila1_probe0,
     --    PROBE1 => dbg_ila1_probe1
     --  );
-    dbg_ila2_FD : dbg_ila2
-    PORT MAP (
-        clk => sys_clk,
-        probe0 => probe0_FD
-    );
   END GENERATE dbg_cores;
+  
+  dbg_ila2_FD : dbg_ila2
+  PORT MAP (
+      clk => sys_clk,
+      probe0 => probe0_FD
+  );
   ---------------------------------------------> debug : ILA and VIO (`Chipscope')
   ---------------------------------------------< UART/RS232
   uart_cores : IF false GENERATE
@@ -1550,7 +1551,8 @@ BEGIN
     PORT MAP (
       O  => FMC_HPC_LA_P(19),  -- Diff_p output (connect directly to top-level port)
       OB => FMC_HPC_LA_N(19),  -- Diff_n output (connect directly to top-level port)
-      I  => lt_out_mc
+--      I  => lt_out_mc
+      I => div_5_out
    );
   ---------------------------------------------< Mic4 control
   ---------------------------------------------< FDOUT
@@ -1603,9 +1605,8 @@ BEGIN
    probe0_FD(5) <= fd_out5;
    probe0_FD(6) <= fd_out6;
    probe0_FD(7) <= fd_out7;
-   probe0_FD(8) <= clk_out_mc;
---    probe0_FD(9) <= div_5_out;
-   probe0_FD(9) <= div_5_out;
+   probe0_FD(8) <= div_5_out;
+   probe0_FD(9) <= clk_out_mc;
    
    -- IBUFDS: Differential Input Buffer
    --         Kintex-7
