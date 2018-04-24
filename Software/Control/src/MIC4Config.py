@@ -31,14 +31,11 @@ class MIC4Config():
         port = 1024
         self.s.connect((self.host,port))
 
-    def empty_fifo(self):
-        nWord = 1
-        time.sleep(0.5)
+    def empty_fifo(self, nWord=1):
         cmdstr = ""
         cmdstr += self.cmd.read_datafifo(nWord)
         self.s.sendall(cmdstr)
-#         retw = self.s.recv(4*nWord)
-        retw = self.s.recv(100)
+        retw = self.s.recv(4*nWord)
 
         print([hex(ord(w)) for w in retw])
         print(len(retw))
@@ -112,10 +109,11 @@ class MIC4Config():
         print([hex(ord(w)) for w in retw])
 
     def readFD_debug(self):
+        self.checkLastReg()
         cmdstr = ''
-        cmdstr += self.cmd.read_register(0)
         cmdstr += self.cmd.send_pulse(1<<10)
         self.s.sendall(cmdstr)
+        self.checkLastReg()
 
 
     def readFD(self):
@@ -130,17 +128,26 @@ class MIC4Config():
         cmdstr += self.cmd.send_pulse(1<<10)
         self.s.sendall(cmdstr)
         retw = self.s.recv(6)
-        print([hex(ord(w)) for w in retw])
+        print("config:",[hex(ord(w)) for w in retw])
 #         return 0
 
-        nWord = 20
+        nWord = 240 # 20 frames, each has 48 byte
         time.sleep(1)
         cmdstr = ""
-        cmdstr += self.cmd.read_datafifo(nWord)
+        cmdstr += self.cmd.read_datafifo(nWord-1)
         self.s.sendall(cmdstr)
 
-        nByte = 4*(nWord+1)
+        nByte = 4*nWord
         retw = self.s.recv(nByte)
+        dx = [ord(w) for w in retw]
+        idx =0
+        for i in dx:
+            if i==0x3d:
+                print('\n',idx,': ')
+                idx+=1
+            print(hex(i),end=' ')
+        print('\n')
+
 #         print([hex(ord(w)) for w in retw])
 #         print(len(retw))
 
@@ -148,7 +155,7 @@ class MIC4Config():
         for i in range(len(retw)):
 #             print(bin(ord(retw[i])))
             ret_all |= ord(retw[i])<<(nByte-i)*8
-#         print(ret_all)
+        print(ret_all)
         return ret_all
 
     def testReg(self, div=None, info=None, read=True):
@@ -196,6 +203,17 @@ class MIC4Config():
         wd |= (clk_div&0x3f)
         print(bin(wd))
         self.s.sendall(self.cmd.write_register(18, wd))
+
+    def testStrobe(self, lt_div, clk_div):
+        wd0 = 0
+        wd0 |= (lt_div&0x3f) << 6
+        wd0 |= (clk_div&0x3f)
+        wd = 0
+        wd |= 0x1 << 12
+        wd |= (lt_div&0x3f) << 6
+        wd |= (clk_div&0x3f)
+        print(bin(wd))
+        self.s.sendall(self.cmd.write_register(18, wd)+self.cmd.write_register(18, wd0)+self.cmd.write_register(18, wd))
 
     def sendGRST_B(self):
         self.s.sendall(self.cmd.send_pulse(0x20))

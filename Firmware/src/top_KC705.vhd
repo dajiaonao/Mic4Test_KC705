@@ -1373,7 +1373,7 @@ BEGIN
   ---------------------------------------------< TOP_SR
   div <= config_reg(5 DOWNTO 0);
   din <= config_reg(207 DOWNTO 8);
-  idata_data_fifo_dout  <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)='1' ELSE fifo_q2(31 DOWNTO 0); -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
+--  idata_data_fifo_dout  <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)='1' ELSE fifo_q2(31 DOWNTO 0); -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
 --  idata_data_fifo_empty <= fifo_empty1          WHEN config_reg(6)='1' ELSE fifo_empty2; 
 
 --    idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE
@@ -1383,14 +1383,14 @@ BEGIN
 --    idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE
 --                             fifo_rden2 WHEN config_reg(6)= '0';
 --  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE x"00000000";
-  idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1' ELSE fifo_empty2;
-  idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE fifo_rden2;
+--  idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1' ELSE fifo_empty2;
+--  idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE fifo_rden2;
 --  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
 --  idata_data_fifo_empty <= fifo_empty1;
 --  idata_data_fifo_rden  <= fifo_rden1;
---  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
---  idata_data_fifo_empty <= fifo_empty2;
---  idata_data_fifo_rden  <= fifo_rden2;
+  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
+  idata_data_fifo_empty <= fifo_empty2;
+  idata_data_fifo_rden  <= fifo_rden2;
 --   idata_data_fifo_dout  <= x"1234" WHEN config_reg(6)='1' ELSE x"abcd"; -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
 --   idata_data_fifo_empty <= '0'; 
 --  idata_data_fifo_rden  <= fifo_rden1           WHEN config_reg(6)='1' ELSE fifo_rden2; 
@@ -1415,14 +1415,14 @@ BEGIN
       din        => din,
       data_in    => FMC_HPC_HA_P(9) ,
       div        => div,
---      fifo_rd_en => fifo_rden1,
-      fifo_rd_en => idata_data_fifo_rden,
+      fifo_rd_en => fifo_rden1,
+--      fifo_rd_en => idata_data_fifo_rden,
       clk        => clk_sr_contr,
       clk_sr     => FMC_HPC_LA_P(20),
       data_out   => FMC_HPC_LA_P(33),
       load_sr    => FMC_HPC_LA_P(31),
---      fifo_empty => fifo_empty1,
-      fifo_empty => idata_data_fifo_empty,
+      fifo_empty => fifo_empty1,
+--      fifo_empty => idata_data_fifo_empty,
       fifo_q     => fifo_q1
     );
   ---------------------------------------------> TOP_SR

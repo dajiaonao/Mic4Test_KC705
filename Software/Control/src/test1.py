@@ -46,8 +46,8 @@ def testRegister(mc1):
 #     mc1.sReg.setTRX16(0b1000)
 #     mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
-    mc1.testReg(read=True)
-#     mc1.testReg(read=False)
+#     mc1.testReg(read=True)
+    mc1.testReg(read=False)
 
 def lvds_test(mc1):
     mc1.test_DAC8568_config()
@@ -181,14 +181,14 @@ def test_AOUT(mc1):
     mc1.sReg.setPar('IDB2'  ,0x80)
     mc1.sReg.selectVolDAC(3)
     mc1.sReg.selectCurDAC(0)
-    mc1.sReg.selectCol(0)
+    mc1.sReg.selectCol(2)
 
     mc1.sReg.show()
     mc1.testReg(read=True)
 # #     mc1.setClocks(1,6,6)
 
-#     time.sleep(1)
-#     mc1.sendA_PULSE()
+    time.sleep(1)
+    mc1.sendA_PULSE()
 
 
 def check_DOUT(mc1):
@@ -413,7 +413,7 @@ def testA(mc1):
 if __name__ == '__main__':
     mc1 = MIC4Config()
     mc1.connect()
-#    setPixels(mc1, [(127,0,0,1)])
+#     setPixels(mc1, [(127,0,0,1)])
 #    sys.exit()
 #     setLastRow(mc1, mask=0,pulse_en=1)
 #     time.sleep(50)
@@ -430,10 +430,23 @@ if __name__ == '__main__':
 #     checkCol(mc1)
 #     test_AOUT_IHEP_loop(mc1)
 #     test_AOUT_loop(mc1)
-#    test_AOUT(mc1)
+#     test_AOUT(mc1)
 #     mc1.sendGRST_B()
 #     mc1.setClocks(0,6,6)
-    testRegister(mc1)
+#     mc1.setClocks(1,6,6)
+#     mc1.setClocks(0,6,6)
+#     mc1.setClocks(1,6,6)
+#     mc1.setClocks(0,6,6)
+#     mc1.testStrobe(6,6)
+#     mc1.setClocks(1,6,6)
+#     mc1.setClocks(0,6,6)
+#     mc1.setClocks(1,6,6)
+#     mc1.setClocks(0,6,6)
+#     testRegister(mc1)
+#100    mc1.readFD_debug()
+    mc1.readFD()
+#     mc1.sendA_PULSE()
+#     mc1.empty_fifo(500)
     sys.exit(0)
     while True:
        try:
@@ -441,8 +454,6 @@ if __name__ == '__main__':
            mc1.sendD_PULSE()
        except KeyboardInterrupt:
             break
-
-#    setAllPixels(mc1, pulse_en=0, mask=1)
 #     turnOffAllPixels(mc1)
 #     test_AOUT_IHEP(mc1)
 #     mc1.checkLastReg()
@@ -452,10 +463,8 @@ if __name__ == '__main__':
 #    a = 0
 #    while a==0:
 #        a = mc1.readFIFO_test()
- #       mc1.empty_fifo()
+#     mc1.empty_fifo(2000)
 #    setupDOUT(mc1)
 #     mc1.setClocks(1,10,10)
-#     mc1.readFD_debug()
 #     D_signal_checks(mc1)
 #     check_FDout(mc1, 0)
-#     mc1.sendA_PULSE()
