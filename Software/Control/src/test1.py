@@ -46,8 +46,8 @@ def testRegister(mc1):
 #     mc1.sReg.setTRX16(0b1000)
 #     mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
-#     mc1.testReg(read=True)
-    mc1.testReg(read=False)
+    mc1.testReg(read=True)
+#     mc1.testReg(read=False)
 
 def lvds_test(mc1):
     mc1.test_DAC8568_config()
@@ -444,10 +444,10 @@ if __name__ == '__main__':
 #     mc1.setClocks(0,6,6)
 #     testRegister(mc1)
 #100    mc1.readFD_debug()
-#     mc1.readFD()
+    mc1.readFD()
 #     mc1.sendA_PULSE()
 #     mc1.empty_fifo(500)
-    mc1.sendD_PULSE()
+#     mc1.sendD_PULSE()
     sys.exit(0)
     while True:
        try:
