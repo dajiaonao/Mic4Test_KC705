@@ -167,13 +167,13 @@ class MIC4Config():
             if i==0xbc:
                 print('\n',idx,': ')
                 idx+=1
-                if data_t: print(len(data_t))
+#                 if data_t: print(len(data_t))
                 data_t = []
             if data_t is not None: data_t.append(i)
             if data_t and len(data_t) == 48:
                 parseFD(data_t)
-            print(hex(i),end=' ')
-        print('\n')
+#             print(hex(i),end=' ')
+#         print('\n')
 
 #         print([hex(ord(w)) for w in retw])
 #         print(len(retw))
@@ -182,7 +182,7 @@ class MIC4Config():
         for i in range(len(retw)):
 #             print(bin(ord(retw[i])))
             ret_all |= ord(retw[i])<<(nByte-i)*8
-        print(ret_all)
+#         print(ret_all)
         return ret_all
 
     def testReg(self, div=None, info=None, read=True):
@@ -263,7 +263,9 @@ class MIC4Config():
         #for i in range(8):
         #    cmdStr += self.dac.set_voltage(i, val)
         cmdStr += self.dac.set_voltage(0, 1.2) # LT_VREF
+#        cmdStr += self.dac.set_voltage(2, 1.5) # VPLUSE_HIGH
         cmdStr += self.dac.set_voltage(2, 1.5) # VPLUSE_HIGH
+
         cmdStr += self.dac.set_voltage(3, 1.2) # LVDS_REF
         cmdStr += self.dac.set_voltage(4, 0.5) # VPULSE_LOW
         #cmdStr += self.dac.set_voltage(6, 1.63) # DAC_REF
