@@ -843,6 +843,7 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL  fifo_empty2 : std_logic;
   SIGNAL  fifo_q2     : std_logic_vector(35 DOWNTO 0);
   SIGNAL  probe0_FD   :std_logic_vector(9 DOWNTO 0);
+  SIGNAL  start_fd  : std_logic;
   ---------------------------------------------> FDOUT
   ---------------------------------------------> DIV_5
   SIGNAL div_5_out : std_logic;
@@ -1513,8 +1514,8 @@ BEGIN
     GENERIC MAP(
       DIV_WIDTH     => 6,
       COUNT_WIDTH   => 64,
-      APULSE_LENGTH => 2000,
-      DPULSE_LENGTH => 5,
+      APULSE_LENGTH => 90000,
+      DPULSE_LENGTH => 10,
       GRST_LENGTH   => 5
     )
     PORT MAP (
@@ -1553,11 +1554,12 @@ BEGIN
     PORT MAP (
       O  => FMC_HPC_LA_P(19),  -- Diff_p output (connect directly to top-level port)
       OB => FMC_HPC_LA_N(19),  -- Diff_n output (connect directly to top-level port)
---      I  => lt_out_mc
-      I => div_5_out
+      I  => lt_out_mc
+--       I => div_5_out
    );
   ---------------------------------------------< Mic4 control
   ---------------------------------------------< FDOUT
+  start_fd <= FMC_HPC_HA_P(05);
   Parallel_Serial_top_inst0: Parallel_Serial_top
     GENERIC MAP (
       NDATA       => 20,
@@ -1569,7 +1571,8 @@ BEGIN
       clk_in      => clk_out_mc,
       clk_control => control_clk,
       rst         => reset,
-      start_pulse => pulse_reg(10),
+--       start_pulse => pulse_reg(10),
+      start_pulse => start_fd,
       fd0         => fd_out0,
       fd1         => fd_out1,
       fd2         => fd_out2,
