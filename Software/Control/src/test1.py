@@ -452,7 +452,7 @@ if __name__ == '__main__':
    # mc1.readFD()
 #     mc1.readFD()
 #     mc1.sendA_PULSE()
-    mc1.readFD(readOnly=False)
+#     mc1.readFD(readOnly=True)
   
 #     mc1.empty_fifo(500)
 #     mc1.sendD_PULSE()
@@ -469,7 +469,7 @@ if __name__ == '__main__':
 #     test_AOUT_IHEP(mc1)
 #     mc1.checkLastReg()
 #     mc1.readFIFO_test()
-#     mc1.checkLastReg()
+    mc1.checkLastReg()
 #     mc1.readFD()
 #    a = 0
 #    while a==0:

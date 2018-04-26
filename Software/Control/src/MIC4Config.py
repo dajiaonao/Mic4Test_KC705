@@ -17,20 +17,21 @@ import sys
 # to/from long integer for I/O
 #
 
-def looksLikeHeader(i, l, h=0xbc):
+def looksLikeHeader(i, l, h=0xbc, level=1):
     if l[i] != h: return False
-    if i>0 and l[i-1]>16: return False
-    N = len(l)
-    PowerOfTwo = lambda n: n and (not (n&(n-1))) ## taken from https://www.geeksforgeeks.org/find-position-of-the-only-set-bit/
-    if i+1<N and not PowerOfTwo(l[i+1]): return False
-    if i+2<=N and not PowerOfTwo(l[i+2]): return False
+    if level>0:
+        if i>0 and l[i-1]>16: return False
+        N = len(l)
+        PowerOfTwo = lambda n: n and (not (n&(n-1))) ## taken from https://www.geeksforgeeks.org/find-position-of-the-only-set-bit/
+        if i+1<N and not PowerOfTwo(l[i+1]): return False
+        if i+2<=N and not PowerOfTwo(l[i+2]): return False
 
     return True
 
 def n2N(n):
     j = 0
     while n>>j: j+=1
-    return j
+    return j-1
 
 def findHeader(list1):
     n = len(list1)
@@ -39,35 +40,52 @@ def findHeader(list1):
     for i in range(min(nF, n)):
         j = i
         while j<n:
-            if not looksLikeHeader(j,list1): j=n
-            else:
-                if j+nF<n: j+=nF
+#             print("--->",j,n,list1[j])
+            if not looksLikeHeader(j,list1,level=0): j=n
+            elif j+nF<n: j+=nF
+            else: break
         if j!=n: headers.append(i)
     if len(headers) ==0: return -1
+    header = headers[0]
     if len(headers) >1:
-        print("More Than 1 Header:", headers, "Using the first!!!1")
-    return headers[0]
+        headers2 = []
+        for hi in headers:
+            j = hi
+            while j<n:
+                if not looksLikeHeader(j,list1,level=1): j=n
+                elif j+nF<n: j+=nF
+                else: break
+            if j!=n: headers2.append(hi)
+        if len(headers2) != 0:
+            header = headers2[0]
+        elif len(headers2)>1:
+            print("More Than 1 Header:", headers, "Using the first!!!1")
+    return header
 
 def parseFD(dlist):
-    print('*'*20)
-    print(bin(dlist[0]))
-    vx = 0
-    nbit = 0
-    for dx in dlist[1:-1]:
-        vx |= dx<<nbit
-        nbit += 8
-        if nbit>=23:
-            x1 = vx & 0x7fffff
-            bC = x1>>20
-            bR = (x1>>16)&0xf
-            pC = n2N((x1>>8)&0xff)
-            pR = n2N(x1&0xff)
-            print('{0:0>3b} {1:0>4b} {2:0>8b} {3:0>8b} => {4:>3d} {5:>2d}'.format(bC, bR, pC, pR, bR*8+pR, bC*8+pC))
-            vx = vx >> 23
-            nbit -= 23
-    print(dlist[-1])
-    print('*'*20)
+    has_non_zero = [x for x in dlist[1:] if x!=0]
 
+    if has_non_zero:
+        print('*'*20)
+        print(bin(dlist[0]))
+        vx = 0
+        nbit = 0
+        for dx in dlist[1:-1]:
+            vx |= dx<<nbit
+            nbit += 8
+            if nbit>=23:
+                x1 = vx & 0x7fffff
+                bC = x1>>20
+                bR = (x1>>16)&0xf
+                pC = (x1>>8)&0xff
+                pR = x1&0xff
+                print(bin(x1),': {0:0>3b} {1:0>4b} {2:0>8b} {3:0>8b} => {4:>3d} {5:>2d}'.format(bC, bR, pC, pR, bR*8+n2N(pR), bC*8+n2N(pC)))
+                vx = vx >> 23
+                nbit -= 23
+        print(dlist[-1])
+        print('*'*20)
+    else:
+        print('------- All 0, ignored -------')
 
 class MIC4Config():
     cmd = Cmd()
@@ -199,13 +217,13 @@ class MIC4Config():
         hd = findHeader(dx)
         if hd>=0:
             while hd+nF<len(dx):
-                print(hd, hd+nF, len(dx))
+#                 print(hd, hd+nF, len(dx))
                 parseFD(dx[hd:hd+nF])
                 hd+=nF
         else:
             iN = 0
             while iN+nF<len(dx):
-                print(dx[iN:iN+nF])
+#                 print(dx[iN:iN+nF])
                 iN+=nF
                 parseFD(dx[iN:iN+nF])
 

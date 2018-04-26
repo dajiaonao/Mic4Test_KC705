@@ -56,6 +56,7 @@ module Top_SR #(parameter WIDTH=170, //% @param Width of data input and output
 wire trig;
 wire fifo_full;
 wire fifo_wr_en;
+wire fifo_rst;
 wire valid;
 wire [FIFO_WIDTH-1:0] data_to_fifo;
 wire [CNT_WIDTH-1:0] count_delay;
@@ -120,6 +121,7 @@ SR_Control #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .SHIFT_DIRECTION(SHIFT_D
 //        .clk_sr(clk_sr)
 //   );
 assign trig= (READ_TRIG_SRC==1)? load_sr: start;
+assign fifo_rst = start|rst;
         
 Receive_Data #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .SHIFT_DIRECTION(SHIFT_DIRECTION), .READ_DELAY(READ_DELAY))
      receive_data_0(
@@ -130,7 +132,7 @@ Receive_Data #(.DATA_WIDTH(WIDTH), .CNT_WIDTH(CNT_WIDTH), .SHIFT_DIRECTION(SHIFT
         .valid(valid),
         .dout(data_receive)
         ); 
-        
+      
 Format_Data #(.DATA_WIDTH(WIDTH), .VALID_WIDTH(VALID_WIDTH), .NUM_WIDTH(NUM_WIDTH), .FIFO_WIDTH(FIFO_WIDTH))
      format_data_inst (
         .clk(clk_in),
@@ -144,7 +146,8 @@ Format_Data #(.DATA_WIDTH(WIDTH), .VALID_WIDTH(VALID_WIDTH), .NUM_WIDTH(NUM_WIDT
         );
 
 fifo36x512 fifo_sr_inst(
-        .rst(rst),
+//        .rst(rst),
+        .rst(fifo_rst),
         .wr_clk(clk_in),
         .rd_clk(clk_in),
         .din(data_to_fifo),
