@@ -17,6 +17,36 @@ import sys
 # to/from long integer for I/O
 #
 
+def looksLikeHeader(i, l, h=0xbc):
+    if l[i] != h: return False
+    if i>0 and l[i-1]>16: return False
+    N = len(l)
+    PowerOfTwo = lambda n: n and (not (n&(n-1))) ## taken from https://www.geeksforgeeks.org/find-position-of-the-only-set-bit/
+    if i+1<N and not PowerOfTwo(l[i+1]) return False
+    if i+2<=N and not PowerOfTwo(l[i+2]) return False
+
+    return True
+
+def n2N(n):
+    j = 0
+    while n>>j: j+=1
+    return j
+
+def findHeader(list1):
+    n = len(list1)
+    nF = 48
+    headers = []
+    for i in range(min(nF, n)):
+        j = i
+        while j<n:
+            if not looksLikeHeader(j,list1): j=n
+            else:
+                if j+nF<n: j+=nF
+        if j!=n: headers.append(i)
+    if len(headers) ==0: return -1
+    if len(headers) >1:
+        print("More Than 1 Header:", headers, "Using the first!!!1")
+    return headers[0]
 
 def parseFD(dlist):
     print('*'*20)
@@ -161,6 +191,12 @@ class MIC4Config():
 
         dx = [ord(w) for w in retw]
         idx =0
+
+        hd = findHeader(dx)
+        nF = 48
+        while hd+nF<len(dx):
+            parseFD(dx[hd:hd+nF])
+            hd+=nF
 
         data_t = None
         for i in dx:
