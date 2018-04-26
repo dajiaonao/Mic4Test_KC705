@@ -1559,7 +1559,7 @@ BEGIN
    );
   ---------------------------------------------< Mic4 control
   ---------------------------------------------< FDOUT
-  start_fd <= FMC_HPC_HA_P(05);
+  start_fd <= FMC_HPC_HA_P(05) or pulse_reg(10);
   Parallel_Serial_top_inst0: Parallel_Serial_top
     GENERIC MAP (
       NDATA       => 20,

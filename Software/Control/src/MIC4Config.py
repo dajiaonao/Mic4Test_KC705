@@ -22,8 +22,8 @@ def looksLikeHeader(i, l, h=0xbc):
     if i>0 and l[i-1]>16: return False
     N = len(l)
     PowerOfTwo = lambda n: n and (not (n&(n-1))) ## taken from https://www.geeksforgeeks.org/find-position-of-the-only-set-bit/
-    if i+1<N and not PowerOfTwo(l[i+1]) return False
-    if i+2<=N and not PowerOfTwo(l[i+2]) return False
+    if i+1<N and not PowerOfTwo(l[i+1]): return False
+    if i+2<=N and not PowerOfTwo(l[i+2]): return False
 
     return True
 
@@ -58,8 +58,12 @@ def parseFD(dlist):
         nbit += 8
         if nbit>=23:
             x1 = vx & 0x7fffff
-            print(bin(x1))
-            vx >> 23
+            bC = x1>>20
+            bR = (x1>>16)&0xf
+            pC = n2N((x1>>8)&0xff)
+            pR = n2N(x1&0xff)
+            print('{0:0>3b} {1:0>4b} {2:0>8b} {3:0>8b} => {4:>3d} {5:>2d}'.format(bC, bR, pC, pR, bR*8+pR, bC*8+pC))
+            vx = vx >> 23
             nbit -= 23
     print(dlist[-1])
     print('*'*20)
@@ -163,16 +167,15 @@ class MIC4Config():
         self.s.sendall(cmdstr)
         self.checkLastReg()
 
-    def readFD(self):
+    def readFD(self, readOnly=True):
         cmdstr = ''
         cmdstr += self.cmd.write_register(0, 0)
         self.s.sendall(cmdstr)
 
-        self.checkLastReg()
-
         cmdstr = ''
         cmdstr += self.cmd.read_register(0)
-        cmdstr += self.cmd.send_pulse(1<<10)
+        if not readOnly:
+            cmdstr += self.cmd.send_pulse(1<<10)
         self.s.sendall(cmdstr)
         retw = self.s.recv(6)
         print("config:",[hex(ord(w)) for w in retw])
@@ -192,22 +195,30 @@ class MIC4Config():
         dx = [ord(w) for w in retw]
         idx =0
 
-        hd = findHeader(dx)
         nF = 48
-        while hd+nF<len(dx):
-            parseFD(dx[hd:hd+nF])
-            hd+=nF
+        hd = findHeader(dx)
+        if hd>=0:
+            while hd+nF<len(dx):
+                print(hd, hd+nF, len(dx))
+                parseFD(dx[hd:hd+nF])
+                hd+=nF
+        else:
+            iN = 0
+            while iN+nF<len(dx):
+                print(dx[iN:iN+nF])
+                iN+=nF
+                parseFD(dx[iN:iN+nF])
 
-        data_t = None
-        for i in dx:
-            if i==0xbc:
-                print('\n',idx,': ')
-                idx+=1
-#                 if data_t: print(len(data_t))
-                data_t = []
-            if data_t is not None: data_t.append(i)
-            if data_t and len(data_t) == 48:
-                parseFD(data_t)
+#         data_t = None
+#         for i in dx:
+#             if i==0xbc:
+#                 print('\n',idx,': ')
+#                 idx+=1
+# #                 if data_t: print(len(data_t))
+#                 data_t = []
+#             if data_t is not None: data_t.append(i)
+#             if data_t and len(data_t) == 48:
+#                 parseFD(data_t)
 #             print(hex(i),end=' ')
 #         print('\n')
 
@@ -798,4 +809,3 @@ def testPConf():
 if __name__ == "__main__":
 #     testReg()
     testPConf()
-

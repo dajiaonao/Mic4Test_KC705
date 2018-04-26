@@ -181,10 +181,10 @@ def test_AOUT(mc1):
     mc1.sReg.setPar('IDB2'  ,0x80)
     mc1.sReg.selectVolDAC(3)
     mc1.sReg.selectCurDAC(1)
-    mc1.sReg.selectCol(18)
+    mc1.sReg.selectCol(16)
     mc1.sReg.setLVDS_TEST(0b1000)
-#   mc1.sReg.setTRX16(0b1000)
-#    mc1.sReg.setTRX15_serializer(0b1000)
+    mc1.sReg.setTRX16(0b1000)
+    mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
     mc1.testReg(read=True)
 # #     mc1.setClocks(1,6,6)
@@ -414,7 +414,7 @@ def testA(mc1):
 #     mc1.sReg.test()
 if __name__ == '__main__':
     mc1 = MIC4Config()
-#    mc1.host = '192.168.2.1'
+    mc1.host = '192.168.2.1'
     mc1.connect()
 #     setPixels(mc1, [(127,15,1,1),(127,21,1,1)])
 #     sys.exit()
@@ -433,8 +433,8 @@ if __name__ == '__main__':
 #     checkCol(mc1)
 #     test_AOUT_IHEP_loop(mc1)
 #     test_AOUT_loop(mc1)
-#    test_AOUT(mc1)
-    check_DOUT(mc1)
+#     test_AOUT(mc1)
+#     check_DOUT(mc1)
  #   mc1.sendGRST_B()
 #     mc1.setClocks(0,6,6)
 #     mc1.setClocks(1,6,6)
@@ -450,8 +450,10 @@ if __name__ == '__main__':
 #100    mc1.readFD_debug()
   #  mc1.sendD_PULSE()
    # mc1.readFD()
-  
+#     mc1.readFD()
 #     mc1.sendA_PULSE()
+    mc1.readFD(readOnly=False)
+  
 #     mc1.empty_fifo(500)
 #     mc1.sendD_PULSE()
 #    sys.exit(0)
