@@ -423,11 +423,13 @@ def testA(mc1):
 #     mc1.sReg.test()
 if __name__ == '__main__':
     mc1 = MIC4Config()
+    mc1.host = '192.168.2.1'
     mc1.connect()
+    mc1.sendA_PULSE()
 #     mc1.empty_fifo()
 #     testA(mc1)
 #     testPixels(mc1)
-    lvds_test(mc1)
+#     lvds_test(mc1)
 #     test_DOUT(mc1)
 #     CheckValid(mc1)
 #     busySigal(mc1)

@@ -25,11 +25,11 @@ class MIC4Config():
         self.sReg = MIC4Reg(0)
         self.dac = DAC8568(self.cmd)
         self.pCfg = PixelConfig(self.cmd, self.s)
+        self.host = '192.168.2.3'
 
     def connect(self):
-        host = '192.168.2.3'
         port = 1024
-        self.s.connect((host,port))
+        self.s.connect((self.host,port))
 
     def empty_fifo(self):
         nWord = 1
