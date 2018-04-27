@@ -457,12 +457,16 @@ ARCHITECTURE Behavioral OF top IS
       PROBE1 : IN std_logic_vector(15 DOWNTO 0)
     );
   END COMPONENT;
-  COMPONENT dbg_ila2
+COMPONENT dbg_ila2
+  
   PORT (
       clk : IN STD_LOGIC;
-      probe0 : IN STD_LOGIC_VECTOR(9 DOWNTO 0)
+      probe0 : IN STD_LOGIC_VECTOR(7 DOWNTO 0); 
+      probe1 : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      probe2 : IN STD_LOGIC_VECTOR(15 DOWNTO 0)
   );
-  END COMPONENT;
+  END COMPONENT  ;
+  
   COMPONENT dbg_vio
     PORT (
       CLK        : IN  std_logic;
@@ -842,7 +846,8 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL  fifo_rden2  : std_logic;
   SIGNAL  fifo_empty2 : std_logic;
   SIGNAL  fifo_q2     : std_logic_vector(35 DOWNTO 0);
-  SIGNAL  probe0_FD   :std_logic_vector(9 DOWNTO 0);
+  SIGNAL  probe0_FD   :std_logic_vector(7 DOWNTO 0);
+  SIGNAL  ila2_probe1 :std_logic_vector(3 DOWNTO 0);
   SIGNAL  start_fd  : std_logic;
   ---------------------------------------------> FDOUT
   ---------------------------------------------> DIV_5
@@ -916,7 +921,9 @@ BEGIN
   dbg_ila2_FD : dbg_ila2
   PORT MAP (
       clk => sys_clk,
-      probe0 => probe0_FD
+      probe0 => probe0_FD,
+      probe1 => ila2_probe1,
+      probe2 => pulse_reg
   );
   ---------------------------------------------> debug : ILA and VIO (`Chipscope')
   ---------------------------------------------< UART/RS232
@@ -1610,8 +1617,10 @@ BEGIN
    probe0_FD(5) <= fd_out5;
    probe0_FD(6) <= fd_out6;
    probe0_FD(7) <= fd_out7;
-   probe0_FD(8) <= div_5_out;
-   probe0_FD(9) <= fifo_empty2;
+   ila2_probe1(0) <= div_5_out;
+   ila2_probe1(1) <= fifo_empty2;
+   ila2_probe1(2) <= fifo_empty1;
+   ila2_probe1(3) <= config_reg(6);
    
    -- IBUFDS: Differential Input Buffer
    --         Kintex-7
