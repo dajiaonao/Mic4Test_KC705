@@ -1609,14 +1609,15 @@ BEGIN
   ---------------------------------------------< DIV_5
 --FMC_HPC_LA_P(21) <= clk_out_mc;
 
-   probe0_FD(0) <= fd_out0;
-   probe0_FD(1) <= fd_out1;
-   probe0_FD(2) <= fd_out2;
-   probe0_FD(3) <= fd_out3;
-   probe0_FD(4) <= fd_out4;
-   probe0_FD(5) <= fd_out5;
-   probe0_FD(6) <= fd_out6;
-   probe0_FD(7) <= fd_out7;
+   probe0_FD <= fd_out0 & fd_out1 & fd_out2 & fd_out3 & fd_out4 & fd_out5 & fd_out6 & fd_out7;
+--    probe0_FD(0) <= fd_out0;
+--    probe0_FD(1) <= fd_out1;
+--    probe0_FD(2) <= fd_out2;
+--    probe0_FD(3) <= fd_out3;
+--    probe0_FD(4) <= fd_out4;
+--    probe0_FD(5) <= fd_out5;
+--    probe0_FD(6) <= fd_out6;
+--    probe0_FD(7) <= fd_out7;
    ila2_probe1(0) <= div_5_out;
    ila2_probe1(1) <= fifo_empty2;
    ila2_probe1(2) <= fifo_empty1;

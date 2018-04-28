@@ -319,6 +319,17 @@ class MIC4Config():
         print(xyz)
         self.s.sendall(xyz)
 
+    def setVhVl(self, vH=1.5, vL=0.5):
+        ### Configure DAC8568
+        cmdStr = ''
+        val = 1.
+        cmdStr += self.dac.turn_on_2V5_ref()			#turn on internal reference voltage
+        cmdStr += self.dac.set_voltage(2, vH) # VPLUSE_HIGH
+        cmdStr += self.dac.set_voltage(4, vL) # VPULSE_LOW
+        self.s.sendall(cmdStr)
+        ### 
+
+
     def test_DAC8568_config(self):
         ### Configure DAC8568
         cmdStr = ''
