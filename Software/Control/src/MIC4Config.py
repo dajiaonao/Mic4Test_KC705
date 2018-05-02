@@ -18,12 +18,13 @@ import sys
 # to/from long integer for I/O
 #
 
+PowerOfTwo = lambda n: n and (not (n&(n-1))) ## taken from https://www.geeksforgeeks.org/find-position-of-the-only-set-bit/
+
 def looksLikeHeader(i, l, h=0xbc, level=1):
     if l[i] != h: return False
     if level>0:
         if i>0 and l[i-1]>16: return False
         N = len(l)
-        PowerOfTwo = lambda n: n and (not (n&(n-1))) ## taken from https://www.geeksforgeeks.org/find-position-of-the-only-set-bit/
         if i+1<N and not PowerOfTwo(l[i+1]): return False
         if i+2<=N and not PowerOfTwo(l[i+2]): return False
 
@@ -80,7 +81,8 @@ def parseFD(dlist):
                 bR = (x1>>16)&0xf
                 pC = (x1>>8)&0xff
                 pR = x1&0xff
-                print(bin(x1),': {0:0>3b} {1:0>4b} {2:0>8b} {3:0>8b} => {4:>3d} {5:>2d}'.format(bC, bR, pC, pR, bR*8+n2N(pR), bC*8+n2N(pC)))
+                flag = '' if PowerOfTwo(pR) and PowerOfTwo(pC) else 'X' 
+                print(bin(x1),': {0:0>3b} {1:0>4b} {2:0>8b} {3:0>8b} => {4:>3d} {5:>2d} {6}'.format(bC, bR, pC, pR, bR*8+n2N(pR), bC*8+n2N(pC), flag))
                 vx = vx >> 23
                 nbit -= 23
         print(dlist[-1])
@@ -89,9 +91,9 @@ def parseFD(dlist):
         print('------- All 0, ignored -------')
 
 ### stackoverflow.com/questions/15869158/python-socket-listening
-class dataSaver(threading.Thread):
+class DataSaver(threading.Thread):
     def __init__(self, conn, saveName='test_data_out.dat'):
-        super(dataSaver, self).__init__()
+        super(DataSaver, self).__init__()
         self.conn = conn
         self.data = ""
         self.saveName = saveName
@@ -99,8 +101,9 @@ class dataSaver(threading.Thread):
     def run(self):
         with open(self.saveName, 'a') as fout:
             while True:
+                print("testing....")
                 self.data = self.conn.recv(1024)
-                if self.isDebug: print self.data
+                if self.isDebug: print(self.data)
                 fout.write(self.data)
                 self.data = ""
 
@@ -202,6 +205,11 @@ class MIC4Config():
         self.s.sendall(cmdstr)
         self.checkLastReg()
 
+    def testRead(self, nWord=240):
+        cmdstr = ""
+        cmdstr += self.cmd.read_datafifo(nWord-1)
+        self.s.sendall(cmdstr)
+
     def readFD(self, readOnly=True):
         cmdstr = ''
         cmdstr += self.cmd.write_register(0, 0)
@@ -232,6 +240,7 @@ class MIC4Config():
 
         nF = 48
         hd = findHeader(dx)
+        print(dx)
         if hd>=0:
             while hd+nF<len(dx):
 #                 print(hd, hd+nF, len(dx))
@@ -853,11 +862,15 @@ def testPConf():
 #     c1.applyConfig()
 
 def testDataSave():
+    mc1 = MIC4Config()
+    mc1.connect()
+    print("JJJJJ")
+
     ### create connection
-    host = '192.168.2.3'
-    port = 1024
-    s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-    s.connect((host,port))
+#     host = '192.168.2.3'
+#     port = 1024
+#     s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+#     s.connect((host,port))
 
     ### setup the device
     mc1.test_DAC8568_config()
@@ -867,17 +880,25 @@ def testDataSave():
     mc1.testReg(read=True)
 
     ### Start listening
-    c = DataSaver(s)
+    c = DataSaver(mc1.s)
     c.isDebug = True
     c.start()
 
+    print("testing XXJ")
+
     ### Send A-Pulse
     mc1.sendD_PULSE()
+    mc1.testRead(5)
+#     mc1.readFD(readOnly=False)
+#     mc1.rea
+
+    print("testing Y")
 
     ### Finish and close
-    c.close()
-    s.close()
+#     c.close()
+    mc1.s.close()
 
 if __name__ == "__main__":
 #     testReg()
-    testPConf()
+#     testPConf()
+    testDataSave()
