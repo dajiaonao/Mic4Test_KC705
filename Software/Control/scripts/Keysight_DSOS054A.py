@@ -115,7 +115,7 @@ def takeData(channels=[1],filename='temp1.dat'):
     data = []
     ### get list of data
     for iChan in channels: 
-        data_i = [0]*int(total_point)
+        data_i = [0]*total_point
         ss.send(":WAVeform:SOURce CHANnel{0:d};".format(iChan))       #Waveform source 
 
         ## offset

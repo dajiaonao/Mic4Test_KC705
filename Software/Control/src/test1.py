@@ -52,13 +52,13 @@ def testRegister(mc1):
 def lvds_test(mc1):
     mc1.test_DAC8568_config()
     mc1.sReg.value = 0
-    mc1.sReg.setLVDS_TEST(0b1000)
-#     mc1.sReg.setTRX16(0b1000)
+#     mc1.sReg.setLVDS_TEST(0b1000)
+    mc1.sReg.setTRX16(0b1000)
 #     mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
 #     mc1.testReg(read=True)
     mc1.testReg(read=False)
-    mc1.setClocks(1,0,0)
+#     mc1.setClocks(1,0,0)
 
 def checkDefaultDACinChip(mc1):
     mc1.sReg.value = 0
@@ -164,8 +164,8 @@ def test_AOUT_IHEP_loop(mc1):
 def test_AOUT(mc1):
     mc1.setClocks(0,6,6)
 #     sys.exit(1)
-#     mc1.test_DAC8568_config()
-    mc1.setVhVl(1.5,0.5)
+    mc1.test_DAC8568_config()
+    mc1.setVhVl(1.2,0.5)
 # # #     mc1.sReg.useDefault()
     mc1.sReg.value =  0
     mc1.sReg.setPDB(0)
@@ -231,8 +231,8 @@ def test_AOUT(mc1):
     mc1.testReg(read=True)
 # #     mc1.setClocks(1,6,6)
 
-    time.sleep(1)
-    mc1.sendA_PULSE()
+#     time.sleep(1)
+#     mc1.sendA_PULSE()
 
 
 def check_DOUT(mc1):
@@ -325,6 +325,13 @@ def setAllPixels(mc1,pulse_en=0, mask=0):
         print "turning off row", r
         mc1.pCfg.pixels = [(r,i,mask,pulse_en) for i in range(64)]
         mc1.pCfg.applyConfig()
+
+def setPixelsInRow(mc1, row, pulse_en=1, mask=0):
+    mc1.setClocks(0,8,8) # from 250 MHz clock
+    mc1.test_DAC8568_config()
+    mc1.pCfg.clk_div = 18 # from 100 MHz clock
+    mc1.pCfg.pixels = [(row,i,mask,pulse_en) for i in range(64)]
+    mc1.pCfg.applyConfig()
 
 def setLastRow(mc1, pulse_en=1, mask=0):
     mc1.setClocks(0,8,8) # from 250 MHz clock
@@ -458,10 +465,11 @@ if __name__ == '__main__':
     mc1 = MIC4Config()
 #     mc1.host = '192.168.2.1'
     mc1.connect()
-#     setPixels(mc1, [(127,63,0,1)])
+#     setPixelsInRow(mc1, 124, mask=0, pulse_en=0)
+#     setPixels(mc1, [(127,12,0,1)])
 #     sys.exit(0)
 # #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
-    setAllPixels(mc1, mask=0, pulse_en=1)
+#     setAllPixels(mc1, mask=0, pulse_en=0)
 #     sys.exit()
 #     setLastRow(mc1, mask=0,pulse_en=1)
 #     time.sleep(50)
@@ -480,7 +488,7 @@ if __name__ == '__main__':
 #     test_AOUT_loop(mc1)
 
 #     check_DOUT(mc1)
- #   mc1.sendGRST_B()
+#     mc1.sendGRST_B()
 #     mc1.setClocks(0,6,6)
 #     mc1.setClocks(1,6,6)
 #     mc1.setClocks(0,6,6)
@@ -497,11 +505,11 @@ if __name__ == '__main__':
    # mc1.readFD()
 #     mc1.readFD()
 #     mc1.sendA_PULSE()
-#     test_AOUT(mc1)
+    test_AOUT(mc1)
 #     mc1.readFD(readOnly=True)
   
 #     mc1.empty_fifo(500)
-#     mc1.sendD_PULSE()
+#     mc1.sendd_pulse()
 #    sys.exit(0)
 #    while True:
 #      try:
