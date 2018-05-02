@@ -34,9 +34,6 @@ parameter COUNTER0_FULL = 2'b11;
 parameter FRAME_HEADER = 8'b10111100;
 
 reg has_header;
-wire started;
-wire in_header;
-
 
 wire [7:0] t_data;
 reg [3:0] current_state, next_state;
@@ -51,17 +48,8 @@ parameter s0=3'b001;
 parameter s1=3'b010;
 parameter s2=3'b100;
 
-assign started = (has_header==1&&counter1>0&&fifo_full==0);
-assign in_header = (fd_in == FRAME_HEADER);
 wire moni0;
 assign moni0 = (counter3==FRAME_WIDTH-1);
-
-///% move to next state
-always@(negedge clk or posedge rst)
-begin
-  if(rst) current_state<=s0;
-  else    current_state<=next_state;
-end
 
 ///% doing the combination
 always@(negedge clk)
@@ -78,7 +66,7 @@ begin
     counter2 = 0;
   end
 
-  if(rst) next_state=s0;
+  if(rst) current_state=s0;
 
   case(current_state)
     s0: begin /// initialize variables
@@ -95,10 +83,10 @@ begin
     s1: begin/// find header
       fifo_wr_en <= 0; /// needed when the previous state is s3
       data_out <= 0;
-      counter0 <= COUNTER0_FULL;
+      counter0 = COUNTER0_FULL;
 
       if(has_header == 1'b0) begin /// find header
-        if(in_header==1'b1) begin
+        if(fd_in == FRAME_HEADER) begin
           has_header = 1'b1;
           counter3 = 0;
         end
@@ -106,13 +94,13 @@ begin
       else begin /// track header
         counter3 = counter3+1;
         if (counter3==FRAME_WIDTH) begin
-          has_header = in_header;
+          has_header = (fd_in == FRAME_HEADER);
           counter3 = 0;
         end
       end
 
       /// decide the next state
-      if(started == 1'b1 && in_header == 1'b1) begin
+      if(has_header==1&&counter1>0&&fifo_full==0 && fd_in == FRAME_HEADER) begin
         next_state=s2;
         data_out_temp = (fd_in<<(counter0*8));
         counter0 = counter0-1;
@@ -139,13 +127,15 @@ begin
       end
 
       /// decide the next state
-      if(started == 1'b0) next_state=s1;
+      if(has_header==0||counter1==0||fifo_full==1) next_state=s1;
 
     end
     default: begin //% do nothing
       next_state=s0;
     end
   endcase
+
+  current_state = next_state;
 end
 
 endmodule
