@@ -8,6 +8,7 @@
 from __future__ import print_function
 import copy
 from command import *
+import threading
 import socket
 import time
 import sys
@@ -86,6 +87,22 @@ def parseFD(dlist):
         print('*'*20)
     else:
         print('------- All 0, ignored -------')
+
+### stackoverflow.com/questions/15869158/python-socket-listening
+class dataSaver(threading.Thread):
+    def __init__(self, conn, saveName='test_data_out.dat'):
+        super(dataSaver, self).__init__()
+        self.conn = conn
+        self.data = ""
+        self.saveName = saveName
+        self.isDebug = False
+    def run(self):
+        with open(self.saveName, 'a') as fout:
+            while True:
+                self.data = self.conn.recv(1024)
+                if self.isDebug: print self.data
+                fout.write(self.data)
+                self.data = ""
 
 class MIC4Config():
     cmd = Cmd()
@@ -823,6 +840,32 @@ def testPConf():
     print(c1.pixels)
     c1.getConfList()
 #     c1.applyConfig()
+
+def testDataSave():
+    ### create connection
+    host = '192.168.2.3'
+    port = 1024
+    s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    s.connect((host,port))
+
+    ### setup the device
+    mc1.test_DAC8568_config()
+    mc1.setClocks(0,6,6)
+    mc1.sReg.useDefault() 
+    mc1.sReg.show()
+    mc1.testReg(read=True)
+
+    ### Start listening
+    c = DataSaver(s)
+    c.isDebug = True
+    c.start()
+
+    ### Send A-Pulse
+    mc1.sendD_PULSE()
+
+    ### Finish and close
+    c.close()
+    s.close()
 
 if __name__ == "__main__":
 #     testReg()
