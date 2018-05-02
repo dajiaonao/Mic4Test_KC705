@@ -550,6 +550,26 @@ COMPONENT dbg_ila2
   END COMPONENT;
   ---------------------------------------------> Mic4 control
   ---------------------------------------------< FDOUT
+  COMPONENT Parallel_SerialX_top
+    GENERIC (
+      NDATA        : positive := 20;
+      FIFO_WIDTH   : positive := 36;
+      NUM_WIDTH    : positive := 2;
+      FRAME_WIDTH  : positive := 48
+    );
+    PORT (
+      clk_in     : IN  std_logic;
+      clk_control: IN  std_logic;
+      rst        : IN  std_logic;
+      start_pulse: IN  std_logic;
+      fd_in      : IN  std_logic_Vector(7 DOWNTO 0);
+      trigger    : IN  std_logic;
+      fifo_rd_en : IN  std_logic;
+      fifo_empty : OUT std_logic;
+      fifo_q     : OUT std_logic_Vector(FIFO_WIDTH-1 DOWNTO 0)
+  );
+  END COMPONENT;
+
   COMPONENT Parallel_Serial_top
     GENERIC (
       NDATA        : positive := 20;
@@ -1566,8 +1586,7 @@ BEGIN
    );
   ---------------------------------------------< Mic4 control
   ---------------------------------------------< FDOUT
-  start_fd <= FMC_HPC_HA_P(05) or pulse_reg(10);
-  Parallel_Serial_top_inst0: Parallel_Serial_top
+  Parallel_SerialX_top_inst0: Parallel_SerialX_top
     GENERIC MAP (
       NDATA       => 20,
       FIFO_WIDTH  => 36,
@@ -1578,24 +1597,43 @@ BEGIN
       clk_in      => clk_out_mc,
       clk_control => control_clk,
       rst         => reset,
---       start_pulse => pulse_reg(10),
-      start_pulse => start_fd,
-      fd0         => fd_out0,
-      fd1         => fd_out1,
-      fd2         => fd_out2,
-      fd3         => fd_out3,
-      fd4         => fd_out4,
-      fd5         => fd_out5,
-      fd6         => fd_out6,
-      fd7         => fd_out7,
-      mode        => '1',
+      start_pulse => pulse_reg(10),
+      fd_in       => probe0_FD, 
+      trigger     => FMC_HPC_HA_P(05),
       fifo_rd_en  => fifo_rden2,
---      out_debug   => FMC_HPC_LA_P(21),
-      out_debug   => OPEN,
       fifo_empty  => fifo_empty2,
---      fifo_empty  => FMC_HPC_LA_P(21),
       fifo_q      => fifo_q2
   );
+--   start_fd <= FMC_HPC_HA_P(05) or pulse_reg(10);
+--   Parallel_Serial_top_inst0: Parallel_Serial_top
+--     GENERIC MAP (
+--       NDATA       => 20,
+--       FIFO_WIDTH  => 36,
+--       NUM_WIDTH   => 2 ,
+--       FRAME_WIDTH => 48
+--     )
+--     PORT MAP(
+--       clk_in      => clk_out_mc,
+--       clk_control => control_clk,
+--       rst         => reset,
+-- --       start_pulse => pulse_reg(10),
+--       start_pulse => start_fd,
+--       fd0         => fd_out0,
+--       fd1         => fd_out1,
+--       fd2         => fd_out2,
+--       fd3         => fd_out3,
+--       fd4         => fd_out4,
+--       fd5         => fd_out5,
+--       fd6         => fd_out6,
+--       fd7         => fd_out7,
+--       mode        => '1',
+--       fifo_rd_en  => fifo_rden2,
+-- --      out_debug   => FMC_HPC_LA_P(21),
+--       out_debug   => OPEN,
+--       fifo_empty  => fifo_empty2,
+-- --      fifo_empty  => FMC_HPC_LA_P(21),
+--       fifo_q      => fifo_q2
+--   );
   ---------------------------------------------> FDOUT
 
 --   FMC_HPC_LA_P(24) <= div_5_out; -- use d-pulse temparaily
