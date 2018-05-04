@@ -124,7 +124,9 @@ class encChecker:
     def __init__(self):
         self.dataFiles = None
         self.bins = (50,0,1)
-        pass
+        self.Info = None
+        self.lt = TLatex()
+
     def showENC(self):
         tree1 = TTree()
         header = 'idX/i:vL/F:vH:A:D/i:R:W'
@@ -166,9 +168,10 @@ class encChecker:
         print v0, v1
 
         fUnit = 1000.
-        lt = TLatex()
-        lt.DrawLatexNDC(0.185,0.89,'#mu = {0:.1f} #pm {1:.1f} mV'.format(v0*fUnit, e0*fUnit))
-        lt.DrawLatexNDC(0.185,0.84,'#sigma = {0:.1f} #pm {1:.1f} mV'.format(v1*fUnit, e1*fUnit))
+        self.lt.DrawLatexNDC(0.185,0.89,'#mu = {0:.1f} #pm {1:.1f} mV'.format(v0*fUnit, e0*fUnit))
+        self.lt.DrawLatexNDC(0.185,0.84,'#sigma = {0:.1f} #pm {1:.1f} mV'.format(v1*fUnit, e1*fUnit))
+        if self.Info:
+            self.lt.DrawLatexNDC(0.185,0.6, self.Info)
 
         print 'TMath::Gaus(x,{0:.5f},{1:.5f})'.format(v0, v1)
         fun2 = TF1('gaus1','TMath::Gaus(x,{0:.5f},{1:.5f})'.format(v0, v1))
@@ -189,7 +192,13 @@ class encChecker:
 def test1A():
     dir1 = '/data/repos/Mic4Test_KC705/Software/Analysis/data/ENC/'
     enc1 = encChecker()
-    enc1.dataFiles = [dir1+'ENC_0504_Chip5Col12_scan_sub-3v.dat']
+#     enc1.dataFiles = [dir1+'ENC_0504_Chip5Col12_scan_sub-3v.dat']
+#     enc1.Info = 'sub: -3 V'
+#     enc1.dataFiles = [dir1+'ENC_0504_Chip5Col12_scan_sub-4v_bias1.dat']
+#     enc1.Info = 'sub: -4 V (bias1)'
+    enc1.dataFiles = [dir1+'ENC_0504_Chip5Col12_scan_sub-3v_bias2.dat']
+    enc1.Info = 'sub: -3 V (bias2)'
+
 
     enc1.showENC()
 
