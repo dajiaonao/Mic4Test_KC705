@@ -56,14 +56,12 @@ always@(negedge clk)
 begin
   /// trigger mode: only save 1 frame
   if(trigger==1) begin
-    counter1 = 1;
-    counter2 = 0;
+    counter1 = 2;
   end
 
   /// auto mode, save 20 frames
   if(start==1)begin
     counter1 = NDATA;
-    counter2 = 0;
   end
 
   if(rst) current_state=s0;
@@ -104,6 +102,7 @@ begin
         next_state=s2;
         data_out_temp = (fd_in<<(counter0*8));
         counter0 = counter0-1;
+        counter2 = 0;
       end
     end
     s2: begin //% pass data
