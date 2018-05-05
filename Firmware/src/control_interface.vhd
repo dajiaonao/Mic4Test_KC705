@@ -44,6 +44,8 @@
 --! 2013-10-21  1.1      thorsten        changed memory address space to 32 bit
 --!                                      added an interface to read a data fifo
 --! 2016-12-25           ymei            Adapt to FWFT FIFO
+--/ 2018-05-06           dzhang          Modified the data_fifo reading so it will quit
+--/                                      if data_fifo is empty instead of waiting.
 --! \endverbatim
 --------------------------------------------------------------------------------
 
@@ -389,6 +391,8 @@ BEGIN
               -- reduce the counter.
               counterFIFO := counterFIFO - 1;
             END IF;
+          ELSIF DATA_FIFO_EMPTY = '1' THEN
+            counterFIFO := 0;
           END IF;
 
 --      //// shouldn't happen
