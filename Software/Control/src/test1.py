@@ -531,7 +531,7 @@ if __name__ == '__main__':
 #     mc1.host = '192.168.2.1'
     mc1.connect()
 #     setPixelsInRow(mc1, 127, mask=0, pulse_en=0)
-#     setPixels(mc1, [(127,22,0,1)])
+#     setPixels(mc1, [(127,12,0,1)])
 #     setPixels(mc1, [(127,i,0,1) for i in range(32)])
 #     sys.exit(0)
 # #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])

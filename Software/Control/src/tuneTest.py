@@ -4,6 +4,7 @@ from MIC4Config import MIC4Config
 import socket
 import time
 import numpy as nm
+from sampleTest import sampler
 
 isDebug = True
 
@@ -158,6 +159,8 @@ class dataTaker:
 class DeltaUScanner(dataTaker):
     def __init__(self,outFileName=None):
         dataTaker.__init__(self,outFileName)
+        self.sampler = None
+        self.fout = None
 
     def setup(self):
         self.connect()
@@ -198,21 +201,6 @@ class DeltaUScanner(dataTaker):
 # SUB=-3V Chip #5 bias2
 
 
-#        self.mic4.sReg.setPar('VCLIP' ,0.47,  0.833, 0b1001011001)
-#        self.mic4.sReg.setPar('VReset',1.43,  1.084, 0b1100000111)
-#        self.mic4.sReg.setPar('VCASN2',0.9,  0.502, 0b101100110)
-#        self.mic4.sReg.setPar('VCASN' ,0.9,  0.384, 0b100011110)
-#        self.mic4.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000)
-#        self.mic4.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
-#        self.mic4.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
-#        self.mic4.sReg.setPar('IDB'   ,0x80)
-#        self.mic4.sReg.setPar('ITHR'  ,0x80)
-#        self.mic4.sReg.setPar('IRESET',0x80)
-#        self.mic4.sReg.setPar('IDB2'  ,0x80)
-
-# SUB=-4V Chip #5 bias1
-
-
         self.mic4.sReg.setPar('VCLIP' ,0.47,  0.833, 0b1001011001)
         self.mic4.sReg.setPar('VReset',1.43,  1.084, 0b1100000111)
         self.mic4.sReg.setPar('VCASN2',0.9,  0.502, 0b101100110)
@@ -225,7 +213,23 @@ class DeltaUScanner(dataTaker):
         self.mic4.sReg.setPar('IRESET',0x80)
         self.mic4.sReg.setPar('IDB2'  ,0x80)
 
+# SUB=-4V Chip #5 bias1
 
+
+#         self.mic4.sReg.setPar('VCLIP' ,0.47,  0.833, 0b1001011001)
+#         self.mic4.sReg.setPar('VReset',1.43,  1.084, 0b1100000111)
+#         self.mic4.sReg.setPar('VCASN2',0.9,  0.502, 0b101100110)
+#         self.mic4.sReg.setPar('VCASN' ,0.9,  0.384, 0b100011110)
+#         self.mic4.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000)
+#         self.mic4.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+#         self.mic4.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
+#         self.mic4.sReg.setPar('IDB'   ,0x80)
+#         self.mic4.sReg.setPar('ITHR'  ,0x80)
+#         self.mic4.sReg.setPar('IRESET',0x80)
+#         self.mic4.sReg.setPar('IDB2'  ,0x80)
+
+
+        self.mic4.sReg.setTRX16(0b1000)
         self.mic4.sReg.selectVolDAC(0)
         self.mic4.sReg.selectCurDAC(4)
         self.mic4.sReg.selectCol(12)
@@ -336,21 +340,48 @@ class DeltaUScanner(dataTaker):
                 if fout:
                     fout.write('{6:d} {0:.4f} {1:.3f} {2:.4f} {3:d} {4:d} {5:d}\n'.format(vL, vH, mean, vout, R, W, j))
 
+
+    def measureX(self, x):
+        vL = self.vL
+        vH = x+self.vL
+        mean,vout, R, W = self.measure(vH, vL)
+        if self.fout:
+            self.fout.write('{6:d} {0:.4f} {1:.3f} {2:.4f} {3:d} {4:d} {5:d}\n'.format(vL, vH, mean, vout, R, W, 0))
+
+        return vout
+
+    def run5(self, N=500):
+        self.fout = open(self.outFileName,'w') if self.outFileName else None
+        self.vL = 0.7
+
+        s1 = sampler((0.05,0.8),12)
+        s1.funY = lambda x:x*(1.-x)/6.
+        s1.funX = self.measureX
+        s1.sFactor = 2
+        s1.show()
+
+        for i in range(N):
+            s1.generate()
+
+        self.fout.close()
+
 def test_DeltaUScanner():
 #     t1 = DeltaUScanner("scan2loops.dat")
 #    t1 = DeltaUScanner("ENC_Chip5Col12_scan2.dat")
 #    t1 = DeltaUScanner("Qth_0504_Chip5Col12_scan_sub-3v_bias2.dat")
 #    t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-3v_bias2.dat")
 #    t1 = DeltaUScanner("Qth_0504_Chip5Col12_scan_sub-4v_bias1.dat")
-    t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-4v_bias1.dat")
+#     t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-4v_bias1.dat")
+    t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-3v_bias2_try2.dat")
 #     t1.wave.saveDataToFile = open('test112.dat','w')
 #     t1.wave.channel = 4
     t1.setup()
 #     t1.measure(1.3,0.6)
 #     t1.saveDataToFile.close()
+    t1.run5()
 
 #    t1.run3()
-    t1.run4()
+#     t1.run4()
 
 class Tuner(dataTaker):
     def __init__(self,outFileName=None):
