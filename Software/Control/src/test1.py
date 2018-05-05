@@ -165,7 +165,7 @@ def test_AOUT(mc1):
     mc1.setClocks(0,6,6)
 #     sys.exit(1)
     mc1.test_DAC8568_config()
-    mc1.setVhVl(1.2,0.5)
+    mc1.setVhVl(0.81,0.7)
 # # #     mc1.sReg.useDefault()
     mc1.sReg.value =  0
     mc1.sReg.setPDB(0)
@@ -209,10 +209,10 @@ def test_AOUT(mc1):
 #    mc1.sReg.setPar('IDB2'  ,0x80)
 
 # PLAC 
-    mc1.sReg.setPar('VCLIP' ,0.1,  0.833, 0b1001011001)
+    mc1.sReg.setPar('VCLIP' ,0,  0.833, 0b1001011001)
     mc1.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
     mc1.sReg.setPar('VCASP' ,0.5,  0.603, 0b110110000)
-    mc1.sReg.setPar('VReset',1.1,  1.084, 0b1100000111)
+    mc1.sReg.setPar('VReset',1.2,  1.084, 0b1100000111)
     mc1.sReg.setPar('VCASN2',0.5,  0.502, 0b101100110)
     mc1.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
     mc1.sReg.setPar('IBIAS' ,0xc9)
@@ -220,19 +220,84 @@ def test_AOUT(mc1):
     mc1.sReg.setPar('ITHR'  ,0x80)
     mc1.sReg.setPar('IRESET',0x80)
     mc1.sReg.setPar('IDB2'  ,0x80)
-    mc1.sReg.selectCol(12)
 
-    mc1.sReg.selectVolDAC(3)
-    mc1.sReg.selectCurDAC(3)
-    mc1.sReg.setLVDS_TEST(0b1000)
+
+# SUB=-3V Chip #5 bias1
+#    mc1.sReg.setPar('VCLIP' ,0.37,  0.833, 0b1001011001)
+#    mc1.sReg.setPar('VCASN' ,0.76,  0.384, 0b100011110)
+#    mc1.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000)
+#    mc1.sReg.setPar('VReset',1.43,  1.084, 0b1100000111)
+#    mc1.sReg.setPar('VCASN2',0.8,  0.502, 0b101100110)
+#    mc1.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+#    mc1.sReg.setPar('IBIAS' ,0xff)
+#    mc1.sReg.setPar('IDB'   ,0x80)
+#    mc1.sReg.setPar('ITHR'  ,0x80)
+#    mc1.sReg.setPar('IRESET',0x80)
+#    mc1.sReg.setPar('IDB2'  ,0x80)
+
+
+
+# SUB=-3V Chip #5 bias2
+#    mc1.sReg.setPar('VCLIP' ,0.47, 0.833, 0b1001011001)
+#    mc1.sReg.setPar('VCASN' ,0.9,  0.384, 0b100011110)
+#    mc1.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000)
+#    mc1.sReg.setPar('VReset',1.43, 1.084, 0b1100000111)
+#    mc1.sReg.setPar('VCASN2',0.9,  0.502, 0b101100110)
+#    mc1.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+#    mc1.sReg.setPar('IBIAS' ,0xff)
+#    mc1.sReg.setPar('IDB'   ,0x80)##(chip#5,0x80->72mV, 0x90->77.6mV, 0xc0->93.6mV, 0xe0->103.8mV, 0xff->112.9mV)
+#    mc1.sReg.setPar('ITHR'  ,0x80)
+#    mc1.sReg.setPar('IRESET',0x80)
+#    mc1.sReg.setPar('IDB2'  ,0x80)
+
+
+# SUB=-4V Chip #5 bias1
+#     mc1.sReg.setPar('VCLIP' ,0.47, 0.833, 0b1001011001)
+#     mc1.sReg.setPar('VCASN' ,1,  0.384, 0b100011110)
+#     mc1.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000)
+# #    mc1.sReg.setPar('VReset', 0x3ff)##(chip#5, 0x3ff->1.389V)
+#     mc1.sReg.setPar('VReset',1.389, 1.389, 0x3ff)
+#     mc1.sReg.setPar('VCASN2',1.1,  0.502, 0b101100110)
+#     mc1.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+#     mc1.sReg.setPar('IBIAS' ,0xff)
+#     mc1.sReg.setPar('IDB'   ,0xe0) 
+#     mc1.sReg.setPar('ITHR'  ,0x80)
+#     mc1.sReg.setPar('IRESET',0x80)
+#     mc1.sReg.setPar('IDB2'  ,0x80)
+
+
+
+
+# SUB=-5V Chip #5 not find a working point
+#    mc1.sReg.setPar('VCLIP' ,0.5,  0.833, 0b1001011001)
+#    mc1.sReg.setPar('VCASN' ,0.6,  0.384, 0b100011110)
+#    mc1.sReg.setPar('VCASP' ,0.7,  0.603, 0b110110000)
+#    mc1.sReg.setPar('VReset',1.43,  1.084, 0b1100000111)
+#    mc1.sReg.setPar('VCASN2',1,    0.502, 0b101100110)
+#    mc1.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+#    mc1.sReg.setPar('IBIAS' ,0xff)
+#    mc1.sReg.setPar('IDB'   ,0x80)
+#    mc1.sReg.setPar('ITHR'  ,0x80)
+#    mc1.sReg.setPar('IRESET',0x80)
+#    mc1.sReg.setPar('IDB2'  ,0x80)
+
+
+
+
+    mc1.sReg.selectCol(22)
+
+
+    mc1.sReg.selectVolDAC(2)
+    mc1.sReg.selectCurDAC(6)
+#    mc1.sReg.setLVDS_TEST(0b1000)
     mc1.sReg.setTRX16(0b1000)
-    mc1.sReg.setTRX15_serializer(0b1000)
+#    mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
     mc1.testReg(read=True)
 # #     mc1.setClocks(1,6,6)
 
-#     time.sleep(1)
-#     mc1.sendA_PULSE()
+    time.sleep(2)
+    mc1.sendA_PULSE()
 
 
 def check_DOUT(mc1):
@@ -318,9 +383,9 @@ def setPixels(mc1,pxiels):
     mc1.pCfg.applyConfig()
 
 def setAllPixels(mc1,pulse_en=0, mask=0):
-    mc1.setClocks(0,8,8) # from 250 MHz clock
+    mc1.setClocks(0,6,6) # from 250 MHz clock
     mc1.test_DAC8568_config()
-    mc1.pCfg.clk_div = 18 # from 100 MHz clock
+    mc1.pCfg.clk_div = 16 # from 100 MHz clock
     for r in range(128):
         print "turning off row", r
         mc1.pCfg.pixels = [(r,i,mask,pulse_en) for i in range(64)]
@@ -465,16 +530,18 @@ if __name__ == '__main__':
     mc1 = MIC4Config()
 #     mc1.host = '192.168.2.1'
     mc1.connect()
-#     setPixelsInRow(mc1, 124, mask=0, pulse_en=0)
-#     setPixels(mc1, [(127,12,0,1)])
+#     setPixelsInRow(mc1, 127, mask=0, pulse_en=0)
+#     setPixels(mc1, [(127,22,0,1)])
+#     setPixels(mc1, [(127,i,0,1) for i in range(32)])
 #     sys.exit(0)
 # #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
-#     setAllPixels(mc1, mask=0, pulse_en=0)
+#     setAllPixels(mc1, mask=1, pulse_en=0)
 #     sys.exit()
 #     setLastRow(mc1, mask=0,pulse_en=1)
 #     time.sleep(50)
 #     mc1.empty_fifo()
 #     testA(mc1)
+#     test_AOUT(mc1)
 #     testPixels(mc1)
 #    lvds_test(mc1)
 #     test_DOUT(mc1)
@@ -505,7 +572,7 @@ if __name__ == '__main__':
    # mc1.readFD()
 #     mc1.readFD()
 #     mc1.sendA_PULSE()
-#     test_AOUT(mc1)
+
     mc1.readFD(readOnly=True)
 #     mc1.readFD(readOnly=False)
   

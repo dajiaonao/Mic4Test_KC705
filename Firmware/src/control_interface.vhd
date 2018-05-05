@@ -382,17 +382,16 @@ BEGIN
           -- exit when enough words were transferred
           bMemNotReg <= SEL_FIFO;
           cmdState   <= FIFO_ADV;
-          IF (DATA_FIFO_EMPTY = '0') AND (sFifoFull = '0') THEN
-            IF counterFIFO = 0 THEN
-              -- we are done.
-              bMemNotReg <= SEL_REG;
-              cmdState   <= WAIT_CMD;
-            ELSE
-              -- reduce the counter.
-              counterFIFO := counterFIFO - 1;
-            END IF;
-          ELSIF DATA_FIFO_EMPTY = '1' THEN
-            counterFIFO := 0;
+          IF (counterFIFO = 0) OR (DATA_FIFO_EMPTY = '1') THEN
+            -- we are done.
+            bMemNotReg <= SEL_REG;
+            cmdState   <= WAIT_CMD;
+          ELSIF (DATA_FIFO_EMPTY = '0') AND (sFifoFull = '0') THEN                    
+            -- reduce the counter.
+            counterFIFO := counterFIFO - 1;
+--          ELSIF DATA_FIFO_EMPTY = '1' THEN
+            -- I quit...
+--            counterFIFO := 0;
           END IF;
 
 --      //// shouldn't happen
