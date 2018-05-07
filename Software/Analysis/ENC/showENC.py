@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from ROOT import TTree, TProfile, TF1, TLatex, TLegend, TGraphErrors
+from ROOT import TTree, TProfile, TF1, TLatex, TLegend, TGraphErrors, gPad
 from rootUtil import waitRootCmdX, useAtlasStyle
 
 def showDecay():
@@ -10,9 +10,12 @@ def showDecay():
 #     p1 = TProfile('p1','p1;#DeltaU [V];Prob',50,0.12,0.2)
 #     tree1.Draw("W:(vH-vL)>>p1","","profE")
 
-    tree1.Draw("R:(vH-vL)>>p1","","")
+    tree1.Draw("W*0.0001:(vH-vL)>>p1","","profs")
 
-
+    p1 = gPad.GetPrimitive('p1')
+    p1.GetYaxis().SetTitle('<Width> [us]')
+#     p1.GetYaxis().SetTitle('<Raising time> [us]')
+    p1.GetXaxis().SetTitle('#Delta U [V]')
 
 #     fun1 = TF1('fun1','0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1])))',0.05,0.3)
 #     fun1.SetParameter(0,0.155);
@@ -206,5 +209,5 @@ def test1A():
 if __name__ == '__main__':
     useAtlasStyle()
 #     showENC()
-    test1A()
-#     showDecay()
+#     test1A()
+    showDecay()

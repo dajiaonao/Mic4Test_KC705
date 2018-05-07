@@ -8,7 +8,7 @@ VList = [('VREF_Current_DAC','VRef'),('VCASN2','VCASN2'),('VReset','VReset'),('V
 IList = [('IBIAS_IHEP_40n','IBIAS'),('IHEP_IFOL_2n','ITHR'),('IHEP_IRESET_40p','IRESET'),('IHEP_IDB2','IDB2'),('IBIAS','IBIAS'),('ITHR','ITHR'),('IDB','IDB')]
 
 
-def showDAC(fname, Infox=None, saveName='temp_figs/test'):
+def showDAC(fname, Infox=None, saveName='temp_figs/test', mode=1):
 
     lines = None
     with open(fname,'r') as f1:
@@ -33,6 +33,7 @@ def showDAC(fname, Infox=None, saveName='temp_figs/test'):
             print code
         else:
             ms = [float(x) for x in line.split(',')][1::2]
+            if mode==0: ms = [float(line)]
             mean = nm.mean(ms) 
             error = nm.std(ms)
 
@@ -115,21 +116,21 @@ def showDAC(fname, Infox=None, saveName='temp_figs/test'):
     waitRootCmdX(saveName)
 
 
-def easyCheck(idx):
+def easyCheck(idx, mode=1):
     idy = idx%10
     xList = VList if idx<10 else IList
 
     dir1 = '../data/DAC/'
     dir2 = get_default_fig_dir()
-    showDAC(dir1+'DAC_chip5_scan{0:d}.dat'.format(idx), xList[idy][0], dir2+xList[idy][0])
+    showDAC(dir1+'DAC_chip5_scan{0:d}.dat'.format(idx), xList[idy][0], dir2+xList[idy][0], mode=mode)
 
 def runChecks():
-#     for i in range(6): 
-#         if i>1: break
+    for i in range(6): 
+        if i<3: continue
 #         if i!=2: continue
+        easyCheck(i, 0)
+#     for i in range(10,17):
 #         easyCheck(i)
-    for i in range(10,17):
-        easyCheck(i)
 
 def test1():
     dir1 = '../data/DAC/'

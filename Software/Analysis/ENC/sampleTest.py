@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 import random, math
-# from ROOT import TH1F, TGraph, TCanvas
-# from rootUtil import waitRootCmdX, useAtlasStyle
 
 class xBin:
     def __init__(self,Range=None, totalY=0.01):
@@ -84,42 +82,65 @@ class sampler:
 #         b.totalY += self.funY(y1)/self.xNbins
         b.totalY += self.funY(b.totalZ/b.Nevent)*self.sFactor/self.xNbins
 
-        totalP = sum([a.actualP() for a in self.xBins])
-        if b.actualP()>totalP/len(self.xBins):
-            b1 = b.split()
-            self.xBins.insert(ib, b1)
-            self.rebin()
+        if(b.Range[1]-b.Range[0])/(self.xRange[1]-self.xRange[0])>0.01: self.rebin(ib)       
+
+#         totalP = sum([a.actualP() for a in self.xBins])
+#         if b.actualP()>2.*totalP/len(self.xBins):
+#             b1 = b.split()
+#             self.xBins.insert(ib, b1)
+#             self.rebin()
 
         if self.totalN%self.xNbins == 1:
             self.show()
 
         return x1
 
-    def rebin(self):
+    def rebin(self, ib=None):
+        b = self.xBins[ib]
         minI, minV = min(enumerate([self.xBins[i].actualP()+self.xBins[i+1].actualP()] for i in range(self.xNbins-1)), key=lambda p:p[1])
+        print minV[0]
+
+        if b.actualP() > 2.*minV[0]:
+            self.xBins[minI+1].merge(self.xBins[minI])
+            del self.xBins[minI]
+
+            b1 = b.split()
+            ibx = ib if minI>ib else ib-1
+            self.xBins.insert(ibx, b1)
+
+
         ### merge and delete
-        self.xBins[minI+1].merge(self.xBins[minI])
-        del self.xBins[minI]
     def show(self):
+        print '-'*30
         i = 0
         totalP = 0
+        bw0 = (self.xRange[1]-self.xRange[0])/len(self.xBins)
+        print ' i   actualP Nevent    totalZ    totalY totalZ/Nevent Range'
         for x in self.xBins:
-            print i, x.Range, x.Nevent, x.totalY, x.totalZ, x.actualP(), x.totalZ/x.Nevent if x.Nevent>0 else '----'
+#             print i, x.Range, x.Nevent, x.totalY, x.totalZ, x.actualP(), x.totalZ/x.Nevent if x.Nevent>0 else '----'
+            print '{0:>2d} {5:<9.5f} {2:>5.1f} {4:>9.4f} {3:>9.4f} {6:>9.5f} {7:>.3f} {1}'.format(i, x.Range, x.Nevent, x.totalY, x.totalZ, x.actualP(), x.totalZ/x.Nevent if x.Nevent>0 else -1, (x.Range[1]-x.Range[0])/bw0)
             totalP += x.actualP()
             i += 1
         print totalP
+        print '-'*30
 
 def test():
-    s1 = sampler((0.,1.),100)
-    s1.funX = lambda x:0.5*(1+math.erf((x-0.4)/0.04))
-    s1.funY = lambda x:x*(1.-x)/6.
+    from ROOT import TH1F, TGraph, TCanvas, TF1, Double
+    from rootUtil import waitRootCmdX, useAtlasStyle
+    useAtlasStyle()
+
+    s1 = sampler((0.05,0.8),15)
+#     s1.funX = lambda x:0.5*(1+math.erf((x-0.4)/0.04))
+    s1.funX = lambda x:1. if random.random() < 0.5*(1.+math.erf((x-0.4)/0.04)) else 0.
+    s1.funY = lambda x:math.sqrt(x*(1.-x))
+#     s1.funY = lambda x:x*(1.-x)/6.
     for i in range(10): print s1.funY(0.1*i)
     print s1.next()
 
-    s1.sFactor = 80
+    s1.sFactor = 20
 
-    NEVT = 2000
-    h1 = TH1F('h1','h1;x;Events',100,0,1)
+    NEVT = 700
+    h1 = TH1F('h1','h1;x;Events',100,0.,1)
 #     h1 = TH1F('h1','h1;x;Events',NEVT,0,NEVT)
     g1 = TGraph()
     for i in range(NEVT):
@@ -134,6 +155,12 @@ def test():
     c1.Divide(2)
     c1.cd(1)
     h1.Draw()
+    mx, mn = Double(0),Double(0)
+    h1.GetMinimumAndMaximum(mn, mx)
+    print mx, mn
+    fun1 = TF1('fun1','{0:.1f}*TMath::Gaus(x,0.4,0.04/TMath::Sqrt(2))'.format(mx),0,1)
+    fun1.SetLineColor(2)
+    fun1.Draw('same')
     c1.cd(2)
     g1.Draw('AP')
     c1.cd()
@@ -141,5 +168,4 @@ def test():
     waitRootCmdX()
 
 if __name__ == '__main__':
-    useAtlasStyle()
     test()
