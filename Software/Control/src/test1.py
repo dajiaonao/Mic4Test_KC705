@@ -2,6 +2,7 @@
 import sys
 import time
 from MIC4Config import MIC4Config, bitSet
+import socket
 
 def check_FDout(mc1, iTest=10):
 #     setAllPixels(mc1, mask=1, pulse_en=0)
@@ -571,9 +572,17 @@ if __name__ == '__main__':
 #     mc1.sendD_PULSE()
    # mc1.readFD()
 #     mc1.readFD()
-#     mc1.sendA_PULSE()
+    mc1.sendA_PULSE()
 
-    mc1.readFD(readOnly=True)
+    mc1.s.settimeout(0.2)
+    try:
+        l1 = mc1.getFDAddresses()
+        if l1:
+            print l1
+            print l1.index((127,12))
+#         mc1.readFD(readOnly=True)
+    except socket.timeout as e:
+        print "caught the exception:", e
 #     mc1.readFD(readOnly=False)
   
 #     mc1.empty_fifo(500)

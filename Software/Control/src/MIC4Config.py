@@ -64,12 +64,17 @@ def findHeader(list1):
             print("More Than 1 Header:", headers, "Using the first!!!1")
     return header
 
-def parseFD(dlist):
+def translateAddress(r, c):
+    pass
+
+def parseFD(dlist, show=True):
     has_non_zero = [x for x in dlist[1:] if x!=0]
 
+    addresses = []
     if has_non_zero:
-        print('*'*20)
-        print(bin(dlist[0]))
+        if show: 
+            print('*'*20)
+            print(bin(dlist[0]))
         vx = 0
         nbit = 0
         for dx in dlist[1:-1]:
@@ -82,13 +87,17 @@ def parseFD(dlist):
                 pC = (x1>>8)&0xff
                 pR = x1&0xff
                 flag = '' if PowerOfTwo(pR) and PowerOfTwo(pC) else 'X' 
-                print(bin(x1),': {0:0>3b} {1:0>4b} {2:0>8b} {3:0>8b} => {4:>3d} {5:>2d} {6}'.format(bC, bR, pC, pR, bR*8+n2N(pR), bC*8+n2N(pC), flag))
+                if show: print(bin(x1),': {0:0>3b} {1:0>4b} {2:0>8b} {3:0>8b} => {4:>3d} {5:>2d} {6}'.format(bC, bR, pC, pR, bR*8+n2N(pR), bC*8+n2N(pC), flag))
                 vx = vx >> 23
                 nbit -= 23
-        print(dlist[-1])
-        print('*'*20)
+                if flag == '': addresses.append((bR*8+n2N(pR), bC*8+n2N(pC)))
+        if show:
+            print(dlist[-1])
+            print('*'*20)
     else:
-        print('------- All 0, ignored -------')
+        if show: print('------- All 0, ignored -------')
+
+    return addresses
 
 ### stackoverflow.com/questions/15869158/python-socket-listening
 class DataSaver(threading.Thread):
@@ -210,6 +219,37 @@ class MIC4Config():
         cmdstr = ""
         cmdstr += self.cmd.read_datafifo(nWord-1)
         self.s.sendall(cmdstr)
+
+    def getFDAddresses(self):
+        cmdstr = ''
+        cmdstr += self.cmd.write_register(0, 0)
+        self.s.sendall(cmdstr)
+
+        nWord = 240 # 20 frames, each has 48 byte
+        time.sleep(1)
+        cmdstr = ""
+        cmdstr += self.cmd.read_datafifo(nWord-1)
+        self.s.sendall(cmdstr)
+
+        nByte = 4*nWord
+        retw = self.s.recv(nByte)
+
+#         dataLS = []
+
+        dx = [ord(w) for w in retw]
+        idx =0
+
+        nF = 48
+        hd = findHeader(dx)
+        if hd<0:
+            return None
+
+        aList = []
+        while hd+nF<=len(dx):
+            aList += parseFD(dx[hd:hd+nF], show=False)
+            hd+=nF
+        return aList
+
 
     def readFD(self, readOnly=True):
         cmdstr = ''
