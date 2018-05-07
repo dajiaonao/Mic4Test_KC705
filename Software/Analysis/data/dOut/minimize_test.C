@@ -83,8 +83,16 @@ int NumericalMinimization()
  
    const double *xs = min.X();
    cout << "Minimum: f(" << xs[0] << "," << xs[1] << "): " 
-        << RosenBrock(xs) << endl;
- 
+        << intL(xs) << endl;
+//         << RosenBrock(xs) << endl;
+
+   double err1, err2;
+   min.GetMinosError(0, err1, err2);
+   cout << "mean error:" << err1 << " " << err2 << std::endl;
+   min.GetMinosError(1, err1, err2);
+   cout << "width error:" << err1 << " " << err2 << std::endl;
+
+
    return 0;
 }
 
