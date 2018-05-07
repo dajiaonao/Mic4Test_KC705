@@ -2,6 +2,7 @@
 import sys
 import time
 from MIC4Config import MIC4Config, bitSet
+import socket
 
 def check_FDout(mc1, iTest=10):
 #     setAllPixels(mc1, mask=1, pulse_en=0)
@@ -376,9 +377,9 @@ def loopCol(mc1):
         time.sleep(2)
 
 def setPixels(mc1,pxiels):
-    mc1.setClocks(0,8,8) # from 250 MHz clock
+    mc1.setClocks(0,6,6) # from 250 MHz clock
     mc1.test_DAC8568_config()
-    mc1.pCfg.clk_div = 18 # from 100 MHz clock
+    mc1.pCfg.clk_div = 16 # from 100 MHz clock
     mc1.pCfg.pixels = pxiels
     mc1.pCfg.applyConfig()
 
@@ -392,23 +393,23 @@ def setAllPixels(mc1,pulse_en=0, mask=0):
         mc1.pCfg.applyConfig()
 
 def setPixelsInRow(mc1, row, pulse_en=1, mask=0):
-    mc1.setClocks(0,8,8) # from 250 MHz clock
+    mc1.setClocks(0,6,6) # from 250 MHz clock
     mc1.test_DAC8568_config()
-    mc1.pCfg.clk_div = 18 # from 100 MHz clock
+    mc1.pCfg.clk_div = 16 # from 100 MHz clock
     mc1.pCfg.pixels = [(row,i,mask,pulse_en) for i in range(64)]
     mc1.pCfg.applyConfig()
 
 def setLastRow(mc1, pulse_en=1, mask=0):
-    mc1.setClocks(0,8,8) # from 250 MHz clock
+    mc1.setClocks(0,6,6) # from 250 MHz clock
     mc1.test_DAC8568_config()
-    mc1.pCfg.clk_div = 18 # from 100 MHz clock
+    mc1.pCfg.clk_div = 16 # from 100 MHz clock
     mc1.pCfg.pixels = [(127,i,mask,pulse_en) for i in range(64)]
     mc1.pCfg.applyConfig()
 
 def busySigal(mc1):
-    mc1.setClocks(0,8,8) # from 250 MHz clock
+    mc1.setClocks(0,6,6) # from 250 MHz clock
     mc1.test_DAC8568_config()
-    mc1.pCfg.clk_div = 18 # from 100 MHz clock
+    mc1.pCfg.clk_div = 16 # from 100 MHz clock
     mc1.pCfg.pixels = [(127,0,0,1)]# for i in range(64)]
 #     mc1.pCfg.pixels = [(127,0,0,0),(127,0,0,1),(127,0,1,1),(127,0,1,0)]# for i in range(64)]
     mc1.pCfg.applyConfig()
@@ -526,6 +527,22 @@ def testA(mc1):
     #mc1.sReg.simpleCheck()
 #     print('{0:b}'.format(mc1.sReg.getConf()))
 #     mc1.sReg.test()
+
+def runFD_check(mc1):
+    mc1.s.settimeout(0.2)
+
+    with open('test_here.dat','w') as fout1:
+        for i in range(100):
+            mc1.sendA_PULSE()
+            fd = 0
+            try:
+                l1 = mc1.getFDAddresses()
+                if l1: fd = l1.index((127,12)) >= 0
+            except socket.timeout as e:
+                print "caught the exception:", e
+            print i, fd
+            fout1.write('{0:d} {1:d}'.format(i, fd))
+
 if __name__ == '__main__':
     mc1 = MIC4Config()
 #     mc1.host = '192.168.2.1'
@@ -571,9 +588,19 @@ if __name__ == '__main__':
 #     mc1.sendD_PULSE()
    # mc1.readFD()
 #     mc1.readFD()
-#     mc1.sendA_PULSE()
 
-    mc1.readFD(readOnly=True)
+    runFD_check(mc1)
+#     mc1.sendA_PULSE()
+# 
+#     mc1.s.settimeout(0.2)
+#     try:
+#         l1 = mc1.getFDAddresses()
+#         if l1:
+#             print l1
+#             print l1.index((127,12))
+# #         mc1.readFD(readOnly=True)
+#     except socket.timeout as e:
+#         print "caught the exception:", e
 #     mc1.readFD(readOnly=False)
   
 #     mc1.empty_fifo(500)
