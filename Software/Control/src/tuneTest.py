@@ -5,6 +5,7 @@ import socket
 import time
 import numpy as nm
 from sampleTest import sampler
+import math
 
 isDebug = True
 
@@ -166,19 +167,17 @@ class DeltaUScanner(dataTaker):
         self.connect()
         #0.0983856601469 1.22217230856 0.304039126696 0.427606878636 78.9207677012 74.8590110773 0.443751901382 0.0
 
-
-#        self.mic4.sReg.setPar('VCLIP' ,0.  , 0.689, 0x200)
-#        self.mic4.sReg.setPar('VReset',1.2, 0.703, 0x200)
-#        self.mic4.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
-#        self.mic4.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
-#        self.mic4.sReg.setPar('VCASP' ,0.5, 0.694, 0x200)
-#        self.mic4.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
-#         self.mic4.sReg.setPar('IBIAS' ,79) ## Chip 5: 0xff->0.594 V
-#        self.mic4.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
-#        self.mic4.sReg.setPar('IDB'   ,0xf0)
-#        self.mic4.sReg.setPar('ITHR'  ,0x80)
-#        self.mic4.sReg.setPar('IRESET',0x80)
-#        self.mic4.sReg.setPar('IDB2'  ,0x80)
+        self.mic4.sReg.setPar('VCLIP' ,0.  , 0.689, 0x200)
+        self.mic4.sReg.setPar('VReset',1.2, 0.703, 0x200)
+        self.mic4.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
+        self.mic4.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
+        self.mic4.sReg.setPar('VCASP' ,0.5, 0.694, 0x200)
+        self.mic4.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
+        self.mic4.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
+        self.mic4.sReg.setPar('IDB'   ,0xf0)
+        self.mic4.sReg.setPar('ITHR'  ,0x80)
+        self.mic4.sReg.setPar('IRESET',0x80)
+        self.mic4.sReg.setPar('IDB2'  ,0x80)
 
 # SUB=-3V Chip #5 bias1
 
@@ -200,18 +199,18 @@ class DeltaUScanner(dataTaker):
 
 # SUB=-3V Chip #5 bias2
 
-
-        self.mic4.sReg.setPar('VCLIP' ,0.47,  0.833, 0b1001011001)
-        self.mic4.sReg.setPar('VReset',1.43,  1.084, 0b1100000111)
-        self.mic4.sReg.setPar('VCASN2',0.9,  0.502, 0b101100110)
-        self.mic4.sReg.setPar('VCASN' ,0.9,  0.384, 0b100011110)
-        self.mic4.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000)
-        self.mic4.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
-        self.mic4.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
-        self.mic4.sReg.setPar('IDB'   ,0x80)
-        self.mic4.sReg.setPar('ITHR'  ,0x80)
-        self.mic4.sReg.setPar('IRESET',0x80)
-        self.mic4.sReg.setPar('IDB2'  ,0x80)
+# 
+#         self.mic4.sReg.setPar('VCLIP' ,0.47,  0.833, 0b1001011001)
+#         self.mic4.sReg.setPar('VReset',1.43,  1.084, 0b1100000111)
+#         self.mic4.sReg.setPar('VCASN2',0.9,  0.502, 0b101100110)
+#         self.mic4.sReg.setPar('VCASN' ,0.9,  0.384, 0b100011110)
+#         self.mic4.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000)
+#         self.mic4.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+#         self.mic4.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
+#         self.mic4.sReg.setPar('IDB'   ,0x80)
+#         self.mic4.sReg.setPar('ITHR'  ,0x80)
+#         self.mic4.sReg.setPar('IRESET',0x80)
+#         self.mic4.sReg.setPar('IDB2'  ,0x80)
 
 # SUB=-4V Chip #5 bias1
 
@@ -237,6 +236,7 @@ class DeltaUScanner(dataTaker):
         self.mic4.sReg.show()
         self.mic4.testReg(read=True)
 
+        self.mic4.s.settimeout(0.1)
 
     def measure_average(self, vH, vL, N=1):
         self.mic4.setVhVl(vH,vL)
@@ -350,14 +350,33 @@ class DeltaUScanner(dataTaker):
 
         return vout
 
-    def run5(self, N=500):
+    def measureY(self,x):
+        vL = self.vL
+        vH = x+self.vL
+        self.mic4.setVhVl(vH, vL)
+        time.sleep(0.5)
+        self.mic4.sendA_PULSE()
+        fd = 0
+        try:
+            l1 = self.mic4.getFDAddresses()
+            if len(l1)>1: print "more than 1 addresses"
+            if l1: fd = l1.index((127,12)) >= 0 and 1 or 0
+        except socket.timeout as e:
+            print "caught the exception:", e
+        print x, fd
+        if self.fout:
+            self.fout.write('{3:d} {0:.4f} {1:.4f} {2:d}\n'.format(vL, vH, fd,0))
+
+        return fd
+
+    def run5(self, N=700):
         self.fout = open(self.outFileName,'w') if self.outFileName else None
         self.vL = 0.7
 
-        s1 = sampler((0.05,0.8),12)
-        s1.funY = lambda x:x*(1.-x)/6.
-        s1.funX = self.measureX
-        s1.sFactor = 2
+        s1 = sampler((0.05,0.8),15)
+        s1.funY = lambda x:math.sqrt(x*(1.-x))
+        s1.funX = self.measureY
+        s1.sFactor = 100
         s1.show()
 
         for i in range(N):
@@ -372,7 +391,8 @@ def test_DeltaUScanner():
 #    t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-3v_bias2.dat")
 #    t1 = DeltaUScanner("Qth_0504_Chip5Col12_scan_sub-4v_bias1.dat")
 #     t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-4v_bias1.dat")
-    t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-3v_bias2_try2.dat")
+#     t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-3v_bias2_try2.dat")
+    t1 = DeltaUScanner("ENC_0507_Chip5Col12_scan_normal_try1.dat")
 #     t1.wave.saveDataToFile = open('test112.dat','w')
 #     t1.wave.channel = 4
     t1.setup()

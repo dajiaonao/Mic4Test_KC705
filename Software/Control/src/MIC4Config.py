@@ -226,7 +226,7 @@ class MIC4Config():
         self.s.sendall(cmdstr)
 
         nWord = 240 # 20 frames, each has 48 byte
-        time.sleep(1)
+        time.sleep(0.1)
         cmdstr = ""
         cmdstr += self.cmd.read_datafifo(nWord-1)
         self.s.sendall(cmdstr)

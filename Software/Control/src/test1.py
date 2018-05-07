@@ -285,7 +285,7 @@ def test_AOUT(mc1):
 
 
 
-    mc1.sReg.selectCol(22)
+    mc1.sReg.selectCol(12)
 
 
     mc1.sReg.selectVolDAC(2)
@@ -529,15 +529,17 @@ def testA(mc1):
 #     mc1.sReg.test()
 
 def runFD_check(mc1):
-    mc1.s.settimeout(0.2)
-
+    mc1.s.settimeout(0.1)
+    mc1.setVhVl(1.0,0.7)
     with open('test_here.dat','w') as fout1:
         for i in range(100):
             mc1.sendA_PULSE()
             fd = 0
             try:
                 l1 = mc1.getFDAddresses()
-                if l1: fd = l1.index((127,12)) >= 0
+                if l1:
+                    fd = l1.index((127,12)) >= 0 and 1 or 0
+                    if len(l1)>1: print "more than 1 addresses"
             except socket.timeout as e:
                 print "caught the exception:", e
             print i, fd
@@ -602,6 +604,7 @@ if __name__ == '__main__':
 #     except socket.timeout as e:
 #         print "caught the exception:", e
 #     mc1.readFD(readOnly=False)
+#     mc1.readFD(readOnly=True)
   
 #     mc1.empty_fifo(500)
 #     mc1.sendd_pulse()

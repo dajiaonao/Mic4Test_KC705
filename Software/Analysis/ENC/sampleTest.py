@@ -5,8 +5,8 @@ class xBin:
     def __init__(self,Range=None, totalY=0.01):
         self.Range = Range
         self.totalY = totalY
-        self.totalZ = 0
-        self.Nevent = 0
+        self.totalZ = 0.
+        self.Nevent = 0.
     def contains(self,x):
         return self.Range[0] < x <= self.Range[1]
     def next(self):
@@ -82,7 +82,7 @@ class sampler:
 #         b.totalY += self.funY(y1)/self.xNbins
         b.totalY += self.funY(b.totalZ/b.Nevent)*self.sFactor/self.xNbins
 
-        if(b.Range[1]-b.Range[0])/(self.xRange[1]-self.xRange[0])>0.01: self.rebin(ib)       
+        if(b.Range[1]-b.Range[0])/(self.xRange[1]-self.xRange[0])>0.0002: self.rebin(ib)       
 
 #         totalP = sum([a.actualP() for a in self.xBins])
 #         if b.actualP()>2.*totalP/len(self.xBins):
