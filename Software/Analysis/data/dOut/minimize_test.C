@@ -17,6 +17,22 @@ double RosenBrock(const double *xx )
 
 std::vector< std::pair<float, int> > data1;
 
+void get_data0(){
+  data1.push_back(std::make_pair(0.1,0));
+  data1.push_back(std::make_pair(0.2,0));
+  data1.push_back(std::make_pair(0.25,0));
+//   data1.push_back(std::make_pair(0.25001,1));
+//   data1.push_back(std::make_pair(0.25002,0));
+//   data1.push_back(std::make_pair(0.26001,1));
+//   data1.push_back(std::make_pair(0.26002,0));
+  data1.push_back(std::make_pair(0.27,1));
+  data1.push_back(std::make_pair(0.3,1));
+  data1.push_back(std::make_pair(0.4,1));
+  data1.push_back(std::make_pair(0.5,1));
+  data1.push_back(std::make_pair(0.6,1));
+}
+
+
 void get_data(){
   data1.reserve(700);
   int id, v;
@@ -39,14 +55,14 @@ const double sqrt2 = TMath::Sqrt(2);
 double intL(const double *xx){
   // xx[0] is mean and xx[1] is width, xx[2] is the conditional observable, xx[3] is the meansurement
   double val = 1.;
-//   int j = 0;
+  int j = 0;
   for(auto a: data1){
 //     if(a.first<0.13 or a.first>0.15) continue;
 
     double P = 0.5*(1.+TMath::Erf((a.first-xx[0])/(sqrt2*xx[1])));
     val *= a.second?P:(1-P);
 //     std::cout << a.first << " " << a.second << " -> " << val << " " << P << std::endl;
-//     j+=1;
+    j+=1;
 //     if(j>10) break;
    }
 
@@ -68,7 +84,7 @@ int NumericalMinimization()
 //    ROOT::Math::Functor f(&RosenBrock,2); 
    ROOT::Math::Functor f(&intL,2); 
    double step[2] = {0.0001,0.0001};
-   double variable[2] = { 0.13,0.005};
+   double variable[2] = {0.5,0.3};
  
    min.SetFunction(f);
  
@@ -97,14 +113,15 @@ int NumericalMinimization()
 }
 
 int minimize_test(){
-  get_data();
+//   get_data();
+  get_data0();
   return NumericalMinimization(); 
 
-//   double par[] = {0.14,0.005};
-//   std::cout << "the value " << intL(par) << std::endl;;
+  double par[] = {0.17,0.005};
+  std::cout << "the value " << intL(par) << std::endl;;
 // 
 //   par[0] = 0.136;
 //   par[1] = 0.007;
 //   std::cout << intL(par) << std::endl;
-//   return 0;
+  return 0;
 }

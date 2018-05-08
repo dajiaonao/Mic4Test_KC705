@@ -1,8 +1,9 @@
 from __future__ import print_function
 from ctypes import *
+import os
 
 class Cmd(object):
-    soname = "./build/command.so"
+    soname = os.path.dirname(os.path.realpath(__file__))+"/build/command.so"
     nmax = 20000
 
     def __init__(self):
