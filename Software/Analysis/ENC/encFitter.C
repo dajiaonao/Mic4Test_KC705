@@ -18,12 +18,19 @@ class encFitter{
   double intL(const double *xx) const{
     // xx[0] is mean and xx[1] is width, xx[2] is the conditional observable, xx[3] is the meansurement
     double val = 1.;
-    for(auto& a: data1){
-      double P = 0.5*(1.+TMath::Erf((a.first-xx[0])/(sqrt2*xx[1])));
-      val *= a.second?P:(1-P);
+//     for(auto& a: data1){
+//       double P = 0.5*(1.+TMath::Erf((a.first-xx[0])/(sqrt2*xx[1])));
+//       val *= a.second?P:(1-P);
+    for(size_t i=0; i<data1.size(); i++){
+      double P = 0.5*(1.+TMath::Erf((data1[i].first-xx[0])/(sqrt2*xx[1])));
+      val *= data1[i].second?P:(1-P);
      }
 
     return -2*log(val);
+   }
+
+  void addData(float x, int d){
+    data1.push_back(std::make_pair(x, d));
    }
 
   int fit(){
@@ -86,7 +93,8 @@ class encFitter{
 };
 
 int minimize_test(){
-  auto en1 = new encFitter();
+//   auto en1 = new encFitter();
+  encFitter* en1 = new encFitter();
   en1->test();
 
   return 0;

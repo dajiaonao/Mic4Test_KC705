@@ -166,7 +166,7 @@ def test_AOUT(mc1):
     mc1.setClocks(0,6,6)
 #     sys.exit(1)
     mc1.test_DAC8568_config()
-    mc1.setVhVl(0.81,0.7)
+    mc1.setVhVl(1.2,0.7)
 # # #     mc1.sReg.useDefault()
     mc1.sReg.value =  0
     mc1.sReg.setPDB(0)
@@ -297,8 +297,8 @@ def test_AOUT(mc1):
     mc1.testReg(read=True)
 # #     mc1.setClocks(1,6,6)
 
-    time.sleep(2)
-    mc1.sendA_PULSE()
+#     time.sleep(2)
+#     mc1.sendA_PULSE()
 
 
 def check_DOUT(mc1):
@@ -375,6 +375,20 @@ def loopCol(mc1):
         time.sleep(1)
         mc1.sendA_PULSE()
         time.sleep(2)
+
+def setPixelsInSuperblock(mc1, row, col, pulse_en=1, mask=0):
+    if row>15 or col>7:
+        print "Invalid row (>15) or col(>7):", row, col
+        print 'aborting...'
+        return
+    mc1.setClocks(0,6,6) # from 250 MHz clock
+    mc1.test_DAC8568_config()
+    mc1.pCfg.clk_div = 16 # from 100 MHz clock
+    mc1.pCfg.pixels = [(row*8+i, col*8+j, mask, pulse_en) for i in range(8) for j in range(8)]
+    print mc1.pCfg.pixels
+#     mc1.pCfg.applyConfig()
+
+
 
 def setPixels(mc1,pxiels):
     mc1.setClocks(0,6,6) # from 250 MHz clock
@@ -554,7 +568,36 @@ if __name__ == '__main__':
 #     setPixels(mc1, [(127,i,0,1) for i in range(32)])
 #     sys.exit(0)
 # #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
+#     mc1.sendGRST_B()
 #     setAllPixels(mc1, mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(0,0,mask=1, pulse_en=1)
+#     mc1.setPixelsInSuperblock(1,0,mask=0, pulse_en=1)
+#     mc1.setPixelsInSuperblock(1,0,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(1,1,mask=0, pulse_en=1)
+#     mc1.setPixelsInSuperblock(1,2,mask=0, pulse_en=1)
+#     mc1.setPixelsInSuperblock(0,1,mask=0, pulse_en=1)
+#     mc1.setPixelsInSuperblock(1,1,mask=0, pulse_en=1)
+#     mc1.setPixelsInSuperblock(0,2,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(1,1,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(1,0,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(1,2,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(1,0,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(2,0,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(3,0,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(6,5,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(5,5,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(4,5,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(3,5,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(6,4,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(5,4,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(4,4,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(3,4,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(6,6,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(5,6,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(4,6,mask=1, pulse_en=0)
+#     mc1.setPixelsInSuperblock(3,6,mask=1, pulse_en=0)
+#     time.sleep(5)
+#     setAllPixels(mc1, mask=0, pulse_en=1)
 #     sys.exit()
 #     setLastRow(mc1, mask=0,pulse_en=1)
 #     time.sleep(50)
@@ -574,7 +617,6 @@ if __name__ == '__main__':
 #     test_AOUT_loop(mc1)
 
 #     check_DOUT(mc1)
-#     mc1.sendGRST_B()
 #     mc1.setClocks(0,6,6)
 #     mc1.setClocks(1,6,6)
 #     mc1.setClocks(0,6,6)
@@ -587,11 +629,10 @@ if __name__ == '__main__':
 #     mc1.setClocks(0,6,6)
 #     testRegister(mc1)
 #100    mc1.readFD_debug()
-#     mc1.sendD_PULSE()
    # mc1.readFD()
 #     mc1.readFD()
 
-    runFD_check(mc1)
+#     runFD_check(mc1)
 #     mc1.sendA_PULSE()
 # 
 #     mc1.s.settimeout(0.2)
@@ -604,7 +645,8 @@ if __name__ == '__main__':
 #     except socket.timeout as e:
 #         print "caught the exception:", e
 #     mc1.readFD(readOnly=False)
-#     mc1.readFD(readOnly=True)
+    mc1.sendD_PULSE()
+    mc1.readFD(readOnly=True)
   
 #     mc1.empty_fifo(500)
 #     mc1.sendd_pulse()

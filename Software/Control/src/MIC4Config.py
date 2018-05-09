@@ -140,6 +140,17 @@ class MIC4Config():
         print([hex(ord(w)) for w in retw])
         print(len(retw))
 
+    def setPixelsInSuperblock(self, row, col, pulse_en=1, mask=0):
+        if row>15 or col>7:
+            print("Invalid row (>15) or col(>7):", row, col)
+            print('aborting...')
+            return
+        self.setClocks(0,6,6) # from 250 MHz clock
+        self.test_DAC8568_config()
+        self.pCfg.clk_div = 16 # from 100 MHz clock
+        self.pCfg.pixels = [(row*8+i, col*8+j, mask, pulse_en) for i in range(8) for j in range(8)]
+#         print(self.pCfg.pixels)
+        self.pCfg.applyConfig()
 
     def shift_register_rw(self, data_to_send, clk_div, read=True):
         div_reg = (clk_div & 0x3f) | (1<<6)
@@ -220,12 +231,12 @@ class MIC4Config():
         cmdstr += self.cmd.read_datafifo(nWord-1)
         self.s.sendall(cmdstr)
 
-    def getFDAddresses(self):
+    def getFDAddresses(self, nframe=20):
         cmdstr = ''
         cmdstr += self.cmd.write_register(0, 0)
         self.s.sendall(cmdstr)
 
-        nWord = 240 # 20 frames, each has 48 byte
+        nWord = 12*nframe # 20 frames, each has 48 byte
         time.sleep(0.1)
         cmdstr = ""
         cmdstr += self.cmd.read_datafifo(nWord-1)
