@@ -390,35 +390,35 @@ def setPixelsInSuperblock(mc1, row, col, pulse_en=1, mask=0):
 
 
 
-def setPixels(mc1,pxiels):
-    mc1.setClocks(0,6,6) # from 250 MHz clock
-    mc1.test_DAC8568_config()
-    mc1.pCfg.clk_div = 16 # from 100 MHz clock
-    mc1.pCfg.pixels = pxiels
-    mc1.pCfg.applyConfig()
-
-def setAllPixels(mc1,pulse_en=0, mask=0):
-    mc1.setClocks(0,6,6) # from 250 MHz clock
-    mc1.test_DAC8568_config()
-    mc1.pCfg.clk_div = 16 # from 100 MHz clock
-    for r in range(128):
-        print "turning off row", r
-        mc1.pCfg.pixels = [(r,i,mask,pulse_en) for i in range(64)]
-        mc1.pCfg.applyConfig()
-
-def setPixelsInRow(mc1, row, pulse_en=1, mask=0):
-    mc1.setClocks(0,6,6) # from 250 MHz clock
-    mc1.test_DAC8568_config()
-    mc1.pCfg.clk_div = 16 # from 100 MHz clock
-    mc1.pCfg.pixels = [(row,i,mask,pulse_en) for i in range(64)]
-    mc1.pCfg.applyConfig()
-
-def setLastRow(mc1, pulse_en=1, mask=0):
-    mc1.setClocks(0,6,6) # from 250 MHz clock
-    mc1.test_DAC8568_config()
-    mc1.pCfg.clk_div = 16 # from 100 MHz clock
-    mc1.pCfg.pixels = [(127,i,mask,pulse_en) for i in range(64)]
-    mc1.pCfg.applyConfig()
+# def setPixels(mc1,pxiels):
+#     mc1.setClocks(0,6,6) # from 250 MHz clock
+#     mc1.test_DAC8568_config()
+#     mc1.pCfg.clk_div = 16 # from 100 MHz clock
+#     mc1.pCfg.pixels = pxiels
+#     mc1.pCfg.applyConfig()
+# 
+# def setAllPixels(mc1,pulse_en=0, mask=0):
+#     mc1.setClocks(0,6,6) # from 250 MHz clock
+#     mc1.test_DAC8568_config()
+#     mc1.pCfg.clk_div = 16 # from 100 MHz clock
+#     for r in range(128):
+#         print "turning off row", r
+#         mc1.pCfg.pixels = [(r,i,mask,pulse_en) for i in range(64)]
+#         mc1.pCfg.applyConfig()
+# 
+# def setPixelsInRow(mc1, row, pulse_en=1, mask=0):
+#     mc1.setClocks(0,6,6) # from 250 MHz clock
+#     mc1.test_DAC8568_config()
+#     mc1.pCfg.clk_div = 16 # from 100 MHz clock
+#     mc1.pCfg.pixels = [(row,i,mask,pulse_en) for i in range(64)]
+#     mc1.pCfg.applyConfig()
+# 
+# def setLastRow(mc1, pulse_en=1, mask=0):
+#     mc1.setClocks(0,6,6) # from 250 MHz clock
+#     mc1.test_DAC8568_config()
+#     mc1.pCfg.clk_div = 16 # from 100 MHz clock
+#     mc1.pCfg.pixels = [(127,i,mask,pulse_en) for i in range(64)]
+#     mc1.pCfg.applyConfig()
 
 def busySigal(mc1):
     mc1.setClocks(0,6,6) # from 250 MHz clock
@@ -563,13 +563,19 @@ if __name__ == '__main__':
     mc1 = MIC4Config()
 #     mc1.host = '192.168.2.1'
     mc1.connect()
+#     mc1.setup()
 #     setPixelsInRow(mc1, 127, mask=0, pulse_en=0)
-#     setPixels(mc1, [(127,12,0,1)])
+#     mc1.setPixels([(127,12,0,1)])
+#     mc1.setPixels([(8*i+i,i,1,1) for i in range(8)])
+#     mc1.setPixels([(7,8,0,1)])
+#     mc1.setPixels([(8,0,1,0),(8,1,0,1)])
+#     mc1.setPixels([(8,1,1,1)])
 #     setPixels(mc1, [(127,i,0,1) for i in range(32)])
 #     sys.exit(0)
 # #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
 #     mc1.sendGRST_B()
-#     setAllPixels(mc1, mask=1, pulse_en=0)
+#     mc1.setAllPixels(mask=1, pulse_en=0)
+#     mc1.setClocks(0,6,6)
 #     mc1.setPixelsInSuperblock(0,0,mask=1, pulse_en=1)
 #     mc1.setPixelsInSuperblock(1,0,mask=0, pulse_en=1)
 #     mc1.setPixelsInSuperblock(1,0,mask=1, pulse_en=0)
@@ -597,7 +603,15 @@ if __name__ == '__main__':
 #     mc1.setPixelsInSuperblock(4,6,mask=1, pulse_en=0)
 #     mc1.setPixelsInSuperblock(3,6,mask=1, pulse_en=0)
 #     time.sleep(5)
-#     setAllPixels(mc1, mask=0, pulse_en=1)
+
+    mc1.start_take_data()
+    mc1.sendD_PULSE()
+    mc1.wait()
+#     time.sleep(20)
+#     mc1.quit()
+
+#     mc1.readFD(readOnly=True)
+ #     setAllPixels(mc1, mask=0, pulse_en=1)
 #     sys.exit()
 #     setLastRow(mc1, mask=0,pulse_en=1)
 #     time.sleep(50)
@@ -626,7 +640,6 @@ if __name__ == '__main__':
 #     mc1.setClocks(1,6,6)
 #     mc1.setClocks(0,6,6)
 #     mc1.setClocks(1,6,6)
-#     mc1.setClocks(0,6,6)
 #     testRegister(mc1)
 #100    mc1.readFD_debug()
    # mc1.readFD()
@@ -645,9 +658,7 @@ if __name__ == '__main__':
 #     except socket.timeout as e:
 #         print "caught the exception:", e
 #     mc1.readFD(readOnly=False)
-    mc1.sendD_PULSE()
-    mc1.readFD(readOnly=True)
-  
+ 
 #     mc1.empty_fifo(500)
 #     mc1.sendd_pulse()
 #    sys.exit(0)
