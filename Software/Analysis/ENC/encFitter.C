@@ -5,7 +5,7 @@
 #include <utility>
 #include <fstream>
 #include <cmath>
-
+using namespace std;
 const double sqrt2 = TMath::Sqrt(2);
 
 class encFitter{
@@ -14,15 +14,32 @@ class encFitter{
   double mean, sigma, meanErr, sigmaErr;
   double meanErrU, meanErrD, sigmaErrU, sigmaErrD;
   double minIntL;
+  float mean0;
+  float sigma0;
+
+  encFitter(){
+    mean0 = 0.5;
+    sigma0 = 0.1;
+  };
+
+  void showData(int n, int m=0){
+    if(n>data1.size()) n = data1.size();
+    cout << "------- data1:" << data1.size() << " -------" << endl;
+    for(int i=m; i<n; i++){
+      cout << i << " " << data1[i].first << " " << data1[i].second << endl;
+     }
+    cout << "------- End -------" << endl;
+   }
 
   double intL(const double *xx) const{
-    // xx[0] is mean and xx[1] is width, xx[2] is the conditional observable, xx[3] is the meansurement
+    // xx[0] is mean and xx[1] is width
     double val = 1.;
     for(auto& a: data1){
       double P = 0.5*(1.+TMath::Erf((a.first-xx[0])/(sqrt2*xx[1])));
       val *= a.second?P:(1-P);
+//     cout << a.first << " " << a.second << " " << P << " " << val << endl;
      }
-
+//     cout << xx[0] << " " << xx[1] << "->" << -2*log(val) << endl;
     return -2*log(val);
    }
 
@@ -38,7 +55,10 @@ class encFitter{
  
    ROOT::Math::Functor f(this, &encFitter::intL,2); 
    double step[2] = {0.0001,0.0001};
-   double variable[2] = {0.5,0.3};
+//    double variable[2] = {0.35,0.3};
+//    double variable[2] = {0.1003,0.004406};
+//    double variable[2] = {0.14,0.006};
+   double variable[2] = {mean0,sigma0};
  
    min.SetFunction(f);
  
@@ -46,7 +66,7 @@ class encFitter{
    min.SetVariable(0,"mu",variable[0], step[0]);
    min.SetVariable(1,"sigma",variable[1], step[1]);
 
-   min.SetVariableLimits(0, 0.05, 0.8);
+   min.SetVariableLimits(0, 0.05, 0.85);
    min.SetVariableLimits(1, 0.0005, 0.2);
  
    min.Minimize(); 
@@ -67,15 +87,20 @@ class encFitter{
    cout << "mean error:" << meanErr << " " << meanErrD << " " << meanErrU << std::endl;
    cout << "width error:" << sigmaErr << " " << sigmaErrD << " " << sigmaErrU << std::endl;
 
+//1.00301e-01   5.03571e-04   2.38270e-07   1.01821e+00
+//   2  p1           4.40609e-03
+//    double par2[2] = {1.00301e-01, 4.40609e-03};
+//    cout << intL(par2) << endl;
+
    return 0;
   }
 
-  int test(){
+  int test(string fname="ENC_0507_Chip5Col12_scan_normal_try1.dat"){
     data1.reserve(700);
     int id, v;
     float vL, vH, x;
 
-    std::ifstream fin("ENC_0507_Chip5Col12_scan_normal_try1.dat");
+    std::ifstream fin(fname.c_str());
     while(fin){
       fin >> id >> vL >> vH >> v;
       data1.push_back(std::make_pair(vH-vL, v));

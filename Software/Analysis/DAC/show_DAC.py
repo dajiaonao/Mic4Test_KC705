@@ -57,7 +57,7 @@ def showDAC(fname, Infox=None, saveName='temp_figs/test', mode=1):
     print LSB
     for i in range(N):
         gr2.SetPoint(i, i, Ys[i]-(Ys[0]+i*LSB))
-        gr3.SetPoint(i, i, Ys[i]-Ys[i-1] if i>0 else 0)
+        gr3.SetPoint(i, i, Ys[i]-Ys[i-1]-LSB if i>0 else 0)
 
 
     line = TLine()
@@ -126,11 +126,12 @@ def easyCheck(idx, mode=1):
 
 def runChecks():
     for i in range(6): 
-        if i<3: continue
-#         if i!=2: continue
-        easyCheck(i, 0)
-#     for i in range(10,17):
-#         easyCheck(i)
+#         if i<3: continue
+        if i==3: break
+        easyCheck(i)
+#         easyCheck(i, 0)
+    for i in range(10,17):
+        easyCheck(i)
 
 def test1():
     dir1 = '../data/DAC/'
