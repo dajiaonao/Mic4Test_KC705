@@ -68,12 +68,30 @@ def findHeader(list1):
 def translateAddress(r, c):
     pass
 
+
+def getAddresses(data, debug=False):
+    dx = [ord(w) for w in data]
+
+    nF = 48
+    hd = findHeader(dx)
+    if hd<0:
+        print(dx)
+        return None
+
+    aList = []
+    while hd+nF<=len(dx):
+        aList += parseFD(dx[hd:hd+nF], show=debug)
+        hd+=nF
+    return aList
+
+
 def parseFD(dlist, show=True):
     has_non_zero = [x for x in dlist[1:] if x!=0]
 
     addresses = []
     if has_non_zero:
         if show: 
+            print(dlist)
             print('*'*20)
             print(bin(dlist[0]))
         vx = 0
