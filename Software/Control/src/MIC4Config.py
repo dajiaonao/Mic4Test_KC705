@@ -68,12 +68,30 @@ def findHeader(list1):
 def translateAddress(r, c):
     pass
 
+
+def getAddresses(data, debug=False):
+    dx = [ord(w) for w in data]
+
+    nF = 48
+    hd = findHeader(dx)
+    if hd<0:
+        print(dx)
+        return None
+
+    aList = []
+    while hd+nF<=len(dx):
+        aList += parseFD(dx[hd:hd+nF], show=debug)
+        hd+=nF
+    return aList
+
+
 def parseFD(dlist, show=True):
     has_non_zero = [x for x in dlist[1:] if x!=0]
 
     addresses = []
     if has_non_zero:
         if show: 
+            print(dlist)
             print('*'*20)
             print(bin(dlist[0]))
         vx = 0
@@ -111,7 +129,7 @@ class DataCollector(threading.Thread):
         self.isDebug = False
         self.on = True
         self.daemon = True
-        self.nFrame = 20
+        self.nFrame = 40
     def run(self):
         while self.on:
             self.conn.sendall(self.cmdstr)
@@ -120,7 +138,6 @@ class DataCollector(threading.Thread):
             except socket.timeout as e:
                 continue
             if self.data:
-                print("got Here:", [ord(w) for w in self.data])
                 self.pipe.write(self.data+'\n')
                 self.pipe.flush()
                 self.data = ''
@@ -139,22 +156,21 @@ class DataSaver(threading.Thread):
             while self.on:
                 try:
                     retw = self.pipe.readline()[:-1]
-#                     retw = xx[:-1].split(',')
                     dx = [ord(w) for w in retw]
                 except TypeError as e:
                     print(e)
-                    print(len(retw))
-                    print(retw)
+#                     print(len(retw))
+#                     print(retw)
                     continue
 
                 print(datetime.now())
-                print(dx)
                 idx =0
 
                 nF = 48
                 hd = findHeader(dx)
                 if hd<0:
                     print("header not found....")
+                    print(dx)
                     continue
 
                 aList = []
@@ -162,8 +178,8 @@ class DataSaver(threading.Thread):
                     aList += parseFD(dx[hd:hd+nF], show=False)
                     hd+=nF
                 print(aList)
-#                 fout.write('#'+datetime.now()+'\n')
-#                 fout.write(aList+'\n')
+                fout.write('#'+str(datetime.now())+'\n')
+                fout.write(retw+'\n')
         self.pipe.close()
 
 
@@ -189,10 +205,19 @@ class MIC4Config():
         self.setClocks()
         self.test_DAC8568_config()
 
+        self.sReg.useDefault() 
+        self.sReg.show()
+        self.testReg(read=True)
+        print("Setup the chip working point")
+
     def start_take_data(self):
+        cmdstr = ''
+        cmdstr += self.cmd.write_register(0, 0)
+        self.s.sendall(cmdstr)
+
         r, w = os.pipe()
         c1 = DataCollector(w, self.s)
-        c1.cmdstr = self.cmd.read_datafifo(240)
+        c1.cmdstr = self.cmd.read_datafifo(480)
 #         print("xxx",c1)
 #         c1.run()
         s1 = DataSaver(r)
@@ -532,10 +557,10 @@ class MIC4Config():
         #    cmdStr += self.dac.set_voltage(i, val)
         cmdStr += self.dac.set_voltage(0, 1.2) # LT_VREF
 #        cmdStr += self.dac.set_voltage(2, 1.5) # VPLUSE_HIGH
-        cmdStr += self.dac.set_voltage(2, 1.5) # VPLUSE_HIGH
+        cmdStr += self.dac.set_voltage(2, 1.3) # VPLUSE_HIGH
 
         cmdStr += self.dac.set_voltage(3, 1.2) # LVDS_REF
-        cmdStr += self.dac.set_voltage(4, 0.5) # VPULSE_LOW
+        cmdStr += self.dac.set_voltage(4, 0.7) # VPULSE_LOW
         #cmdStr += self.dac.set_voltage(6, 1.63) # DAC_REF
         cmdStr += self.dac.set_voltage(6, 1.2) # DAC_REF
 #         cmdStr += self.dac.set_voltage(6, 0.6) # DAC_REF
@@ -780,26 +805,25 @@ class MIC4Reg(object):
 
     def useDefault(self):
         self.value =  0
-        self.setLVDS_TEST(0b0000)
-        self.setTRX16(0b1000)
-        self.setTRX15_serializer(0b1000)
         self.setPDB(0)
-        self.setTEST(0)
-        self.setPar('VCLIP',0,0.075,0b0000101001)
-        self.setPar('VReset',1.1, 0.484,0b0101010101)
-        self.setPar('VCASN2',0.5, 0.57, 0b0110011001)
-        self.setPar('VCASN',0.4, 0.381,0b0100010001)
-        self.setPar('VCASP',0.6,1.040,0b1011101110)
-        self.setPar('VRef',0.4, 0.4, 0b100011111)
-#         self.setPar('VRef',0b0000010001)
-        self.setPar('IBIAS',0x80)
-        self.setPar('IDB',0x80)
-        self.setPar('ITHR',0x80)
+#         self.setLVDS_TEST(0b0000)
+        self.setTRX16(0b1000)
+#         self.setTRX15_serializer(0b1000)
+#         self.setTEST(0)
+        self.setPar('VCLIP' ,0,  0.833, 0b1001011001)
+        self.setPar('VCASN' ,0.4,  0.384, 0b100011110)
+        self.setPar('VCASP' ,0.5,  0.603, 0b110110000)
+        self.setPar('VReset',1.2,  1.084, 0b1100000111)
+        self.setPar('VCASN2',0.5,  0.502, 0b101100110)
+        self.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+        self.setPar('IBIAS' ,0xc9)
+        self.setPar('IDB'   ,0x80)
+        self.setPar('ITHR'  ,0x80)
         self.setPar('IRESET',0x80)
-        self.setPar('IDB2',0x80)
-        # self.setPar('XYZ',0x80) ### test the exception handling
+        self.setPar('IDB2'  ,0x80)
         self.selectVolDAC(5)
         self.selectCurDAC(0)
+        self.selectCol(12)
 
     def getConf(self):
         ### if it's not clear what does this class is supposed to provide

@@ -565,6 +565,7 @@ if __name__ == '__main__':
     mc1.connect()
 #     mc1.setup()
 #     setPixelsInRow(mc1, 127, mask=0, pulse_en=0)
+#     mc1.setPixels([(i+32*k,j,0,1) for i in range(7) for j in range(32) for k in range(4)])
 #     mc1.setPixels([(127,12,0,1)])
 #     mc1.setPixels([(8*i+i,i,1,1) for i in range(8)])
 #     mc1.setPixels([(7,8,0,1)])
@@ -605,8 +606,11 @@ if __name__ == '__main__':
 #     time.sleep(5)
 
     mc1.start_take_data()
-    mc1.sendD_PULSE()
-    mc1.wait()
+#     mc1.sendD_PULSE()
+    try:
+        mc1.wait()
+    except KeyboardInterrupt:
+        mc1.quit()
 #     time.sleep(20)
 #     mc1.quit()
 
