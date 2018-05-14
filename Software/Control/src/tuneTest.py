@@ -167,17 +167,17 @@ class DeltaUScanner(dataTaker):
         self.connect()
         #0.0983856601469 1.22217230856 0.304039126696 0.427606878636 78.9207677012 74.8590110773 0.443751901382 0.0
 
-        self.mic4.sReg.setPar('VCLIP' ,0.  , 0.689, 0x200)
-        self.mic4.sReg.setPar('VReset',1.2, 0.703, 0x200)
-        self.mic4.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
-        self.mic4.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
-        self.mic4.sReg.setPar('VCASP' ,0.5, 0.694, 0x200)
-        self.mic4.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
-        self.mic4.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
-        self.mic4.sReg.setPar('IDB'   ,0xf0)
-        self.mic4.sReg.setPar('ITHR'  ,0x80)
-        self.mic4.sReg.setPar('IRESET',0x80)
-        self.mic4.sReg.setPar('IDB2'  ,0x80)
+#        self.mic4.sReg.setPar('VCLIP' ,0.  , 0.689, 0x200)
+#        self.mic4.sReg.setPar('VReset',1.2, 0.703, 0x200)
+#        self.mic4.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
+#        self.mic4.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
+#        self.mic4.sReg.setPar('VCASP' ,0.5, 0.694, 0x200)
+#        self.mic4.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
+#        self.mic4.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
+#        self.mic4.sReg.setPar('IDB'   ,0xf0)
+#        self.mic4.sReg.setPar('ITHR'  ,0x80)
+#        self.mic4.sReg.setPar('IRESET',0x80)
+#        self.mic4.sReg.setPar('IDB2'  ,0x80)
 
 # SUB=-3V Chip #5 bias1
 
@@ -212,6 +212,67 @@ class DeltaUScanner(dataTaker):
 #         self.mic4.sReg.setPar('IRESET',0x80)
 #         self.mic4.sReg.setPar('IDB2'  ,0x80)
 
+# SUB=-3V Chip #5 bias3
+
+# 
+#        self.mic4.sReg.setPar('VCLIP' ,0.47,  0.833, 0b1001011001) #0.453
+#        self.mic4.sReg.setPar('VReset',1.43,  1.084, 0b1100000111)# chip#5 set 1.43V, test is 1.388V under this setting
+#        self.mic4.sReg.setPar('VCASN2',0.9,  0.502, 0b101100110) #0.864V
+#        self.mic4.sReg.setPar('VCASN' ,0.86,  0.384, 0b100011110) #0.866V
+#        self.mic4.sReg.setPar('VCASP' ,0.6,  0.603, 0b110110000) #0.579
+#        self.mic4.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)#0.388V
+#        self.mic4.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.573 V
+#        self.mic4.sReg.setPar('IDB'   ,0x80) # 0.0716
+#        self.mic4.sReg.setPar('ITHR'  ,0x80) # 0.010V
+#        self.mic4.sReg.setPar('IRESET',0x80)
+#        self.mic4.sReg.setPar('IDB2'  ,0x80)
+
+# SUB=-3V Chip #5 bias4
+
+ 
+#        self.mic4.sReg.setPar('VCLIP' ,0.453,  0.686, 0x200) #select<5>
+#        self.mic4.sReg.setPar('VReset',1.388,  0.701, 0x200) #select<2> set 1.37, real is 1.356
+#        self.mic4.sReg.setPar('VCASN2',0.864,  0.692, 0x200) #select<1>
+#        self.mic4.sReg.setPar('VCASN' ,0.866,  0.695, 0x200) #select<4>
+#        self.mic4.sReg.setPar('VCASP' ,0.58,  0.692, 0x200) #select<3>
+#        self.mic4.sReg.setPar('VRef'  ,0.4,  0.701, 0x200) #select<0> 
+#        self.mic4.sReg.setPar('IBIAS' ,0xff) #select<4> 0x80 is 0.342  0xff is 0.588
+#        self.mic4.sReg.setPar('IDB'   ,0x80) #select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
+#        self.mic4.sReg.setPar('ITHR'  ,0x80) #select<5> 0x80 is 0.0101 0xff is 0.0158
+#        self.mic4.sReg.setPar('IRESET',0x80)
+#        self.mic4.sReg.setPar('IDB2'  ,0x80)
+
+
+# SUB=-3V Chip #5 bias5
+
+ 
+#        self.mic4.sReg.setPar('VCLIP' ,0.45,  0.686, 0x200) #select<5>
+#        self.mic4.sReg.setPar('VReset',1.385,  0.701, 0x200) #select<2> 
+#        self.mic4.sReg.setPar('VCASN2',0.9,  0.692, 0x200) #select<1>
+#        self.mic4.sReg.setPar('VCASN' ,0.87,  0.695, 0x200) #select<4>
+#        self.mic4.sReg.setPar('VCASP' ,0.5,  0.692, 0x200) #select<3>
+#        self.mic4.sReg.setPar('VRef'  ,0.4,  0.701, 0x200) #select<0> 
+#        self.mic4.sReg.setPar('IBIAS' ,0xff) #select<4> 0x80 is 0.342  0xff is 0.588
+#        self.mic4.sReg.setPar('IDB'   ,0x80) #select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
+#        self.mic4.sReg.setPar('ITHR'  ,0x80) #select<5> 0x80 is 0.0101 0xff is 0.0158
+#        self.mic4.sReg.setPar('IRESET',0x80)
+#        self.mic4.sReg.setPar('IDB2'  ,0x80)
+
+# SUB=-3V Chip #5 bias6
+
+ 
+        self.mic4.sReg.setPar('VCLIP' ,0.45,  0.686, 0x200) #select<5>
+        self.mic4.sReg.setPar('VReset',1.388,  0.701, 0x200) #select<2> 
+        self.mic4.sReg.setPar('VCASN2',0.9,  0.692, 0x200) #select<1>
+        self.mic4.sReg.setPar('VCASN' ,0.87,  0.695, 0x200) #select<4>
+        self.mic4.sReg.setPar('VCASP' ,0.5,  0.692, 0x200) #select<3>
+        self.mic4.sReg.setPar('VRef'  ,0.4,  0.701, 0x200) #select<0> 
+        self.mic4.sReg.setPar('IBIAS' ,0xff) #select<4> 0x80 is 0.342  0xff is 0.588
+        self.mic4.sReg.setPar('IDB'   ,0x80) #select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
+        self.mic4.sReg.setPar('ITHR'  ,0x40) #select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
+        self.mic4.sReg.setPar('IRESET',0x80)
+        self.mic4.sReg.setPar('IDB2'  ,0x80)
+
 # SUB=-4V Chip #5 bias1
 
 
@@ -229,8 +290,8 @@ class DeltaUScanner(dataTaker):
 
 
         self.mic4.sReg.setTRX16(0b1000)
-        self.mic4.sReg.selectVolDAC(0)
-        self.mic4.sReg.selectCurDAC(4)
+        self.mic4.sReg.selectVolDAC(5)
+        self.mic4.sReg.selectCurDAC(5)
         self.mic4.sReg.selectCol(12)
 
         self.mic4.sReg.show()
@@ -322,8 +383,8 @@ class DeltaUScanner(dataTaker):
         fout = open(self.outFileName,'w') if self.outFileName else None
         ### loop over
         vL = 0.7
-        for i in range(4):
-            vH = 0.835 + i*0.01
+        for i in range(7):
+            vH = 0.78 + i*0.01
             for j in range(100):
                 mean,vout, R, W = self.measure(vH, vL)
                 if fout:
@@ -392,15 +453,16 @@ def test_DeltaUScanner():
 #    t1 = DeltaUScanner("Qth_0504_Chip5Col12_scan_sub-4v_bias1.dat")
 #     t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-4v_bias1.dat")
 #     t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-3v_bias2_try2.dat")
-    t1 = DeltaUScanner("ENC_0507_Chip5Col12_scan_normal_try1.dat")
+#    t1 = DeltaUScanner("Qth_0508_Chip5Col12_scan_sub-3v_bias6.dat")
+    t1 = DeltaUScanner("ENC_0508_Chip5Col12_scan_sub-3v_bias6.dat")
 #     t1.wave.saveDataToFile = open('test112.dat','w')
 #     t1.wave.channel = 4
     t1.setup()
 #     t1.measure(1.3,0.6)
 #     t1.saveDataToFile.close()
-    t1.run5()
+#    t1.run5()
 
-#    t1.run3()
+    t1.run3()
 #     t1.run4()
 
 class Tuner(dataTaker):

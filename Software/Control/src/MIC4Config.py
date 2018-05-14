@@ -12,6 +12,7 @@ import threading
 import socket
 import time
 import sys
+from datetime import datetime
 
 ## Manage Topmetal-S 1mm chip's internal register map.
 # Allow combining and disassembling individual registers
@@ -87,7 +88,7 @@ def parseFD(dlist, show=True):
                 pC = (x1>>8)&0xff
                 pR = x1&0xff
                 flag = '' if PowerOfTwo(pR) and PowerOfTwo(pC) else 'X' 
-                if show: print(bin(x1),': {0:0>3b} {1:0>4b} {2:0>8b} {3:0>8b} => {4:>3d} {5:>2d} {6}'.format(bC, bR, pC, pR, bR*8+n2N(pR), bC*8+n2N(pC), flag))
+                if show: print('{7:0>23b}: {0:0>3b} {1:0>4b} {2:0>8b} {3:0>8b} => {4:>3d} {5:>2d} {6}'.format(bC, bR, pC, pR, bR*8+n2N(pR), bC*8+n2N(pC), flag, x1))
                 vx = vx >> 23
                 nbit -= 23
                 if flag == '': addresses.append((bR*8+n2N(pR), bC*8+n2N(pC)))
@@ -100,32 +101,113 @@ def parseFD(dlist, show=True):
     return addresses
 
 ### stackoverflow.com/questions/15869158/python-socket-listening
-class DataSaver(threading.Thread):
-    def __init__(self, conn, saveName='test_data_out.dat'):
-        super(DataSaver, self).__init__()
+class DataCollector(threading.Thread):
+    def __init__(self, p, conn):
+        super(DataCollector, self).__init__()
+        self.pipe = os.fdopen(p,'w')
         self.conn = conn
+        self.cmdstr = None
         self.data = ""
+        self.isDebug = False
+        self.on = True
+        self.daemon = True
+        self.nFrame = 20
+    def run(self):
+        while self.on:
+            self.conn.sendall(self.cmdstr)
+            try:
+                self.data += self.conn.recv(4*(12*self.nFrame+1))
+            except socket.timeout as e:
+                continue
+            if self.data:
+                print("got Here:", [ord(w) for w in self.data])
+                self.pipe.write(self.data+'\n')
+                self.pipe.flush()
+                self.data = ''
+        self.pipe.close()
+
+class DataSaver(threading.Thread):
+    def __init__(self, p, saveName='test_data_out.dat'):
+        super(DataSaver, self).__init__()
+        self.pipe = os.fdopen(p)
         self.saveName = saveName
         self.isDebug = False
+        self.on = True
+        self.daemon = True
     def run(self):
         with open(self.saveName, 'a') as fout:
-            while True:
-                print("testing....")
-                self.data = self.conn.recv(1024)
-                print("get data:")
-                if self.isDebug: print(self.data)
-                fout.write(self.data)
-                self.data = ""
+            while self.on:
+                try:
+                    retw = self.pipe.readline()[:-1]
+#                     retw = xx[:-1].split(',')
+                    dx = [ord(w) for w in retw]
+                except TypeError as e:
+                    print(e)
+                    print(len(retw))
+                    print(retw)
+                    continue
+
+                print(datetime.now())
+                print(dx)
+                idx =0
+
+                nF = 48
+                hd = findHeader(dx)
+                if hd<0:
+                    print("header not found....")
+                    continue
+
+                aList = []
+                while hd+nF<=len(dx):
+                    aList += parseFD(dx[hd:hd+nF], show=False)
+                    hd+=nF
+                print(aList)
+#                 fout.write('#'+datetime.now()+'\n')
+#                 fout.write(aList+'\n')
+        self.pipe.close()
+
 
 class MIC4Config():
     cmd = Cmd()
 
     def __init__(self):
+        self.host = '192.168.2.3'
+        self.lt_div = 6
+        self.clk_div = 6
+
         self.s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.s.settimeout(0.2)
+
         self.sReg = MIC4Reg(0)
         self.dac = DAC8568(self.cmd)
         self.pCfg = PixelConfig(self.cmd, self.s)
-        self.host = '192.168.2.3'
+        self.pCfg.clk_div = self.clk_div+10 # from 100 MHz clock
+        self.threads = []
+
+    def setup(self):
+        self.connect()
+        self.setClocks()
+        self.test_DAC8568_config()
+
+    def start_take_data(self):
+        r, w = os.pipe()
+        c1 = DataCollector(w, self.s)
+        c1.cmdstr = self.cmd.read_datafifo(240)
+#         print("xxx",c1)
+#         c1.run()
+        s1 = DataSaver(r)
+# 
+        s1.start()
+        c1.start()
+        self.threads += [s1, c1]
+
+    def wait(self):
+        for s in self.threads:
+            s.join()
+
+    def quit(self):
+        for s in self.threads:
+            s.on = False
 
     def connect(self):
         port = 1024
@@ -140,6 +222,31 @@ class MIC4Config():
         print([hex(ord(w)) for w in retw])
         print(len(retw))
 
+    def setPixelsInSuperblock(self, row, col, pulse_en=1, mask=0):
+        if row>15 or col>7:
+            print("Invalid row (>15) or col(>7):", row, col)
+            print('aborting...')
+            return
+        self.pCfg.pixels = [(row*8+i, col*8+j, mask, pulse_en) for i in range(8) for j in range(8)]
+        self.pCfg.applyConfig()
+
+    def setPixels(self,pxiels):
+        self.pCfg.pixels = pxiels
+        self.pCfg.applyConfig()
+
+    def setAllPixels(self,pulse_en=0, mask=0):
+        for r in range(128):
+            print("turning off row", r)
+            self.pCfg.pixels = [(r,i,mask,pulse_en) for i in range(64)]
+            self.pCfg.applyConfig()
+
+    def setPixelsInRow(self, row, pulse_en=1, mask=0):
+        self.pCfg.pixels = [(row,i,mask,pulse_en) for i in range(64)]
+        self.pCfg.applyConfig()
+
+    def setLastRow(self, pulse_en=1, mask=0):
+        self.pCfg.pixels = [(127,i,mask,pulse_en) for i in range(64)]
+        self.pCfg.applyConfig()
 
     def shift_register_rw(self, data_to_send, clk_div, read=True):
         div_reg = (clk_div & 0x3f) | (1<<6)
@@ -220,19 +327,22 @@ class MIC4Config():
         cmdstr += self.cmd.read_datafifo(nWord-1)
         self.s.sendall(cmdstr)
 
-    def getFDAddresses(self):
+    def getFDAddresses(self, nframe=20):
         cmdstr = ''
         cmdstr += self.cmd.write_register(0, 0)
         self.s.sendall(cmdstr)
 
-        nWord = 240 # 20 frames, each has 48 byte
+        nWord = 12*nframe # 20 frames, each has 48 byte
         time.sleep(0.1)
         cmdstr = ""
         cmdstr += self.cmd.read_datafifo(nWord-1)
         self.s.sendall(cmdstr)
 
         nByte = 4*nWord
-        retw = self.s.recv(nByte)
+        try:
+            retw = self.s.recv(nByte)
+        except socket.timeout as e:
+            return None
 
 #         dataLS = []
 
@@ -249,6 +359,12 @@ class MIC4Config():
             aList += parseFD(dx[hd:hd+nF], show=False)
             hd+=nF
         return aList
+
+#     def recordData(self, fname='test_record.dat'):
+#         while True:
+#             add = self.getFDAddresses()
+#             if add:
+#                 print time.now(), add
 
 
     def readFD(self, readOnly=True):
@@ -272,7 +388,12 @@ class MIC4Config():
         self.s.sendall(cmdstr)
 
         nByte = 4*nWord
-        retw = self.s.recv(nByte)
+
+        try:
+            retw = self.s.recv(nByte)
+        except socket.timeout as e:
+            print("Empty FIFO. Caught the exception.")
+            return
 
 #         dataLS = []
 
@@ -355,11 +476,15 @@ class MIC4Config():
 
         return retw
 
-    def setClocks(self, strobe_b, lt_div, clk_div):
+    def setClocks(self, strobe_b=0, lt_div=None, clk_div=None):
+        if lt_div is not None:
+            self.lt_div = lt_div
+        if clk_div is not None:
+            self.clk_div = clk_div
         wd = 0
         wd |= (strobe_b&0x1) << 12
-        wd |= (lt_div&0x3f) << 6
-        wd |= (clk_div&0x3f)
+        wd |= (self.lt_div&0x3f) << 6
+        wd |= (self.clk_div&0x3f)
         print(bin(wd))
         self.s.sendall(self.cmd.write_register(18, wd))
 
@@ -956,5 +1081,6 @@ if __name__ == "__main__":
 #     testPConf()
 #     testDataSave()
 #     parseFD([188, 128, 2, 25, 64, 136, 15, 1, 224, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    parseFD([188, 128, 128, 63, 2, 192, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]+[0]*20)
+#     parseFD([188, 128, 128, 63, 2, 192, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]+[0]*20)
+    parseFD([188, 128, 1, 16, 192, 0, 8, 96, 0, 4, 48, 0, 2, 24, 0, 1, 12, 128, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 188, 128, 1, 16, 192, 0, 8, 96, 0, 4, 48, 0, 2, 24, 0, 1, 12, 128, 0, 6, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 1, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
 #     [188, 128, 1, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 2, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 4, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 8, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 16, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 32, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 64, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 128, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 1, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 2, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 4, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 8, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 32, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 64, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 188, 128, 128, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 128, 1, 47, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
