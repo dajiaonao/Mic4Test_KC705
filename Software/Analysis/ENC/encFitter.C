@@ -14,18 +14,28 @@ class encFitter{
   double mean, sigma, meanErr, sigmaErr;
   double meanErrU, meanErrD, sigmaErrU, sigmaErrD;
   double minIntL;
-  float mean0;
-  float sigma0;
+  float mean0, meanD, meanU;
+  float sigma0, sigmaD, sigmaU;
 
   encFitter(){
+    data1.reserve(1000);
     mean0 = 0.5;
     sigma0 = 0.1;
+    meanD = 0.05;
+    meanU = 0.8;
+    sigmaD = 0.001;
+    sigmaU = 0.05;
   };
 
-  void showData(int n, int m=0){
+  void clearData(){
+    data1.clear();
+    cout << "Data cleared: size= " << data1.size() << endl;
+  }
+
+  void showData(size_t n, size_t m=0){
     if(n>data1.size()) n = data1.size();
     cout << "------- data1:" << data1.size() << " -------" << endl;
-    for(int i=m; i<n; i++){
+    for(size_t i=m; i<n; i++){
       cout << i << " " << data1[i].first << " " << data1[i].second << endl;
      }
     cout << "------- End -------" << endl;
@@ -72,8 +82,8 @@ class encFitter{
    min.SetVariable(0,"mu",variable[0], step[0]);
    min.SetVariable(1,"sigma",variable[1], step[1]);
 
-   min.SetVariableLimits(0, 0.05, 0.85);
-   min.SetVariableLimits(1, 0.0005, 0.2);
+   min.SetVariableLimits(0, meanD, meanU);
+   min.SetVariableLimits(1, sigmaD, sigmaU);
  
    min.Minimize(); 
 
@@ -104,7 +114,7 @@ class encFitter{
   int test(string fname="ENC_0507_Chip5Col12_scan_normal_try1.dat"){
     data1.reserve(700);
     int id, v;
-    float vL, vH, x;
+    float vL, vH;
 
     std::ifstream fin(fname.c_str());
     while(fin){

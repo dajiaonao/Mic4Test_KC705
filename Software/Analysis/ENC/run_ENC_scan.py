@@ -3,6 +3,7 @@ from ROOT import *
 import random, math
 from collections import defaultdict
 # from rootUtil import waitRootCmdX, useAtlasStyle, get_default_fig_dir
+import time
 
 gROOT.LoadMacro('encFitter.C+')
 from ROOT import encFitter
@@ -12,7 +13,7 @@ sys.path.append('../../Control/src')
 from MIC4Config import MIC4Config
 
 
-def genList(l1, N):
+def genList(l1, N, roundN=5):
     if len(l1)>=N: return l1
 
     l3 = None
@@ -30,6 +31,8 @@ def genList(l1, N):
         for i in range(len(l2)-1):
             l3 += [l2[i]+(l2[i+1]-l2[i])/(Ns[i]-1)*j for j in range(Ns[i]-1)]
         l3 += l2[-1:]
+    if roundN is not None: l3 = [round(x,roundN) for x in l3]
+
     return l3
 
 
@@ -38,94 +41,113 @@ class ENCScanner:
         self.fitter = encFitter()
         self.fitter.mean0 = -1
         self.fitter.sigma0 = -1
-        self.npoints = 10
+        self.npoints = 7
         self.nSamples1 = 10
         self.nSamples2 = 100
-        self.nSamples3 = 20
-#         self.nSamplesX = self.nSamples1
-#         self.mic4 = None
-#         self.vL = 0.7
+        self.nSamples3 = 50
         self.totalStats = defaultdict(int)
         self.passStats = defaultdict(int)
         self.workList = [0.,0.6]
         self.funX = None
         self.funY = None
         self.sigmaErrMax = 0.0003
+        self.sigmaErrRelMax = 0.01
+        self.nFitTry = 5
+
+    def showStats(self):
+        for dv in sorted(self.totalStats.iterkeys()):
+            print dv, self.totalStats[dv], self.passStats[dv], float(self.passStats[dv])/self.totalStats[dv]
+    def saveStats(self,fout,prefix='# '):
+        for dv in sorted(self.totalStats.iterkeys()):
+            fout.write(prefix+'{0:.5f} {1:d} {2:d} {3:.3f}\n'.format(dv, self.totalStats[dv], self.passStats[dv], float(self.passStats[dv])/self.totalStats[dv]))
+
+    def doTest(self, dv, N=100):
+        self.funX(dv)
+        self.funY()
+        for i in range(N):
+            fd = self.funY()
+
+            print i, fd
+        
 
     def doScan(self):
+        self.fitter.clearData()
+        self.totalStats = defaultdict(int)
+        self.passStats = defaultdict(int)
         ### first step, narrow down the region
         listA = [0,0.6]
         while len(listA)<4:
-            print listA
+#             print listA
             listB = genList(listA, self.npoints)
-            print listB
+            print 'Will scan', listB
             listA = []
 
             kx0 = None
             ### check the points of list B and update ListA
-            print "-"*20
+#             print "-"*20
             for dv in listB:
-                print dv
+#                 print dv
                 self.funX(dv)
-#                 vH = self.vL + dv
-#                 self.mic4.setVhVl(vH, self.vL)
                 kx = 0
                 for j in range(self.nSamples1):
                     fd = self.funY()
-#                     self.mic4.sendA_Pulse()
-#                     fd = getResultsXXX
+#                     print j,'----',fd
                     self.fitter.addData(dv, fd)
                     self.totalStats[dv] += 1
                     self.passStats[dv] += fd
                     kx += fd
-                print kx, kx0, listA
+#                 print kx, kx0, listA
                 if kx0 is None: kx0 = kx
                 if kx == kx0:
                     dv0 = dv
                 else:
-                    if len(listA)==0: listA.append(dv0)
+                    if len(listA)==0:
+#                         print 'saving dv0=',dv0, 'kx =',kx,'kx0=',kx0
+                        listA.append(dv0)
                     listA.append(dv)
                     kx0 = kx
-            print "="*20
-#         return
+#             print "="*20
+            self.showStats()
+
         ### OK, now we have more than 3 points
         listC = genList(listA, self.npoints)
         for dv in listC:
             self.funX(dv)
-#             vH = self.vL + dv
-#             self.mic4.setVhVl(vH, self.vL)
             for j in range(self.nSamples2):
                 fd = self.funY()
-#                 self.mic4.sendA_Pulse()
-#                 fd = getResultsXXX
                 self.fitter.addData(dv, fd)
                 self.totalStats[dv] += 1
                 self.passStats[dv] += fd
+            print 'P = ',float(self.passStats[dv])/self.totalStats[dv]
         while True:
             if self.fitter.mean0 < 0:
                 self.fitter.mean0 = listC[len(listC)/2]
             if self.fitter.sigma0 < 0:
-                self.fitter.sigma0 = (listC[-1]-listC[0])/2.
+#                 self.fitter.sigma0 = (listC[-1]-listC[0])/10.
+                self.fitter.sigma0 = 0.005
+            self.fitter.meanD = listC[0]
+            self.fitter.meanU = listC[-1]
+            self.fitter.sigmaD = (listC[-1]-listC[0])/1000.
+            self.fitter.sigmaU = (listC[-1]-listC[0])/2.
 
-            self.fitter.fit()
-            if self.fitter.sigmaErr < self.sigmaErrMax: break
+            self.showStats()
+
+            for itry in range(self.nFitTry):
+                print itry, 'th try, initial values:', self.fitter.mean0, self.fitter.sigma0
+                self.fitter.fit()
+                if not math.isnan(self.fitter.mean): break
+                self.fitter.sigma0 *= 2.
+
+            if self.fitter.sigmaErr < self.sigmaErrMax or self.fitter.sigmaErr/self.fitter.sigma < self.sigmaErrRelMax: break
 
             for dv in listC: 
                 self.funX(dv)
-#                 vH = self.vL + dv
-#                 self.mic4.setVhVl(vH, self.vL)
                 for j in range(self.nSamples3):
                     fd = self.funY()
-#                     self.mic4.sendA_Pulse()
-#                     fd = getResultsXXX
                     self.fitter.addData(dv, fd)
                     self.totalStats[dv] += 1
                     self.passStats[dv] += fd
-
-#         for dv in sort(self.totalStats.keys):
-#             print dv, self.totalStats[dv], self.passStats[dv], float(self.passStats[dv])/self.totalStats[dv]
-        return
-
+                print 'P = ',float(self.passStats[dv])/self.totalStats[dv]
 
         return True
 
@@ -146,12 +168,20 @@ class mic4ENCCalculator:
     def __init__(self):
         self.mic4 = MIC4Config()
         self.pixel = (127,12)
+        self.vL = 0.7
+        self.logFile = None
 
     def setDU(self, dU):
         self.mic4.setVhVl(self.vL+dU, self.vL)
+        time.sleep(0.2)
+        self.mic4.getFDAddresses(100, True) ### make sure the FIFO is empty...
     def getVal(self):
-        addrs = self.mic4.getFDAddresses()
-        return 1 if self.pixel in addrs else 0
+        self.mic4.sendA_PULSE()
+        time.sleep(0.05)
+        addrs = self.mic4.getFDAddresses(100)
+#         addrs = self.mic4.getFDAddresses(100, True)
+#         print addrs
+        return 0 if addrs is None or self.pixel not in addrs else 1
     def scanX(self):
         self.mic4.setup()
 
@@ -159,35 +189,203 @@ class mic4ENCCalculator:
         cx1.funX = self.setDU
         cx1.funY = self.getVal
 
-        for i in range(10):
+        for i in range(7):
+            ix = 1.1+0.05*i
+            vclip = 0.
+            vcasn = 0.4
+            vcasp = 0.5
+            vreset= ix # 1.2
+            vcasn2= 0.5
+            vref  = 0.4
+            ibias = 0xff
+            idb   = 0x80
+            ithr  = 0x80
+            ireset= 0x80
+            idb2  = 0x80
+
             ### set the values
-            self.mic4.sReg.setPar('VCLIP' ,0,  0.833, 0b1001011001)
-            self.mic4.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
-            self.mic4.sReg.setPar('VCASP' ,0.5,  0.603, 0b110110000)
-            self.mic4.sReg.setPar('VReset',1.2,  1.084, 0b1100000111)
-            self.mic4.sReg.setPar('VCASN2',0.5,  0.502, 0b101100110)
-            self.mic4.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
-            self.mic4.sReg.setPar('IBIAS' ,0x80+0x10*i)
-            self.mic4.sReg.setPar('IDB'   ,0x80)
-            self.mic4.sReg.setPar('ITHR'  ,0x80)
-            self.mic4.sReg.setPar('IRESET',0x80)
-            self.mic4.sReg.setPar('IDB2'  ,0x80)
+            self.mic4.sReg.setPar('VCLIP' ,vclip,   0.686, 0x200) #select<5>
+            self.mic4.sReg.setPar('VReset',vreset,   0.701, 0x200) #select<2> 
+            self.mic4.sReg.setPar('VCASN2',vcasn2,   0.692, 0x200) #select<1>
+            self.mic4.sReg.setPar('VCASN' ,vcasn,  0.695, 0x200) #select<4>
+            self.mic4.sReg.setPar('VCASP' ,vcasp,  0.692, 0x200) #select<3>
+            self.mic4.sReg.setPar('VRef'  ,vref,    0.701, 0x200) #select<0> 
+            self.mic4.sReg.setPar('IBIAS' ,ibias )#select<4> 0x80 is 0.342  0xff is 0.588
+            self.mic4.sReg.setPar('IDB'   ,idb   )#select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
+            self.mic4.sReg.setPar('ITHR'  ,ithr  )#select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
+            self.mic4.sReg.setPar('IRESET',ireset)
+            self.mic4.sReg.setPar('IDB2'  ,idb2  )
+
+#             self.mic4.sReg.setPar('VCLIP' ,vclip,   0.833, 0b1001011001)
+#             self.mic4.sReg.setPar('VCASN' ,vcasn,   0.384, 0b100011110 )
+#             self.mic4.sReg.setPar('VCASP' ,vcasp,   0.603, 0b110110000 )
+#             self.mic4.sReg.setPar('VReset',vreset,  1.084, 0b1100000111)
+#             self.mic4.sReg.setPar('VCASN2',vcasn2,  0.502, 0b101100110 )
+#             self.mic4.sReg.setPar('VRef'  ,vref,    0.406, 0b100011111 )
+#             self.mic4.sReg.setPar('IBIAS' ,ibias )
+#             self.mic4.sReg.setPar('IDB'   ,idb   )
+#             self.mic4.sReg.setPar('ITHR'  ,ithr  )
+#             self.mic4.sReg.setPar('IRESET',ireset)
+#             self.mic4.sReg.setPar('IDB2'  ,idb2  )
 
             self.mic4.sReg.selectVolDAC(2)
             self.mic4.sReg.selectCurDAC(6)
+            self.mic4.sReg.selectCol(12)
             self.mic4.sReg.setTRX16(0b1000)
             self.mic4.sReg.show()
             self.mic4.testReg(read=True)
 
+            ### empty fifo first
+            self.mic4.getFDAddresses(100)
+
+#             cx1.doTest(0.2)
+#             return
+
+#             if cx1.fitter.mean0< 0: cx1.fitter.mean0 = 0.136
+#             if cx1.fitter.sigma0<0: cx1.fitter.sigma0 = 0.005
             ### the results of ENC
             cx1.doScan()
             print i, ix, cx1.fitter.mean, cx1.fitter.meanErr, cx1.fitter.sigma, cx1.fitter.sigmaErr
+            
+            cx1.fitter.mean0 = cx1.fitter.mean
+            cx1.fitter.sigma0 = cx1.fitter.sigma
+
+            if self.logFile:
+                self.logFile.write('#- VCLIP={0:.4f},VCASN={1:.4f},VCASP={2:.4f},VCRESET={3:.4f},VCASN2={4:.4f},VREF={5:.4f},IBIAS=0x{6:X},IDB=0x{7:X},ITHR=0x{8:X},IRESET=0x{9:X},IDB2=0x{10:X}\n'.format(vclip,vcasn,vcasp,vreset,vcasn2,vref,ibias,idb,ithr,ireset,idb2))
+                self.logFile.write('{0:d} {1:.4f} {2:.6f} {3:.6f} {4:.6f} {5:.6f}\n'.format(i,ix,cx1.fitter.mean, cx1.fitter.meanErr, cx1.fitter.sigma, cx1.fitter.sigmaErr))
+                cx1.saveStats(self.logFile)
+                self.logFile.flush()
 
 
 def testScan():
     mc1 = mic4ENCCalculator()
-    mc1.scanX()
+    logFileName = 'DAC_scan_vreset_1p1TO1p3.dat'
+    with open(logFileName,'w') as f1:
+        mc1.logFile = f1
+        mc1.scanX()
 
+
+def checkFit():
+    data='''
+# 0.0 20 0 0.0
+# 0.1 40 0 0.0
+# 0.116666666667 40 1 0.025
+# 0.119444444444 10 0 0.0
+# 0.122222222222 170 3 0.0176470588235
+# 0.125 160 10 0.0625
+# 0.127777777778 170 28 0.164705882353
+# 0.130555555556 150 35 0.233333333333
+# 0.130555555556 10 9 0.9
+# 0.133333333333 190 92 0.484210526316
+# 0.136111111111 150 89 0.593333333333
+# 0.138888888889 160 138 0.8625
+# 0.144444444444 10 10 1.0
+# 0.15 30 30 1.0
+# 0.166666666667 20 20 1.0
+# 0.183333333333 20 20 1.0
+# 0.2 20 20 1.0
+# 0.2 20 20 1.0
+# 0.3 20 20 1.0
+# 0.4 20 20 1.0
+# 0.5 20 20 1.0
+# 0.6 20 20 1.0
+
+0.0 10 0 0.0
+0.1 130 0 0.0
+0.10278 100 3 0.03
+0.10556 110 19 0.172727272727
+0.11111 110 74 0.672727272727
+0.11389 100 89 0.89
+0.11667 120 114 0.95
+0.12222 110 110 1.0
+0.12778 10 10 1.0
+0.13333 20 20 1.0
+0.15 10 10 1.0
+0.16667 10 10 1.0
+0.18333 10 10 1.0
+0.2 20 20 1.0
+0.3 10 10 1.0
+0.4 10 10 1.0
+0.5 10 10 1.0
+0.6 10 10 1.0
+
+# 0.0 10 0 0.0
+# 0.1 20 0 0.0
+# 0.11667 20 0 0.0
+# 0.11945 110 3 0.0272727272727
+# 0.12222 110 15 0.136363636364
+# 0.12361 100 11 0.11
+# 0.125 110 34 0.309090909091
+# 0.12639 100 41 0.41
+# 0.12778 110 55 0.5
+# 0.13055 110 88 0.8
+# 0.13333 20 19 0.95
+# 0.15 10 10 1.0
+# 0.16667 10 10 1.0
+# 0.18333 10 10 1.0
+# 0.2 20 20 1.0
+# 0.3 10 10 1.0
+# 0.4 10 10 1.0
+# 0.5 10 10 1.0
+# 0.6 10 10 1.0
+
+# 0.0 10 0 0.0
+# # 0.1 30 1 0.0333333333333
+# 0.10556 10 0 0.0
+# 0.11111 10 0 0.0
+# 0.11667 10 2 0.2
+# 0.12222 10 4 0.4
+# 0.12778 10 9 0.9
+# 0.13333 20 20 1.0
+# 0.16667 10 10 1.0
+# # 0.2 20 12 0.6
+# 0.23333 10 10 1.0
+# 0.26667 10 10 1.0
+# 0.3 20 20 1.0
+# 0.4 10 10 1.0
+# 0.5 10 10 1.0
+# 0.6 10 10 1.0
+
+# 
+# 0.0 20 0 0.0
+# 0.1 40 0 0.0
+# 0.116666666667 40 0 0.0
+# 0.119444444444 10 1 0.1
+# 0.122222222222 170 0 0.0
+# 0.125 10 1 0.1
+# 0.127777777778 170 8 0.0470588235294
+# 0.130555555556 150 3 0.02
+# 0.130555555556 10 7 0.7
+# 0.133333333333 190 39 0.205263157895
+# 0.136111111111 150 48 0.32
+# 0.138888888889 160 81 0.50625
+# 0.144444444444 160 141 0.88125
+# 0.15 30 30 1.0
+# 0.166666666667 20 20 1.0
+# 0.183333333333 20 20 1.0
+# 0.2 20 20 1.0
+# 0.2 20 20 1.0
+# 0.3 20 20 1.0
+# 0.4 20 20 1.0
+# 0.5 20 20 1.0
+# 0.6 20 20 1.0
+'''
+    en1 = encFitter()
+    for d in data.split('\n'):
+        d = d.rstrip()
+        if len(d)==0 or d[0]=='#':
+            continue
+        fs = d.split()
+        x = float(fs[0])
+        npass = int(fs[2])
+        for i in range(int(fs[1])):
+            en1.addData(x,i<npass)
+# 0.121369309723 0.00424943258986
+    en1.mean0 = 0.120
+#     en1.sigma0 = 0.00424943258986
+    en1.sigma0 = 0.01
+
+    en1.fit()
 
 def testT():
     cx1 = ENCScanner() 
@@ -202,7 +400,9 @@ def testT():
 
         ###
 if __name__== '__main__':
-    testT()
+#     testT()
+    testScan()
+#     checkFit()
 #     x1 = genList([0.,1.],21)
 #     print len(x1), x1
 #     x2 = genList([0.,0.35,0.8,1.],21)

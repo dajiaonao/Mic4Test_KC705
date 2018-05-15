@@ -178,6 +178,11 @@ class DataSaver(threading.Thread):
                     aList += parseFD(dx[hd:hd+nF], show=False)
                     hd+=nF
                 print(aList)
+                for x in aList:
+                    if x[0] == 127:
+                        print('/'*40+'\n')
+                        print(x)
+                        print('\\'*40+'\n')
                 fout.write('#'+str(datetime.now())+'\n')
                 fout.write(retw+'\n')
         self.pipe.close()
@@ -210,7 +215,7 @@ class MIC4Config():
         self.testReg(read=True)
         print("Setup the chip working point")
 
-    def start_take_data(self):
+    def start_take_data(self,dataFileName):
         cmdstr = ''
         cmdstr += self.cmd.write_register(0, 0)
         self.s.sendall(cmdstr)
@@ -220,15 +225,18 @@ class MIC4Config():
         c1.cmdstr = self.cmd.read_datafifo(480)
 #         print("xxx",c1)
 #         c1.run()
-        s1 = DataSaver(r)
+        s1 = DataSaver(r,saveName=dataFileName)
 # 
         s1.start()
         c1.start()
         self.threads += [s1, c1]
 
     def wait(self):
-        for s in self.threads:
-            s.join()
+        try:
+            for s in self.threads:
+                s.join()
+        except KeyboardInterrupt:
+            self.quit()
 
     def quit(self):
         for s in self.threads:
@@ -352,7 +360,7 @@ class MIC4Config():
         cmdstr += self.cmd.read_datafifo(nWord-1)
         self.s.sendall(cmdstr)
 
-    def getFDAddresses(self, nframe=20):
+    def getFDAddresses(self, nframe=20, debug=False):
         cmdstr = ''
         cmdstr += self.cmd.write_register(0, 0)
         self.s.sendall(cmdstr)
@@ -377,12 +385,14 @@ class MIC4Config():
         nF = 48
         hd = findHeader(dx)
         if hd<0:
+            if debug: print(dx)
             return None
 
         aList = []
         while hd+nF<=len(dx):
             aList += parseFD(dx[hd:hd+nF], show=False)
             hd+=nF
+        if debug and len(aList)==0: print(dx)
         return aList
 
 #     def recordData(self, fname='test_record.dat'):
@@ -544,6 +554,7 @@ class MIC4Config():
         cmdStr += self.dac.set_voltage(2, vH) # VPLUSE_HIGH
         cmdStr += self.dac.set_voltage(4, vL) # VPULSE_LOW
         self.s.sendall(cmdStr)
+        print('vH=',vH,'vL=',vL)
         ### 
 
 
@@ -704,6 +715,7 @@ class MIC4Reg(object):
         print('-'*10,'Other','-'*10)
         print('TEST     :',(self.value>>22)&0x1)
         print('PDB      :',(self.value>>21)&0x1)
+        print('TRX_seril:',(self.value>>21)&0x1)
         print('TRX5_seri:',(self.value>>20)&0x1)
         print('TRX6_seri:',(self.value>>19)&0x1)
         print('TRX7_seri:',(self.value>>18)&0x1)
@@ -970,11 +982,11 @@ class DAC8568(object):
         self.cmd = cmd
     def DACVolt(self, x):
         '''Convert voltage to a 16'b number'''
-        print("V=",x)
+#         print("V=",x)
         #return int(x / 5. * 65536.0)    #calculation
         return int(x / 2.5 * 65536.0)    #calculation
     def write_spi(self, val):
-        print(bin(val))
+#         print(bin(val))
         ret = ""          # 32 bits, send two times, each for a half, starting with the higher one
         ret += self.cmd.write_register(16, (val >> 16) & 0xffff)
         ret += self.cmd.send_pulse(0x2)

@@ -210,17 +210,29 @@ def test_AOUT(mc1):
 #    mc1.sReg.setPar('IDB2'  ,0x80)
 
 # PLAC 
-    mc1.sReg.setPar('VCLIP' ,0,  0.833, 0b1001011001)
-    mc1.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
-    mc1.sReg.setPar('VCASP' ,0.5,  0.603, 0b110110000)
-    mc1.sReg.setPar('VReset',1.2,  1.084, 0b1100000111)
-    mc1.sReg.setPar('VCASN2',0.5,  0.502, 0b101100110)
-    mc1.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
-    mc1.sReg.setPar('IBIAS' ,0xc9)
-    mc1.sReg.setPar('IDB'   ,0x80)
+    mc1.sReg.setPar('VCLIP' ,0. , 0.689, 0x200)
+    mc1.sReg.setPar('VReset',1.2, 0.703, 0x200)
+    mc1.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
+    mc1.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
+    mc1.sReg.setPar('VCASP' ,0.5, 0.694, 0x200)
+    mc1.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
+    mc1.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
+    mc1.sReg.setPar('IDB'   ,0xf0)
     mc1.sReg.setPar('ITHR'  ,0x80)
     mc1.sReg.setPar('IRESET',0x80)
     mc1.sReg.setPar('IDB2'  ,0x80)
+
+#     mc1.sReg.setPar('VCLIP' ,0,  0.833, 0b1001011001)
+#     mc1.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
+#     mc1.sReg.setPar('VCASP' ,0.5,  0.603, 0b110110000)
+#     mc1.sReg.setPar('VReset',1.2,  1.084, 0b1100000111)
+#     mc1.sReg.setPar('VCASN2',0.5,  0.502, 0b101100110)
+#     mc1.sReg.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+#     mc1.sReg.setPar('IBIAS' ,0xc9)
+#     mc1.sReg.setPar('IDB'   ,0x80)
+#     mc1.sReg.setPar('ITHR'  ,0x80)
+#     mc1.sReg.setPar('IRESET',0x80)
+#     mc1.sReg.setPar('IDB2'  ,0x80)
 
 
 # SUB=-3V Chip #5 bias1
@@ -285,7 +297,7 @@ def test_AOUT(mc1):
 
 
 
-    mc1.sReg.selectCol(12)
+    mc1.sReg.selectCol(23)
 
 
     mc1.sReg.selectVolDAC(2)
@@ -564,18 +576,24 @@ if __name__ == '__main__':
 #     mc1.host = '192.168.2.1'
     mc1.connect()
 #     mc1.setup()
-#     setPixelsInRow(mc1, 127, mask=0, pulse_en=0)
+#     mc1.setPixelsInRow(127, mask=0, pulse_en=0)
+#     for i in range(121):
+#         mc1.setPixelsInRow(i, mask=0, pulse_en=0)
+#         time.sleep(0.5)
+#         print mc1.getFDAddresses(50)
 #     mc1.setPixels([(i+32*k,j,0,1) for i in range(7) for j in range(32) for k in range(4)])
-#     mc1.setPixels([(127,12,0,1)])
+    mc1.setPixels([(127,12,0,1)])
+#     mc1.setPixels([(17,31,1,0)])
 #     mc1.setPixels([(8*i+i,i,1,1) for i in range(8)])
 #     mc1.setPixels([(7,8,0,1)])
 #     mc1.setPixels([(8,0,1,0),(8,1,0,1)])
 #     mc1.setPixels([(8,1,1,1)])
 #     setPixels(mc1, [(127,i,0,1) for i in range(32)])
-#     sys.exit(0)
-# #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
+#     test_AOUT(mc1)
+# # #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
 #     mc1.sendGRST_B()
 #     mc1.setAllPixels(mask=1, pulse_en=0)
+#     sys.exit(0)
 #     mc1.setClocks(0,6,6)
 #     mc1.setPixelsInSuperblock(0,0,mask=1, pulse_en=1)
 #     mc1.setPixelsInSuperblock(1,0,mask=0, pulse_en=1)
@@ -605,16 +623,13 @@ if __name__ == '__main__':
 #     mc1.setPixelsInSuperblock(3,6,mask=1, pulse_en=0)
 #     time.sleep(5)
 
-    mc1.start_take_data()
+#     mc1.start_take_data(dataFileName='data_May15_noise_allPixels.dat')
 #     mc1.sendD_PULSE()
-    try:
-        mc1.wait()
-    except KeyboardInterrupt:
-        mc1.quit()
+#     mc1.wait()
 #     time.sleep(20)
 #     mc1.quit()
-
-#     mc1.readFD(readOnly=True)
+#     mc1.setPixelsInRow(126, mask=0, pulse_en=0)
+    mc1.readFD(readOnly=True)
  #     setAllPixels(mc1, mask=0, pulse_en=1)
 #     sys.exit()
 #     setLastRow(mc1, mask=0,pulse_en=1)
