@@ -53,6 +53,7 @@ class ENCScanner:
         self.sigmaErrMax = 0.0003
         self.sigmaErrRelMax = 0.01
         self.nFitTry = 5
+        self.nPixel = 1
 
     def showStats(self):
         for dv in sorted(self.totalStats.iterkeys()):
@@ -150,6 +151,59 @@ class ENCScanner:
                 print 'P = ',float(self.passStats[dv])/self.totalStats[dv]
 
         return True
+
+class pixelData:
+    '''A class to hold the pixel data'''
+    def __init__(self, address, fitter=None):
+        self.addr = address
+        self.fitter = fitter
+        self.dataTotal = defaultdict(int)
+        self.dataPass  = defaultdict(int)
+        self.mean = None
+        self.sigma = None
+        self.meanErr = None
+        self.sigmaErr = None
+    def D(self,list1,x=None):
+        fd = 1 if self.addr in list1 else 0
+        if x is not None:
+            self.dataTotal[x] += 1
+            self.dataPass [x] += fd
+        return fd
+    
+    def mean_estimate(self, Range=None):
+        return self.mean0, 0.005
+
+    def ENC(self):
+        self.fitter.clearData()
+        for dv,n in self.dataTotal.items():
+            for j in range(n):
+                self.fitter.addData(dv, n<self.dataPass[dv])
+        self.fitter.mean0, self.fitter.sigma0 = self.mean_estimate() 
+        self.fitter.fit()
+        self.mean = self.fitter.mean
+        self.meanErr = self.fitter.meanErr
+        self.sigma = self.fitter.sigma
+        self.sigmaErr = self.fitter.sigmaErr
+
+class multiPixelENC:
+    def __init__(self):
+        self.fitter = None
+        self.pixels = [pixelData((i,j),self.fitter) for i in range(8) for j in range(32)]
+        self.funX = self.setDU
+        self.funY = self.getVal
+
+    def setDU(self, x):
+        '''Same as 1 pixel case'''
+        self.mic4.setVhVl(self.vL+dU, self.vL)
+        time.sleep(0.2)
+        self.mic4.getFDAddresses(100, True) ### make sure the FIFO is empty...
+
+    def getVal(self):
+        '''Use some pixels to calculate, no need to do all of them
+        The statistics need to be recorded.
+        '''
+        pass
+
 
 class GenXY:
     def __init__(self):
