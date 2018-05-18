@@ -297,7 +297,7 @@ def test_AOUT(mc1):
 
 
 
-    mc1.sReg.selectCol(23)
+    mc1.sReg.selectCol(4)
 
 
     mc1.sReg.selectVolDAC(2)
@@ -582,17 +582,20 @@ if __name__ == '__main__':
 #         time.sleep(0.5)
 #         print mc1.getFDAddresses(50)
 #     mc1.setPixels([(i+32*k,j,0,1) for i in range(7) for j in range(32) for k in range(4)])
-    mc1.setPixels([(127,12,0,1)])
-#     mc1.setPixels([(17,31,1,0)])
+#    mc1.setPixels([(127,4,0,1)])
+#     time.sleep(0.5)
+    mc1.setPixels([(127,20,1,0),(127,30,0,1)])
+ #   mc1.setPixels([(120,8,1,0),(127,12,0,1)])
+#     mc1.setPixels([(15, 10,1,0)])
 #     mc1.setPixels([(8*i+i,i,1,1) for i in range(8)])
 #     mc1.setPixels([(7,8,0,1)])
 #     mc1.setPixels([(8,0,1,0),(8,1,0,1)])
 #     mc1.setPixels([(8,1,1,1)])
 #     setPixels(mc1, [(127,i,0,1) for i in range(32)])
-#     test_AOUT(mc1)
+#    test_AOUT(mc1)
 # # #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
 #     mc1.sendGRST_B()
-#     mc1.setAllPixels(mask=1, pulse_en=0)
+#    mc1.setAllPixels(mask=1, pulse_en=0)
 #     sys.exit(0)
 #     mc1.setClocks(0,6,6)
 #     mc1.setPixelsInSuperblock(0,0,mask=1, pulse_en=1)
@@ -624,12 +627,13 @@ if __name__ == '__main__':
 #     time.sleep(5)
 
 #     mc1.start_take_data(dataFileName='data_May15_noise_allPixels.dat')
-#     mc1.sendD_PULSE()
+#    mc1.sendD_PULSE()
 #     mc1.wait()
 #     time.sleep(20)
 #     mc1.quit()
 #     mc1.setPixelsInRow(126, mask=0, pulse_en=0)
-    mc1.readFD(readOnly=True)
+#    mc1.sendA_PULSE()
+#    mc1.readFD(readOnly=True)
  #     setAllPixels(mc1, mask=0, pulse_en=1)
 #     sys.exit()
 #     setLastRow(mc1, mask=0,pulse_en=1)
@@ -665,7 +669,6 @@ if __name__ == '__main__':
 #     mc1.readFD()
 
 #     runFD_check(mc1)
-#     mc1.sendA_PULSE()
 # 
 #     mc1.s.settimeout(0.2)
 #     try:

@@ -157,11 +157,21 @@ class dataTaker:
 
         return mean2, maxI2, ix
 
+def saveSamples(sampleList, saveName, text=None):
+    with open(saveName,'w') as fout1:
+        if text is not None: fout1.write(text+'\n')
+        length = min([len(s) for s in sampleList])
+        for i in range(length):
+            text = ' '.join([str(s[i]) for s in sampleList])
+            fout1.write(text+'\n')
+
 class DeltaUScanner(dataTaker):
     def __init__(self,outFileName=None):
         dataTaker.__init__(self,outFileName)
         self.sampler = None
         self.fout = None
+        self.tag = 'test_'
+        self.infoHeader = None
 
     def setup(self):
         self.connect()
@@ -261,17 +271,44 @@ class DeltaUScanner(dataTaker):
 # SUB=-3V Chip #5 bias6
 
  
-        self.mic4.sReg.setPar('VCLIP' ,0.45,  0.686, 0x200) #select<5>
-        self.mic4.sReg.setPar('VReset',1.388,  0.701, 0x200) #select<2> 
-        self.mic4.sReg.setPar('VCASN2',0.9,  0.692, 0x200) #select<1>
-        self.mic4.sReg.setPar('VCASN' ,0.87,  0.695, 0x200) #select<4>
-        self.mic4.sReg.setPar('VCASP' ,0.5,  0.692, 0x200) #select<3>
-        self.mic4.sReg.setPar('VRef'  ,0.4,  0.701, 0x200) #select<0> 
-        self.mic4.sReg.setPar('IBIAS' ,0xff) #select<4> 0x80 is 0.342  0xff is 0.588
-        self.mic4.sReg.setPar('IDB'   ,0x80) #select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
-        self.mic4.sReg.setPar('ITHR'  ,0x40) #select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
-        self.mic4.sReg.setPar('IRESET',0x80)
-        self.mic4.sReg.setPar('IDB2'  ,0x80)
+#         self.mic4.sReg.setPar('VCLIP' ,0.45,  0.686, 0x200) #select<5>
+#         self.mic4.sReg.setPar('VReset',1.388,  0.701, 0x200) #select<2> 
+#         self.mic4.sReg.setPar('VCASN2',0.9,  0.692, 0x200) #select<1>
+#         self.mic4.sReg.setPar('VCASN' ,0.87,  0.695, 0x200) #select<4>
+#         self.mic4.sReg.setPar('VCASP' ,0.5,  0.692, 0x200) #select<3>
+#         self.mic4.sReg.setPar('VRef'  ,0.4,  0.701, 0x200) #select<0> 
+#         self.mic4.sReg.setPar('IBIAS' ,0xff) #select<4> 0x80 is 0.342  0xff is 0.588
+#         self.mic4.sReg.setPar('IDB'   ,0x80) #select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
+#         self.mic4.sReg.setPar('ITHR'  ,0x40) #select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
+#         self.mic4.sReg.setPar('IRESET',0x80)
+#         self.mic4.sReg.setPar('IDB2'  ,0x80)
+
+#SUB=0V
+        vclip = 0.
+        vcasn = 0.4
+        vcasp = 0.5
+        vreset= 1.35
+        vcasn2= 0.5
+        vref  = 0.4
+        ibias = 0xff
+        idb   = 0x80
+        ithr  = 0x70
+        ireset= 0x80
+        idb2  = 0x80
+
+        ### set the values
+        self.mic4.sReg.setPar('VCLIP' ,vclip,   0.686, 0x200) #select<5>
+        self.mic4.sReg.setPar('VReset',vreset,   0.701, 0x200) #select<2> 
+        self.mic4.sReg.setPar('VCASN2',vcasn2,   0.692, 0x200) #select<1>
+        self.mic4.sReg.setPar('VCASN' ,vcasn,  0.695, 0x200) #select<4>
+        self.mic4.sReg.setPar('VCASP' ,vcasp,  0.692, 0x200) #select<3>
+        self.mic4.sReg.setPar('VRef'  ,vref,    0.701, 0x200) #select<0> 
+        self.mic4.sReg.setPar('IBIAS' ,ibias )#select<4> 0x80 is 0.342  0xff is 0.588
+        self.mic4.sReg.setPar('IDB'   ,idb   )#select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
+        self.mic4.sReg.setPar('ITHR'  ,ithr  )#select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
+        self.mic4.sReg.setPar('IRESET',ireset)
+        self.mic4.sReg.setPar('IDB2'  ,idb2  )
+
 
 # SUB=-4V Chip #5 bias1
 
@@ -317,14 +354,16 @@ class DeltaUScanner(dataTaker):
         print vL, vH, mean, err
         return mean, err
 
-
     def measure(self, vH, vL):
         self.mic4.setVhVl(vH,vL)
         time.sleep(1)
 
         self.mic4.sendA_PULSE()
         time.sleep(1)
-        self.wave.channel = 4
+        self.wave.channel = 1
+        sample0 = self.wave.getData()
+
+        self.wave.channel = 2
         sample = self.wave.getData()
         v,R,W = self.analysisMore(sample)
 
@@ -335,6 +374,8 @@ class DeltaUScanner(dataTaker):
             if i>0.5:
                 vout = 1
                 break
+
+        saveSamples([sample0, sample, sample1], self.tag+'{0:.4f}_{1:.4f}'.format(vL,vH).replace('.','p')+'.dat', self.infoHeader)
 
         print v,vout, R, W
         return v, vout, R, W
@@ -383,9 +424,9 @@ class DeltaUScanner(dataTaker):
         fout = open(self.outFileName,'w') if self.outFileName else None
         ### loop over
         vL = 0.7
-        for i in range(7):
-            vH = 0.78 + i*0.01
-            for j in range(100):
+        for i in range(21):
+            vH = 0.7 + i*0.05
+            for j in range(1):
                 mean,vout, R, W = self.measure(vH, vL)
                 if fout:
                     fout.write('{6:d} {0:.4f} {1:.3f} {2:.4f} {3:d} {4:d} {5:d}\n'.format(vL, vH, mean, vout, R, W, j))
@@ -454,11 +495,14 @@ def test_DeltaUScanner():
 #     t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-4v_bias1.dat")
 #     t1 = DeltaUScanner("ENC_0504_Chip5Col12_scan_sub-3v_bias2_try2.dat")
 #    t1 = DeltaUScanner("Qth_0508_Chip5Col12_scan_sub-3v_bias6.dat")
-    t1 = DeltaUScanner("ENC_0508_Chip5Col12_scan_sub-3v_bias6.dat")
+#    t1 = DeltaUScanner("ENC_0508_Chip5Col12_scan_sub-3v_bias6.dat")
+    t1 = DeltaUScanner("May17DifferentChargein_vl0p7_vh0p7to1p7.dat")
 #     t1.wave.saveDataToFile = open('test112.dat','w')
 #     t1.wave.channel = 4
+    t1.tag = 'May17_defaultV1_'
+    t1.infoHeader = '# testDifferentChargein, time scale = 2us, channel 1 is APLSE(scale=1V), channel 2 is AOUT(scale=0.2V), channel 3 is VALID(scale=1V)'
     t1.setup()
-#     t1.measure(1.3,0.6)
+#    t1.measure(1.3,0.6)
 #     t1.saveDataToFile.close()
 #    t1.run5()
 

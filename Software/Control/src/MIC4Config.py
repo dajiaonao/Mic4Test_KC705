@@ -205,12 +205,19 @@ class MIC4Config():
         self.pCfg.clk_div = self.clk_div+10 # from 100 MHz clock
         self.threads = []
 
-    def setup(self):
+    def setup(self, configID=None):
         self.connect()
         self.setClocks()
         self.test_DAC8568_config()
 
-        self.sReg.useDefault() 
+        if configID is None: self.sReg.useDefault()
+        else:
+            try:
+                getattr(self.sReg, 'useConfig{%d}'.format(configID))()
+            except:
+                print("problem with configID:", configID)
+                return
+
         self.sReg.show()
         self.testReg(read=True)
         print("Setup the chip working point")
@@ -814,6 +821,24 @@ class MIC4Reg(object):
         # self.setPar('XYZ',0x80) ### test the exception handling
         self.selectVolDAC(5)
         self.selectCurDAC(0)
+
+    def useConfig0(self):
+        self.value =  0
+        self.setPar('VCLIP' ,0,  0.833, 0b1001011001)
+        self.setPar('VCASN' ,0.4,  0.384, 0b100011110)
+        self.setPar('VCASP' ,0.5,  0.603, 0b110110000)
+        self.setPar('VReset',1.2,  1.084, 0b1100000111)
+        self.setPar('VCASN2',0.5,  0.502, 0b101100110)
+        self.setPar('VRef'  ,0.4,  0.406, 0b100011111)
+        self.setPar('IBIAS' ,0xc9)
+        self.setPar('IDB'   ,0x80)
+        self.setPar('ITHR'  ,0x80)
+        self.setPar('IRESET',0x80)
+        self.setPar('IDB2'  ,0x80)
+        self.setTRX16(0b1000)
+        self.selectVolDAC(5)
+        self.selectCurDAC(0)
+        self.selectCol(12)
 
     def useDefault(self):
         self.value =  0
