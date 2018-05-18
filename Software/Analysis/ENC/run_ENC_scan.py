@@ -3,7 +3,8 @@ from ROOT import *
 import random, math
 from collections import defaultdict
 # from rootUtil import waitRootCmdX, useAtlasStyle, get_default_fig_dir
-import time
+import time, os
+# import subprocess
 
 gROOT.LoadMacro('encFitter.C+')
 from ROOT import encFitter
@@ -53,6 +54,7 @@ class ENCScanner:
         self.sigmaErrMax = 0.0003
         self.sigmaErrRelMax = 0.01
         self.nFitTry = 5
+        self.autoInitial = True
 
     def showStats(self):
         for dv in sorted(self.totalStats.iterkeys()):
@@ -75,9 +77,12 @@ class ENCScanner:
         self.totalStats = defaultdict(int)
         self.passStats = defaultdict(int)
         ### first step, narrow down the region
-        listA = [0,0.6]
+        listA = [0.,0.6]
         while len(listA)<4:
 #             print listA
+            if len(listA) <2:
+                print "Not a good range..... Skipping..."
+                return
             listB = genList(listA, self.npoints)
             print 'Will scan', listB
             listA = []
@@ -120,9 +125,18 @@ class ENCScanner:
                 self.passStats[dv] += fd
             print 'P = ',float(self.passStats[dv])/self.totalStats[dv]
         while True:
-            if self.fitter.mean0 < 0:
-                self.fitter.mean0 = listC[len(listC)/2]
-            if self.fitter.sigma0 < 0:
+            if self.fitter.mean0 < 0 or self.autoInitial:
+#                 self.fitter.mean0 = listC[len(listC)/2]
+                Ys = [(dv, float(self.passStats[dv])/self.totalStats[dv]) for dv in self.totalStats]
+                ### get sorted values
+                st = sorted(Ys, key=lambda x:abs(x[1]-0.5))
+                ### st[0] and st[1] should be close to value
+                if abs(st[0][1] + st[1][1] - 1) < 0.2:
+                    self.fitter.mean0 = st[0][0] + (st[1][0]-st[0][0])/(st[1][1]-st[0][1])*(0.5-st[0][1])
+                else:
+                    self.fitter.mean0 = st[0][0]
+
+            if self.fitter.sigma0 < 0 or self.autoInitial:
 #                 self.fitter.sigma0 = (listC[-1]-listC[0])/10.
                 self.fitter.sigma0 = 0.005
             self.fitter.meanD = listC[0]
@@ -167,7 +181,7 @@ class GenXY:
 class mic4ENCCalculator:
     def __init__(self):
         self.mic4 = MIC4Config()
-        self.pixel = (127,12)
+        self.pixel = (127,4)
         self.vL = 0.7
         self.logFile = None
 
@@ -180,7 +194,7 @@ class mic4ENCCalculator:
         time.sleep(0.05)
         addrs = self.mic4.getFDAddresses(100)
 #         addrs = self.mic4.getFDAddresses(100, True)
-#         print addrs
+        print addrs
         return 0 if addrs is None or self.pixel not in addrs else 1
     def scanX(self):
         self.mic4.setup()
@@ -189,17 +203,18 @@ class mic4ENCCalculator:
         cx1.funX = self.setDU
         cx1.funY = self.getVal
 
-        for i in range(7):
-            ix = 1.1+0.05*i
+        for i in range(1):
+            ix = 0.4+0.1*i
+            #if ix > 0.7 : break
             vclip = 0.
-            vcasn = 0.4
+            vcasn = ix
             vcasp = 0.5
-            vreset= ix # 1.2
+            vreset= 1.35
             vcasn2= 0.5
             vref  = 0.4
             ibias = 0xff
             idb   = 0x80
-            ithr  = 0x80
+            ithr  = 0x70
             ireset= 0x80
             idb2  = 0x80
 
@@ -230,7 +245,7 @@ class mic4ENCCalculator:
 
             self.mic4.sReg.selectVolDAC(2)
             self.mic4.sReg.selectCurDAC(6)
-            self.mic4.sReg.selectCol(12)
+            self.mic4.sReg.selectCol(30)
             self.mic4.sReg.setTRX16(0b1000)
             self.mic4.sReg.show()
             self.mic4.testReg(read=True)
@@ -259,7 +274,15 @@ class mic4ENCCalculator:
 
 def testScan():
     mc1 = mic4ENCCalculator()
-    logFileName = 'DAC_scan_vreset_1p1TO1p3.dat'
+    mc1.pixel = (127,30)
+#    logFileName = 'DAC_scan_vcasn_0p2to0p6.dat'
+    logFileName = 'May17_ENC_col30.dat'
+    if os.path.exists(logFileName):
+        idz = 1
+        while os.path.exists(logFileName+'.'+str(idz)):
+            idz += 1
+        logFileName += '.'+str(idz)
+
     with open(logFileName,'w') as f1:
         mc1.logFile = f1
         mc1.scanX()
@@ -290,25 +313,44 @@ def checkFit():
 # 0.5 20 20 1.0
 # 0.6 20 20 1.0
 
-0.0 10 0 0.0
-0.1 130 0 0.0
-0.10278 100 3 0.03
-0.10556 110 19 0.172727272727
-0.11111 110 74 0.672727272727
-0.11389 100 89 0.89
-0.11667 120 114 0.95
-0.12222 110 110 1.0
-0.12778 10 10 1.0
-0.13333 20 20 1.0
-0.15 10 10 1.0
-0.16667 10 10 1.0
-0.18333 10 10 1.0
-0.2 20 20 1.0
+0.0 20 0 0.0
+0.01667 10 0 0.0
+0.03333 10 0 0.0
+0.05 10 0 0.0
+0.06667 10 0 0.0
+0.08333 20 0 0.0
+0.08611 110 1 0.00909090909091
+0.08889 110 8 0.0727272727273
+0.09028 100 5 0.05
+0.09167 110 23 0.209090909091
+0.09444 110 44 0.4
+0.09722 110 73 0.663636363636
+0.1 130 118 0.907692307692
+0.2 10 10 1.0
 0.3 10 10 1.0
 0.4 10 10 1.0
 0.5 10 10 1.0
 0.6 10 10 1.0
-
+# 
+# 0.0 10 0 0.0
+# 0.1 130 0 0.0
+# 0.10278 100 3 0.03
+# 0.10556 110 19 0.172727272727
+# 0.11111 110 74 0.672727272727
+# 0.11389 100 89 0.89
+# 0.11667 120 114 0.95
+# 0.12222 110 110 1.0
+# 0.12778 10 10 1.0
+# 0.13333 20 20 1.0
+# 0.15 10 10 1.0
+# 0.16667 10 10 1.0
+# 0.18333 10 10 1.0
+# 0.2 20 20 1.0
+# 0.3 10 10 1.0
+# 0.4 10 10 1.0
+# 0.5 10 10 1.0
+# 0.6 10 10 1.0
+# 
 # 0.0 10 0 0.0
 # 0.1 20 0 0.0
 # 0.11667 20 0 0.0
@@ -381,9 +423,10 @@ def checkFit():
         for i in range(int(fs[1])):
             en1.addData(x,i<npass)
 # 0.121369309723 0.00424943258986
-    en1.mean0 = 0.120
+# 0.0808686986566 0.015657313168
+    en1.mean0 = 0.085
 #     en1.sigma0 = 0.00424943258986
-    en1.sigma0 = 0.01
+    en1.sigma0 = 0.015657313168
 
     en1.fit()
 
