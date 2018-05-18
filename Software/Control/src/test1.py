@@ -297,14 +297,14 @@ def test_AOUT(mc1):
 
 
 
-    mc1.sReg.selectCol(4)
+    mc1.sReg.selectCol(12)
 
 
     mc1.sReg.selectVolDAC(2)
     mc1.sReg.selectCurDAC(6)
 #    mc1.sReg.setLVDS_TEST(0b1000)
     mc1.sReg.setTRX16(0b1000)
-#    mc1.sReg.setTRX15_serializer(0b1000)
+    mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
     mc1.testReg(read=True)
 # #     mc1.setClocks(1,6,6)
@@ -582,9 +582,10 @@ if __name__ == '__main__':
 #         time.sleep(0.5)
 #         print mc1.getFDAddresses(50)
 #     mc1.setPixels([(i+32*k,j,0,1) for i in range(7) for j in range(32) for k in range(4)])
-#    mc1.setPixels([(127,4,0,1)])
+#    mc1.setPixels([(127,12,0,1)])
+
 #     time.sleep(0.5)
-    mc1.setPixels([(127,20,1,0),(127,30,0,1)])
+#   mc1.setPixels([(127,20,1,0),(127,30,0,1)])
  #   mc1.setPixels([(120,8,1,0),(127,12,0,1)])
 #     mc1.setPixels([(15, 10,1,0)])
 #     mc1.setPixels([(8*i+i,i,1,1) for i in range(8)])
@@ -592,7 +593,7 @@ if __name__ == '__main__':
 #     mc1.setPixels([(8,0,1,0),(8,1,0,1)])
 #     mc1.setPixels([(8,1,1,1)])
 #     setPixels(mc1, [(127,i,0,1) for i in range(32)])
-#    test_AOUT(mc1)
+    test_AOUT(mc1)
 # # #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
 #     mc1.sendGRST_B()
 #    mc1.setAllPixels(mask=1, pulse_en=0)
@@ -671,12 +672,12 @@ if __name__ == '__main__':
 #     runFD_check(mc1)
 # 
 #     mc1.s.settimeout(0.2)
-#     try:
-#         l1 = mc1.getFDAddresses()
-#         if l1:
-#             print l1
-#             print l1.index((127,12))
-# #         mc1.readFD(readOnly=True)
+#    try:
+#        l1 = mc1.getFDAddresses()
+#        if l1:
+#            print l1
+#            print l1.index((127,12))
+    mc1.readFD(readOnly=True)
 #     except socket.timeout as e:
 #         print "caught the exception:", e
 #     mc1.readFD(readOnly=False)
