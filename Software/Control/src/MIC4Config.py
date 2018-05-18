@@ -367,7 +367,7 @@ class MIC4Config():
         cmdstr += self.cmd.read_datafifo(nWord-1)
         self.s.sendall(cmdstr)
 
-    def getFDAddresses(self, nframe=20, debug=False):
+    def getFDAddresses(self, nframe=20, debug=0):
         cmdstr = ''
         cmdstr += self.cmd.write_register(0, 0)
         self.s.sendall(cmdstr)
@@ -392,14 +392,14 @@ class MIC4Config():
         nF = 48
         hd = findHeader(dx)
         if hd<0:
-            if debug: print(dx)
+            if debug==2: print(dx)
             return None
 
         aList = []
         while hd+nF<=len(dx):
             aList += parseFD(dx[hd:hd+nF], show=False)
             hd+=nF
-        if debug and len(aList)==0: print(dx)
+        if debug==1 and len(aList)==0: print(dx)
         return aList
 
 #     def recordData(self, fname='test_record.dat'):
@@ -824,7 +824,40 @@ class MIC4Reg(object):
 
     def useConfig0(self):
         self.value =  0
-        self.setPar('VCLIP' ,0,  0.833, 0b1001011001)
+
+        vclip = 0.
+        vcasn = 0.4
+        vcasp = 0.5
+        vreset= 1.35
+        vcasn2= 0.5
+        vref  = 0.4
+        ibias = 0xff
+        idb   = 0x80
+        ithr  = 0x70
+        ireset= 0x80
+        idb2  = 0x80
+
+        ### set the values -- chip5
+        self.setPar('VCLIP' ,vclip,   0.686, 0x200) #select<5>
+        self.setPar('VReset',vreset,  0.701, 0x200) #select<2> 
+        self.setPar('VCASN2',vcasn2,  0.692, 0x200) #select<1>
+        self.setPar('VCASN' ,vcasn,   0.695, 0x200) #select<4>
+        self.setPar('VCASP' ,vcasp,   0.692, 0x200) #select<3>
+        self.setPar('VRef'  ,vref,    0.701, 0x200) #select<0> 
+        self.setPar('IBIAS' ,ibias )#select<4> 0x80 is 0.342  0xff is 0.588
+        self.setPar('IDB'   ,idb   )#select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
+        self.setPar('ITHR'  ,ithr  )#select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
+        self.setPar('IRESET',ireset)
+        self.setPar('IDB2'  ,idb2  )
+
+        self.setTRX16(0b1000)
+        self.selectVolDAC(5)
+        self.selectCurDAC(0)
+        self.selectCol(12)
+
+    def useConfig1(self):
+        self.value =  0
+        self.setPar('VCLIP' ,0,    0.833, 0b1001011001)
         self.setPar('VCASN' ,0.4,  0.384, 0b100011110)
         self.setPar('VCASP' ,0.5,  0.603, 0b110110000)
         self.setPar('VReset',1.2,  1.084, 0b1100000111)

@@ -166,7 +166,7 @@ def test_AOUT(mc1):
     mc1.setClocks(0,6,6)
 #     sys.exit(1)
     mc1.test_DAC8568_config()
-    mc1.setVhVl(1.2,0.7)
+    mc1.setVhVl(0.7,0.7)
 # # #     mc1.sReg.useDefault()
     mc1.sReg.value =  0
     mc1.sReg.setPDB(0)
@@ -211,16 +211,20 @@ def test_AOUT(mc1):
 
 # PLAC 
     mc1.sReg.setPar('VCLIP' ,0. , 0.689, 0x200)
-    mc1.sReg.setPar('VReset',1.2, 0.703, 0x200)
+    mc1.sReg.setPar('VReset',1.1, 0.703, 0x200)
     mc1.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
     mc1.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
-    mc1.sReg.setPar('VCASP' ,0.5, 0.694, 0x200)
+#     mc1.sReg.setPar('VCASP' ,0.5, 0.694, 0x200)
+    mc1.sReg.setPar('VCASP' ,0.7, 0.694, 0x200)
     mc1.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
-    mc1.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
-    mc1.sReg.setPar('IDB'   ,0xf0)
-    mc1.sReg.setPar('ITHR'  ,0x80)
+#     mc1.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
+    mc1.sReg.setPar('IBIAS' ,0x0) ## Chip 5: 0xff->0.594 V
+#     mc1.sReg.setPar('IDB'   ,0xf0)
+    mc1.sReg.setPar('ITHR'  ,0xff)
+#     mc1.sReg.setPar('ITHR'  ,0xf0)
     mc1.sReg.setPar('IRESET',0x80)
-    mc1.sReg.setPar('IDB2'  ,0x80)
+#     mc1.sReg.setPar('IDB2'  ,0x80)
+    mc1.sReg.setPar('IDB2'  ,0xf0)
 
 #     mc1.sReg.setPar('VCLIP' ,0,  0.833, 0b1001011001)
 #     mc1.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
@@ -582,7 +586,8 @@ if __name__ == '__main__':
 #         time.sleep(0.5)
 #         print mc1.getFDAddresses(50)
 #     mc1.setPixels([(i+32*k,j,0,1) for i in range(7) for j in range(32) for k in range(4)])
-#    mc1.setPixels([(127,12,0,1)])
+#     mc1.setPixels([(120,30,1,0)])
+#     mc1.setPixels([(120,20,1,0)])
 
 #     time.sleep(0.5)
 #   mc1.setPixels([(127,20,1,0),(127,30,0,1)])
@@ -593,12 +598,14 @@ if __name__ == '__main__':
 #     mc1.setPixels([(8,0,1,0),(8,1,0,1)])
 #     mc1.setPixels([(8,1,1,1)])
 #     setPixels(mc1, [(127,i,0,1) for i in range(32)])
-    test_AOUT(mc1)
+#     test_AOUT(mc1)
 # # #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
 #     mc1.sendGRST_B()
 #    mc1.setAllPixels(mask=1, pulse_en=0)
 #     sys.exit(0)
 #     mc1.setClocks(0,6,6)
+#     for i in range(4):
+#         mc1.setPixelsInSuperblock(15,i,mask=1, pulse_en=0)
 #     mc1.setPixelsInSuperblock(0,0,mask=1, pulse_en=1)
 #     mc1.setPixelsInSuperblock(1,0,mask=0, pulse_en=1)
 #     mc1.setPixelsInSuperblock(1,0,mask=1, pulse_en=0)
@@ -628,7 +635,11 @@ if __name__ == '__main__':
 #     time.sleep(5)
 
 #     mc1.start_take_data(dataFileName='data_May15_noise_allPixels.dat')
-#    mc1.sendD_PULSE()
+#     print mc1.getFDAddresses(100,True)
+#     mc1.sendA_PULSE()
+#     mc1.sendGRST_B()
+#     l1 = mc1.getFDAddresses(100,True)
+#     print l1
 #     mc1.wait()
 #     time.sleep(20)
 #     mc1.quit()
@@ -677,7 +688,7 @@ if __name__ == '__main__':
 #        if l1:
 #            print l1
 #            print l1.index((127,12))
-    mc1.readFD(readOnly=True)
+#     mc1.readFD(readOnly=True)
 #     except socket.timeout as e:
 #         print "caught the exception:", e
 #     mc1.readFD(readOnly=False)

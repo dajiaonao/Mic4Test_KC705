@@ -5,6 +5,7 @@ from collections import defaultdict
 # from rootUtil import waitRootCmdX, useAtlasStyle, get_default_fig_dir
 import time, os
 # import subprocess
+import numpy as nm
 
 gROOT.LoadMacro('encFitter.C+')
 from ROOT import encFitter
@@ -36,6 +37,16 @@ def genList(l1, N, roundN=5):
 
     return l3
 
+def fillList(list1, maxStep=0.004, roundN=5):
+    list2 = sorted(list1)
+    n = len(list2)-1
+    for i in range(n):
+        if list2[i+1]-list2[i] > maxStep:
+            nx = int((list2[i+1]-list2[i])/maxStep)
+            step = (list2[i+1]-list2[i])/(nx+1)
+#             print i, list2[i], list2[i+1], nx, step, list2, [list2[i]+(j+1)*step for j in range(nx)]
+            list2 += [list2[i]+(j+1)*step for j in range(nx)]
+    return [round(x,roundN) for x in sorted(list2)]
 
 class ENCScanner:
     def __init__(self):
@@ -173,13 +184,13 @@ class pixelData:
         self.fitter = fitter
         self.totalStats = defaultdict(int)
         self.passStats  = defaultdict(int)
-        self.mean = None
-        self.sigma = None
-        self.meanErr = None
-        self.sigmaErr = None
+        self.mean = -1
+        self.sigma = -1
+        self.meanErr = -1
+        self.sigmaErr = -1
         self.cachedResults = None
     def D(self,list1,x=None):
-        fd = 1 if self.addr in list1 else 0
+        fd = 1 if (list1 is not None) and (self.addr in list1) else 0
         if x is not None:
             self.totalStats[x] += 1
             self.passStats[x]  += fd
@@ -200,9 +211,9 @@ class pixelData:
 
     def ENC(self):
         self.fitter.clearData()
-        for dv,n in self.dataTotal.items():
+        for dv,n in self.totalStats.items():
             for j in range(n):
-                self.fitter.addData(dv, n<self.dataPass[dv])
+                self.fitter.addData(dv, n<self.passStats[dv])
         self.fitter.mean0, self.fitter.sigma0 = self.mean_estimate() 
         self.fitter.fit()
         self.mean = self.fitter.mean
@@ -220,16 +231,23 @@ class pixelData:
         if self.cachedResults is None:
             self.ENC()
         return self.meanErr
-
+    def dumpInfo(self):
+        text = '\n#---\n'
+        text += '{0:d} {1:d} {2:.5g} {3:.5g} {4:.5g} {5:.5g}\n'.format(self.addr[0],self.addr[1],self.mean,self.meanErr,self.sigma,self.sigmaErr)
+        for dv in sorted(self.totalStats.iterkeys()):
+            text += '# {0:.5f} {1:d}  {2:d}\n'.format(dv, self.totalStats[dv], self.passStats[dv])
+        return text
 
 class multiPixelENC:
     def __init__(self):
         self.fitter = encFitter()
-        self.pixels = [pixelData((i,j),self.fitter) for i in range(8) for j in range(32)]
+        self.pixels = [pixelData((i,j),self.fitter) for i in range(120,128) for j in range(32)]
         self.funX = self.setDU
         self.funY = self.getVal
         self.npoints = 10
         self.nSamples1 = 1
+        self.nSamples2 = 120
+        self.nSamples3 = 50
         self.rangeY0 = 0.01
         self.rangeY1 = 0.99
         self.enc_error_MAX = 0.0003
@@ -255,15 +273,44 @@ class multiPixelENC:
         time.sleep(0.2)
         self.mic4.getFDAddresses(100, True) ### make sure the FIFO is empty...
 
+    def check(self, list1):
+        '''Used to check the health of the returned addresses. 1) duplication; 2) validate'''
+        if len(list1)==0: print "Empty list, wrong header?"
+        jd = defaultdict(int)
+        for x in list1:
+            jd[x] += 1
+        for x in jd:
+            if jd[x]>1:
+                print "duplicated:",x,' --> ', jd[x]
+            if jd[x]>5:
+#                 self.mic4.setPixels([(x[0],x[1],1,0)])                
+                self.mic4.sendGRST_B()
+                print "reset the states"
+
     def getVal(self):
         '''Use some pixels to calculate, no need to do all of them
         The statistics need to be recorded.
         '''
-        adds = self.mic4.getFDAddresses(100)
+        self.mic4.getFDAddresses(100) # empty fifo
+        self.mic4.sendA_PULSE()
+        time.sleep(0.05)
+
+        adds = self.mic4.getFDAddresses(100,debug=1)
+#         print adds
+        if adds is not None: self.check(adds)
         return sum([p.D(adds, self.dU) for p in self.pixels])
+
     def get_enc_error(self, n):
         step = len(self.pixels)/n
+        if step < 1: step = 1
         return nm.mean([p.encError() for p in self.pixels[::step]])
+
+    def showStats(self):
+        for dv in sorted(self.totalStats.iterkeys()):
+            print dv, self.totalStats[dv], self.passStats[dv], float(self.passStats[dv])/self.totalStats[dv]
+    def saveStats(self,fout,prefix='# '):
+        for dv in sorted(self.totalStats.iterkeys()):
+            fout.write(prefix+'{0:.5f} {1:d} {2:d} {3:.3f}\n'.format(dv, self.totalStats[dv], self.passStats[dv], float(self.passStats[dv])/self.totalStats[dv]))
 
     def run_check(self):
         ''' the main function...'''
@@ -282,8 +329,8 @@ class multiPixelENC:
             print 'Will scan', listB
             listA = []
 
-            dv0 = listB[0]
-            dv1 = listB[-1]
+            listL = [listB[0]]
+            listH = [listB[-1]]
             ### check the points of list B and update ListA
             for dv in listB:
                 self.funX(dv)
@@ -293,17 +340,19 @@ class multiPixelENC:
                     self.passStats[dv] += fd
                     r = float(self.passStats[dv])/self.totalStats[dv]
                     if r < self.rangeY0:
-                        dv0 = dv
+                        listL.append(dv)
                     elif r>self.rangeY1:
-                        dv1 = dv
+                        listH.append(dv)
                     else: listA.append(dv)
-            listA+=[dv0,dv1]
+            listA += [max(listL), min(listH)]
 
             self.showStats()
 
         ### OK, now we have more than 3 points
         ### Take data until enough
-        listC = genList(listA, self.npoints)
+        print "going with", listA
+        listC = fillList(genList(listA, self.npoints),0.003)
+        print 'Will scan', listC
         nSample = self.nSamples2
         while True:
             for dv in listC: 
@@ -314,13 +363,13 @@ class multiPixelENC:
                     self.passStats[dv] += fd
                 print 'P = ',float(self.passStats[dv])/self.totalStats[dv]
 
-            if self.get_enc_error() < self.enc_error_MAX: break
+            if self.enc_error_MAX is None or self.get_enc_error(10) < self.enc_error_MAX: break
             nSample = self.nSamples3
 
         ### Save data for further analysis
         ### for each pixel
         with open(self.outfilename, 'w') as fout1:
-            for p in pixel:
+            for p in self.pixels:
                 fout1.write(p.dumpInfo())
 
     def report(self):
@@ -640,10 +689,20 @@ def testT():
     print cx1.fitter.mean, cx1.fitter.meanErr
     print cx1.fitter.sigma, cx1.fitter.sigmaErr
 
+def testScanMore():
+    a = multiPixelENC()
+    a.setup()
+    a.nSamples2 = 200
+    a.enc_error_MAX = None
+    a.outfilename = 'enc_scan_BlockRow15.dat'
+    a.run_check()
+
         ###
 if __name__== '__main__':
 #     testT()
-    testScan()
+#     testScan()
+    testScanMore()
+#     print fillList([0.1,0.13,0.18,0.19],0.003)
 #     checkFit()
 #     x1 = genList([0.,1.],21)
 #     print len(x1), x1
