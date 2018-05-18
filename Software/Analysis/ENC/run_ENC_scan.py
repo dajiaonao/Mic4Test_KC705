@@ -6,6 +6,7 @@ from collections import defaultdict
 import time, os
 # import subprocess
 import numpy as nm
+from math import sqrt
 
 gROOT.LoadMacro('encFitter.C+')
 from ROOT import encFitter
@@ -189,6 +190,10 @@ class pixelData:
         self.meanErr = -1
         self.sigmaErr = -1
         self.cachedResults = None
+        self.graph = None
+        self.fitFun = None
+        self.fitChi2 = None
+    
     def D(self,list1,x=None):
         fd = 1 if (list1 is not None) and (self.addr in list1) else 0
         if x is not None:
@@ -209,12 +214,130 @@ class pixelData:
 
         return mean0, 0.005
 
+    def configFitter(self):
+        Ys = [(dv, float(self.passStats[dv])/self.totalStats[dv]) for dv in self.totalStats]
+        ### get sorted values
+        st = sorted(Ys, key=lambda x:abs(x[1]-0.5))
+        ### st[0] and st[1] should be close to value
+        if abs(st[0][1] + st[1][1] - 1) < 0.2:
+            mean0 = st[0][0] + (st[1][0]-st[0][0])/(st[1][1]-st[0][1])*(0.5-st[0][1])
+        else:
+            mean0 = st[0][0]
+        self.fitter.mean0 = mean0
+        self.fitter.meanU = mean0+0.005
+        self.fitter.meanD = mean0-0.005
+
+        self.fitter.sigma0 = 0.005
+        self.fitter.sigmaD = 0.001
+        self.fitter.sigmaU = 0.01
+        print "mean={0:.5f}[{1:.5f}, {2:.5f}], sigma={3:.5f}[{4:.5f}, {5:.5f}]".format(self.fitter.mean0, self.fitter.meanD, self.fitter.meanU, self.fitter.sigma0, self.fitter.sigmaD, self.fitter.sigmaU)
+
+    def dropIllData(self):
+        '''Remove ill entries
+        '''
+        ### it's non-zero but the 3 after it are 0
+        keys = sorted(self.totalStats.iterkeys())
+        for idv in range(len(keys)-3):
+            if self.passStats[keys[idv]]>0 and self.passStats[keys[idv+1]]==0 and self.passStats[keys[idv+2]]==0 and self.passStats[keys[idv+3]]==0:
+                self.totalStats[keys[idv]] *= -1
+
+        ### if the prob is not 1 but the 3 points before it are 1
+        for idv in range(3,len(keys)):
+            if self.totalStats[keys[idv]]<0: continue
+            if self.totalStats[keys[idv]]>self.passStats[keys[idv]] and self.totalStats[keys[idv-1]]==self.passStats[keys[idv-1]] and self.totalStats[keys[idv-2]]==self.passStats[keys[idv-2]] and self.totalStats[keys[idv-3]]==self.passStats[keys[idv-3]]:
+                self.totalStats[keys[idv]] *= -1
+
+    def getGraph(self, includeIllData=False):
+        if self.graph is None:
+            self.graph = TGraphErrors()
+            for dv in sorted(self.totalStats.iterkeys()):
+                N = self.totalStats[dv]
+                if N<0:
+                    if includeIllData: N *= -1
+                    else: continue
+
+                n = self.graph.GetN()
+                p = float(self.passStats[dv])/self.totalStats[dv]
+                self.graph.SetPoint(n, dv, p)
+                self.graph.SetPointError(n,0,sqrt(p*(1-p)/self.totalStats[dv]))
+        return self.graph
+
+    def getFitFun(self,name=None):
+        if self.fitFun is None:
+            funname = 'fitFun_{0:d}_{1:d}'.format(self.addr[0],self.addr[1]) if name is None else name
+            self.fitFun = TF1(funname,"0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1])))",0,1000)
+            self.fitFun.SetParameter(0, self.mean)
+            self.fitFun.SetParameter(1, self.sigma)
+        return self.fitFun
+
+    def getFitChi2(self):
+        if self.fitChi2 is None:
+            fun1 = self.getFitFun()
+            gr1 = self.getGraph()
+            self.fitChi2 = gr1.Chisquare(fun1)
+        return self.fitChi2
+        
+
+    def loadFromFile(self,fname, filterX=None):
+        '''
+        #---
+        120 0 -1 -1 -1 -1
+        # 0.00000 201  0
+        # 0.00278 200  0
+        '''
+        pX = lambda x,y: x if x>0 else y
+
+        with open(fname,'r') as fin1:
+            stage = 0
+            while True:
+                line = fin1.readline()
+                if len(line)==0: break
+                if line == '#---\n':
+                    stage = 1
+                    continue
+                fs = line.rstrip().split()
+                if len(fs)==0:
+                    if stage==2: break
+                    else: continue
+
+                if line[0]!='#' and len(fs)==6:
+                    if int(fs[0]) == self.addr[0] and int(fs[1]) == self.addr[1]:
+                        stage = 2
+                        if fs[2] != '-1': self.mean = float(fs[2])
+                        if fs[3] != '-1': self.meanErr = float(fs[3])
+                        if fs[4] != '-1': self.sigma = float(fs[4])
+                        if fs[5] != '-1': self.sigmaErr = float(fs[5])
+                        
+                    else: stage = 0
+                    continue
+                if stage==2 and fs[0]=='#':
+                    x = float(fs[1])
+                    if filterX is None or filterX(x):
+                        self.totalStats[x] = int(fs[2])
+                        self.passStats[x] = int(fs[3])
+        self.dropIllData()
+        print self.dumpInfo()
+
+
     def ENC(self):
+        if self.fitter is None: self.fitter = encFitter()
+
         self.fitter.clearData()
         for dv,n in self.totalStats.items():
+            if n<= 0: continue
             for j in range(n):
-                self.fitter.addData(dv, n<self.passStats[dv])
-        self.fitter.mean0, self.fitter.sigma0 = self.mean_estimate() 
+                self.fitter.addData(dv, j<self.passStats[dv])
+        self.configFitter()
+#         print self.fitter.data1.size()
+#         self.fitter.showData(500)
+#         self.fitter.mean0, self.fitter.sigma0 = self.mean_estimate() 
+#         self.fitter.mean0 = 0.0408
+#         self.fitter.meanU = 0.06
+#         self.fitter.meanD = 0.02
+#         self.fitter.sigma0 = 0.005
+#         self.fitter.sigmaU = 0.01
+#         self.fitter.sigmaD = 0.001
+#         print self.fitter.mean0, self.fitter.sigma0
         self.fitter.fit()
         self.mean = self.fitter.mean
         self.meanErr = self.fitter.meanErr

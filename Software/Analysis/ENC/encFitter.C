@@ -50,6 +50,7 @@ class encFitter{
     for(size_t i=0; i<data1.size(); i++){
       double P = 0.5*(1.+TMath::Erf((data1[i].first-xx[0])/(sqrt2*xx[1])));
       val *= data1[i].second?P:(1-P);
+//       cout << i << ": " << data1[i].first << " & " << data1[i].second << -2*log(val) << endl;
      }
 //     cout << xx[0] << " " << xx[1] << "->" << -2*log(val) << endl;
     return -2*log(val);
