@@ -6,7 +6,7 @@ from collections import defaultdict
 import time, os
 # import subprocess
 import numpy as nm
-from math import sqrt
+from math import sqrt, isnan
 
 gROOT.LoadMacro('encFitter.C+')
 from ROOT import encFitter
@@ -262,12 +262,19 @@ class pixelData:
                 self.graph.SetPointError(n,0,sqrt(p*(1-p)/self.totalStats[dv]))
         return self.graph
 
-    def getFitFun(self,name=None):
+    def getFitFun(self,tryRecover=True,name=None):
         if self.fitFun is None:
             funname = 'fitFun_{0:d}_{1:d}'.format(self.addr[0],self.addr[1]) if name is None else name
             self.fitFun = TF1(funname,"0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1])))",0,1000)
-            self.fitFun.SetParameter(0, self.mean)
-            self.fitFun.SetParameter(1, self.sigma)
+           
+            if isnan(self.fitter.mean) and tryRecover:
+                self.fitFun.SetParameter(0, self.fitter.mean0)
+                self.fitFun.SetParameter(1, self.fitter.sigma0)
+                self.getGraph().Fit(self.fitFun)
+            else:
+                self.fitFun.SetParameter(0, self.mean)
+                self.fitFun.SetParameter(1, self.sigma)
+                 
         return self.fitFun
 
     def getFitChi2(self):
@@ -316,7 +323,7 @@ class pixelData:
                         self.totalStats[x] = int(fs[2])
                         self.passStats[x] = int(fs[3])
         self.dropIllData()
-        print self.dumpInfo()
+#         print self.dumpInfo()
 
 
     def ENC(self):
