@@ -43,6 +43,15 @@ ENTITY top IS
     USER_SMA_CLOCK_N : OUT   std_logic;
     USER_SMA_GPIO_P  : OUT   std_logic;
     USER_SMA_GPIO_N  : OUT   std_logic;
+
+    -- SMA MGT
+    GTREFCLK_N       : IN    std_logic; 
+    GTREFCLK_P       : IN    std_logic; 
+    SMA_MGT_TX_P     : OUT   std_logic;
+    SMA_MGT_TX_N     : OUT   std_logic;
+    SMA_MGT_RX_P     : IN    std_logic;
+    SMA_MGT_RX_N     : IN    std_logic;
+
     -- UART via usb
     USB_RX           : OUT   std_logic;
     USB_TX           : IN    std_logic;
@@ -598,7 +607,7 @@ COMPONENT dbg_ila2
   );
   END COMPONENT;
   ---------------------------------------------> FDOUT
-  ---------------------------------------------> DIV_5
+  ---------------------------------------------< DIV_5
   COMPONENT div_5 
     PORT (
       clkin      : IN  std_logic;
@@ -607,6 +616,22 @@ COMPONENT dbg_ila2
   );
   END COMPONENT;
   ---------------------------------------------> DIV_5 
+
+  ---------------------------------------------< DOUT
+  COMPONENT GTX10B8B_dec 
+    PORT (
+      RESET                       : IN  std_logic;
+      Q2_CLK1_GTREFCLK_PAD_N_IN   : IN  std_logic;
+      Q2_CLK1_GTREFCLK_PAD_P_IN   : IN  std_logic;
+      SYSCLK_IN                   : IN  std_logic;
+      RXN_IN                      : IN  std_logic;
+      RXP_IN                      : IN  std_logic;
+      TXN_OUT                     : OUT std_logic;
+      TXP_OUT                     : OUT std_logic;
+      D_DATAOUT1                  : OUT std_logic_Vector(7 DOWNTO 0)
+  );
+  END COMPONENT;
+  ---------------------------------------------> DOUT
 
   -- Signals
   SIGNAL reset                             : std_logic;  
@@ -873,6 +898,9 @@ COMPONENT dbg_ila2
   ---------------------------------------------> DIV_5
   SIGNAL div_5_out : std_logic;
   ---------------------------------------------> DIV_5
+  ---------------------------------------------< DOUT
+  SIGNAL  data_DOut   :std_logic_vector(7 DOWNTO 0);
+  ---------------------------------------------> DOUT
   
 BEGIN
   ---------------------------------------------< Clock
@@ -941,7 +969,8 @@ BEGIN
   dbg_ila2_FD : dbg_ila2
   PORT MAP (
       clk => sys_clk,
-      probe0 => probe0_FD,
+--       probe0 => probe0_FD,
+      probe0 => data_DOut,
       probe1 => ila2_probe1,
       probe2 => pulse_reg
   );
@@ -1406,21 +1435,6 @@ BEGIN
   fifo_rden1<=idata_data_fifo_rden when config_reg(6)='1' else '0';
   fifo_rden2<=idata_data_fifo_rden when config_reg(6)='0' else '0';
 
---    idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE
---                            fifo_q2(31 DOWNTO 0) WHEN config_reg(6)= '0';
---    idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1' ELSE
---                             fifo_empty2 WHEN config_reg(6)= '0';
---    idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE
---                             fifo_rden2 WHEN config_reg(6)= '0';
---  idata_data_fifo_dout <= fifo_q1(31 DOWNTO 0) WHEN config_reg(6)= '1' ELSE x"00000000";
---  idata_data_fifo_empty <= fifo_empty1 WHEN config_reg(6)= '1' ELSE fifo_empty2;
---  idata_data_fifo_rden  <= fifo_rden1 WHEN config_reg(6)= '1' ELSE fifo_rden2;
---  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
---  idata_data_fifo_empty <= fifo_empty1;
---  idata_data_fifo_rden  <= fifo_rden1;
---  idata_data_fifo_dout <= fifo_q2(31 DOWNTO 0);
---  idata_data_fifo_empty <= fifo_empty2;
---  idata_data_fifo_rden  <= fifo_rden2;
 --   idata_data_fifo_dout  <= x"1234" WHEN config_reg(6)='1' ELSE x"abcd"; -- x"0000" will be modified to FD_OUT of mic4 chip when the receiver is done.
 --   idata_data_fifo_empty <= '0'; 
 --  idata_data_fifo_rden  <= fifo_rden1           WHEN config_reg(6)='1' ELSE fifo_rden2; 
@@ -1598,7 +1612,8 @@ BEGIN
       clk_control => control_clk,
       rst         => reset,
       start_pulse => pulse_reg(10),
-      fd_in       => probe0_FD, 
+--       fd_in       => probe0_FD, 
+      fd_in       => data_DOut, 
       trigger     => FMC_HPC_HA_P(05),
       fifo_rd_en  => fifo_rden2,
       fifo_empty  => fifo_empty2,
@@ -1648,14 +1663,6 @@ BEGIN
 --FMC_HPC_LA_P(21) <= clk_out_mc;
 
    probe0_FD <= fd_out0 & fd_out1 & fd_out2 & fd_out3 & fd_out4 & fd_out5 & fd_out6 & fd_out7;
---    probe0_FD(0) <= fd_out0;
---    probe0_FD(1) <= fd_out1;
---    probe0_FD(2) <= fd_out2;
---    probe0_FD(3) <= fd_out3;
---    probe0_FD(4) <= fd_out4;
---    probe0_FD(5) <= fd_out5;
---    probe0_FD(6) <= fd_out6;
---    probe0_FD(7) <= fd_out7;
    ila2_probe1(0) <= div_5_out;
    ila2_probe1(1) <= fifo_empty2;
    ila2_probe1(2) <= fifo_empty1;
@@ -1782,5 +1789,18 @@ BEGIN
  
 
   ---------------------------------------------> FDOUT
-
+-----------------------------------------< DOUT
+   GTX10B8B_dec_inst1: GTX10B8B_dec
+   port map (
+	RESET                     => reset,
+	Q2_CLK1_GTREFCLK_PAD_N_IN => GTREFCLK_N,
+	Q2_CLK1_GTREFCLK_PAD_P_IN => GTREFCLK_P,
+	SYSCLK_IN                 => sys_clk, 
+	RXN_IN                    => SMA_MGT_RX_N,
+	RXP_IN                    => SMA_MGT_RX_P,
+	TXN_OUT                   => SMA_MGT_TX_N,
+	TXP_OUT                   => SMA_MGT_TX_P,
+	D_DATAOUT1                => data_DOut
+   );
+   -----------------------------------------> DOUT
 END Behavioral;

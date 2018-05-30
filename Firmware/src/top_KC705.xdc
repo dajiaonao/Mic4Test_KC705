@@ -1,1 +1,1 @@
-unsupported reparse point
+./top_KC705_2v5.xdc

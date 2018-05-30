@@ -153,6 +153,17 @@ set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_P]
 set_property PACKAGE_PIN Y24 [get_ports USER_SMA_GPIO_N]
 set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_N]
 
+
+set_property PACKAGE_PIN J7 [get_ports GTREFCLK_N]
+set_property PACKAGE_PIN J8 [get_ports GTREFCLK_P]
+set_property PACKAGE_PIN K2 [get_ports SMA_MGT_TX_P]
+set_property PACKAGE_PIN K1 [get_ports SMA_MGT_TX_N]
+set_property PACKAGE_PIN K6 [get_ports SMA_MGT_RX_P]
+set_property PACKAGE_PIN K5 [get_ports SMA_MGT_RX_N]
+
+
+
+
 #>-- LEDs, buttons and switches -->
 
 #<-- UART --<
