@@ -52,6 +52,7 @@ def test2():
 
     h1_thr = TH1F('h1_thr','h1_thr;#DeltaU [V];# Pixel',50,0,0.3)
     h1_enc = TH1F('h1_enc','h1_enc;#DeltaU [V];# Pixel',50,0,0.01)
+    h1b_thr = h1_thr.Clone('h1b_thr')
 
     th2 = TH2F('th2','th2;#DeltaU [V];Prob',100,0,0.3,100,0,1)
     th2.Draw('axis')
@@ -73,6 +74,9 @@ def test2():
 
             h1_thr.Fill(fun1.GetParameter(0))
             h1_enc.Fill(fun1.GetParameter(1))
+
+            if r==127:
+                h1b_thr.Fill(fun1.GetParameter(0))
     waitRootCmdX()
 
     tx1 = ''
@@ -86,6 +90,14 @@ def test2():
     waitRootCmdX()
 
     h1_thr.Draw()
+    h1b_thr.SetLineColor(4)
+    h1b_thr.Draw('same')
+    lgT = TLegend(0.7,0.8,0.92,0.92)
+    lgT.SetFillStyle(0)
+    lgT.SetHeader("Threshold")
+    lgT.AddEntry(h1_thr,"Last block row")
+    lgT.AddEntry(h1b_thr,"Last pixel row")
+    lgT.Draw()
     waitRootCmdX()
 
     h1_enc.Draw()
@@ -116,4 +128,4 @@ def test1():
 if __name__ == '__main__':
     useAtlasStyle()
     savehistory('./')
-    test3()
+    test2()
