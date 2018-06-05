@@ -6,12 +6,15 @@ from ROOT import *
 from collections import defaultdict
 import math
 from run_ENC_scan import pixelData
-from rootUtil import waitRootCmdX, useAtlasStyle, savehistory
+from rootUtil import waitRootCmdX, useAtlasStyle, savehistory, get_default_fig_dir
+
+sDir = get_default_fig_dir()
+sTag = 'test1_'
 
 
 class ENC_stats():
-    def __init__(self):
-        h2temp = TH2F('htemp','Threshold;Col;Row',64,-0.5,63.5,128,-0.5,127.5)
+    def __init__(self, outfilename=None):
+        h2temp = TH2F('htemp','Threshold;Col;Row;U [V]',64,-0.5,63.5,128,-0.5,127.5)
         self.hgrid = h2temp.Clone('hgrid')
         self.hgrid.SetLineColor(4)
         self.hgrid.SetLineWidth(1)
@@ -25,6 +28,14 @@ class ENC_stats():
         self.h1b_thr = h1_thr.Clone('h1b_thr')
 
         self.th2 = TH2F('th2','th2;#DeltaU [V];Prob',100,0,0.3,100,0,1)
+        self.lt = TLatex()
+        self.sDir = sDir
+        self.sTag = sTag
+
+        self.outfile = None
+        if outfilename is not None:
+            self.outfile = open(outfilename, 'w')
+            self.outfile.write('R/I:C:thr/F:thrErr:enc:encErr:status/I')
 
     def show(self):
 #         self.th2.Draw('axis')
@@ -35,36 +46,48 @@ class ENC_stats():
         gPad.SetRightMargin(0.16)
     #     hgrid.Draw('box')
         self.h2_thr.Draw(tx1+'colz')
-        waitRootCmdX()
+        self.lt.DrawLatexNDC(0.2,0.8,"Threshold")
+#         self.h2_thr.GetZaxis().SetRangeUser(0,0.2)
+        waitRootCmdX(self.sDir+self.sTag+'Threshold2D')
 
     #     hgrid.Draw('box')
         self.h2_enc.Draw(tx1+'colz')
-        waitRootCmdX()
+        self.lt.DrawLatexNDC(0.2,0.8,"Noise")
+        waitRootCmdX(self.sDir+self.sTag+'ENC2D')
 
+        gPad.SetRightMargin(0.06)
+        gStyle.SetOptStat(1110);
+        gStyle.SetOptFit(1111);
+        self.h1_thr.UseCurrentStyle()
         self.h1_thr.Draw()
         self.h1b_thr.SetLineColor(4)
         self.h1b_thr.Draw('same')
-        lgT = TLegend(0.7,0.8,0.92,0.92)
+        lgT = TLegend(0.2,0.8,0.35,0.92)
         lgT.SetFillStyle(0)
         lgT.SetHeader("Threshold")
-        lgT.AddEntry(h1_thr,"Last block row")
-        lgT.AddEntry(h1b_thr,"Last pixel row")
+        lgT.AddEntry(h1_thr,"Last block row",'l')
+        lgT.AddEntry(h1b_thr,"Last pixel row",'l')
         lgT.Draw()
-        waitRootCmdX()
+#         self.lt.DrawLatexNDC(0.2,0.8,"Threshold")
+        waitRootCmdX(self.sDir+self.sTag+'Threshold1D')
 
+        self.h1_enc.UseCurrentStyle()
         self.h1_enc.Draw()
-        waitRootCmdX()
+        self.lt.DrawLatexNDC(0.2,0.8,"Noise")
+        waitRootCmdX(self.sDir+self.sTag+'ENC1D')
 
 
 class ENC_checkX():
     '''Take a file and process all the pxiels inside it'''
-    def __init__(self, fname, stats=None):
+    def __init__(self, fname, stats=None, outStatsName=None):
         self.fname = fname
         self.corrTable = {}
         self.pixelList = None
         self.pixelData = {}
         self.stats = stats
-        pass
+        self.lastHighStatX = 0.
+        self.outStatsName =  outStatsName
+
     def loadFile(self):
         pX = lambda x,y: x if x>0 else y
 
@@ -102,6 +125,8 @@ class ENC_checkX():
                 if px.passStats[x] > self.corrTable[x]: self.corrTable[x] = px.passStats[x]
                 if x < self.lowX and px.totalStats[x]>10 and float(px.passStats[x])/px.totalStats[x]>0.95: self.lowX = x
 
+                if x > self.lastHighStatX and px.totalStats[x]>100: self.lastHighStatX = x
+
     def applyCorrection(self,px):
         for x in px.totalStats.keys():
             if x>self.lowX: px.totalStats[x] = self.corrTable[x]
@@ -119,13 +144,19 @@ class ENC_checkX():
             except KeyError as e:
                 print 'pixel', p1, 'is not found'
 
+
+    def isMasked(self, px):
+        return px.passStats[self.lastHighStatX] < 3
+
     def processAll(self,drawFit=True):
         if self.stats is None:
-            self.stats = ENC_stats()
+            self.stats = ENC_stats(outfilename=self.outStatsName)
             if drawFit: self.stats.th2.Draw('axis')
 
         ci = 0
         for p1 in self.pixelData.values():
+            if self.isMasked(p1): continue
+
             r,c = p1.addr
             print '-'*10,p1.addr,'-'*10
 
@@ -138,11 +169,19 @@ class ENC_checkX():
             fun1.SetLineColor(TColor.GetColorPalette(ci))
             print p1.getFitChi2()
 
-            self.stats.h2_thr.Fill(c,r,fun1.GetParameter(0))
-            self.stats.h2_enc.Fill(c,r,fun1.GetParameter(1))
+            thr = fun1.GetParameter(0)
+            enc = fun1.GetParameter(1)
+            self.stats.h2_thr.Fill(c,r,thr)
+            self.stats.h2_enc.Fill(c,r,enc)
 
-            self.stats.h1_thr.Fill(fun1.GetParameter(0))
-            self.stats.h1_enc.Fill(fun1.GetParameter(1))
+            self.stats.h1_thr.Fill(thr)
+            self.stats.h1_enc.Fill(enc)
+
+            if self.stats.outfile:
+                thrE = fun1.GetParError(0)
+                encE = fun1.GetParError(1)
+                print thrE, encE
+                self.stats.outfile.write('\n{0:d} {1:d} {2:.5f} {3:.5f} {4:.5f} {5:.5f} {6:d}'.format(r,c,thr,thrE,enc,encE,p1.status))
 
             if r==127:
                 self.stats.h1b_thr.Fill(fun1.GetParameter(0))
@@ -151,31 +190,76 @@ class ENC_checkX():
         for dv in sorted(self.corrTable.iterkeys()):
             print dv,self.corrTable[dv], dv>self.lowX
 
+def check_map():
+    dir1 = '../data/'
+    flist = [
+#         'ENC/May28_Chip7_enc_scan_row0To7_col0To32.dat',
+#         'ENC/May29_Chip7_enc_scan_row8To15_col0To32.dat',
+#         'ENC/May29_Chip7_enc_scan_row16To23_col0To32.dat',
+#         'ENC/May29_Chip7_enc_scan_row24To31_col0To32.dat',
+#         'ENC/May30_Chip7_enc_scan_row32To39_112To113_col0To32.dat',
+        'ENC/May30_Chip7_enc_scan_row40To47_114To115_col0To32.dat',
+#         'ENC/May30_Chip7_enc_scan_row48To55_116To117_col0To32.dat',
+#         'ENC/May30_Chip7_enc_scan_row56To63_118To119_col0To32.dat',
+#         'ENC/May30_Chip7_enc_scan_row63To71_col0To32.dat',
+#         'ENC/May30_Chip7_enc_scan_row72To79_col0To32.dat',
+#         'ENC/May30_Chip7_enc_scan_row80To87_col0To32.dat',
+#         'ENC/May30_Chip7_enc_scan_row88To95_col0To32.dat',
+#         'ENC/May30_Chip7_enc_scan_row96To103_col0To32.dat',
+#         'ENC/May30_Chip7_enc_scan_row104To111_and15_col0To32.dat',
+#         'ENC/May28_Chip7_enc_scan_row120To127_col0To32.dat',
+        ]
+
+    px1 = None
+#     px1 = (127,17)
+    px1 = (42,2)
+
+    stats1 = None
+    for f in flist:
+        ex2 = ENC_checkX(dir1+f,stats1,"scan_results.ttl")
+        ex2.loadFile()
+        ex2.getCorrTable()
+
+        if px1 is not None:
+            ex2.showPix(px1)
+            p1 = ex2.pixelData[px1]
+            ex2.applyCorrection(p1)
+            p1.dropIllData()
+            p1.ENC()
+            p1.getGraph().Draw("AP")
+            p1.getFitFun().Draw('same')
+            fun1 = p1.getFitFun()
+            print fun1.GetParError(0), fun1.GetParError(1)
+
+            waitRootCmdX()
+            return
+
+        ex2.processAll()
+        if stats1 is None: stats1 = ex2.stats
+
+    if gPad : waitRootCmdX(sDir+sTag+'sCurve')
+    stats1.show()
+    if stats1.outfile is not None: stats1.outfile.close()
+
 def test5():
     dir1 = '../data/'
-    ex1 = ENC_checkX(dir1+'ENC/May30_Chip7_enc_scan_row72To79_col0To32.dat')
+    ex1 = ENC_checkX(dir1+'ENC/May29_Chip7_enc_scan_row24To31_col0To32.dat')
     ex1.loadFile()
     ex1.showPix()
     ex1.getCorrTable()
-#     ex1.showCorrTable()
+    ex1.showCorrTable()
 #     ex1.processAll()
 
-    stats1 = ex1.stats
-    ex2 = ENC_checkX(dir1+'ENC/May29_Chip7_enc_scan_row16To23_col0To32.dat',stats1)
-    ex2.loadFile()
-    ex2.getCorrTable()
-#     ex2.processAll()
-
-    pix = (21,21)
-    ex2.showPix(pix)
-    ex2.showCorrTable()
-    ex2.applyCorrection(ex2.pixelData[pix])
-    ex2.showPix(pix)
-    ex2.pixelData[pix].dropIllData()
-    ex2.showPix(pix)
+    pix = (24,6)
+    ex1.showPix(pix)
+    ex1.showCorrTable()
+    ex1.applyCorrection(ex1.pixelData[pix])
+    ex1.showPix(pix)
+    ex1.pixelData[pix].dropIllData()
+    ex1.showPix(pix)
     return
 
-    if gPad : waitRootCmdX()
+    if gPad : waitRootCmdX(sDir+sTag+'sCurve')
     stats1.show()
 
     return
@@ -191,8 +275,6 @@ def test5():
     fun1.SetLineColor(TColor.GetColorPalette(8))
     fun1.Draw('same')
     waitRootCmdX()
-
-    
 
 
 def test3():
@@ -317,4 +399,5 @@ if __name__ == '__main__':
     useAtlasStyle()
     savehistory('./')
 #     test2()
-    test5()
+#     test5()
+    check_map()

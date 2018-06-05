@@ -193,6 +193,7 @@ class pixelData:
         self.graph = None
         self.fitFun = None
         self.fitChi2 = None
+        self.status = -1
     
     def D(self,list1,x=None):
         fd = 1 if (list1 is not None) and (self.addr in list1) else 0
@@ -219,7 +220,7 @@ class pixelData:
         ### get sorted values
         st = sorted(Ys, key=lambda x:abs(x[1]-0.5))
         ### st[0] and st[1] should be close to value
-        if abs(st[0][1] + st[1][1] - 1) < 0.2:
+        if abs(st[0][1] + st[1][1] - 1) < 0.2 and abs(0.5-st[0][1])>0.0001 and abs(st[1][1]-st[0][1])>0.001:
             mean0 = st[0][0] + (st[1][0]-st[0][0])/(st[1][1]-st[0][1])*(0.5-st[0][1])
         else:
             mean0 = st[0][0]
@@ -267,13 +268,18 @@ class pixelData:
             funname = 'fitFun_{0:d}_{1:d}'.format(self.addr[0],self.addr[1]) if name is None else name
             self.fitFun = TF1(funname,"0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1])))",0,1000)
            
-            if isnan(self.fitter.mean) and tryRecover:
+            if (isnan(self.fitter.mean) or isnan(self.fitter.meanErr)) and tryRecover:
                 self.fitFun.SetParameter(0, self.fitter.mean0)
                 self.fitFun.SetParameter(1, self.fitter.sigma0)
-                self.getGraph().Fit(self.fitFun)
+                s = self.getGraph().Fit(self.fitFun)
+                self.status = 10+int(s)
+
+                print self.fitFun.GetParError(0), self.fitFun.GetParError(1), "Inside"
             else:
                 self.fitFun.SetParameter(0, self.mean)
                 self.fitFun.SetParameter(1, self.sigma)
+                self.fitFun.SetParError(0,self.meanErr)
+                self.fitFun.SetParError(1,self.sigmaErr)
                  
         return self.fitFun
 
@@ -335,17 +341,8 @@ class pixelData:
             for j in range(n):
                 self.fitter.addData(dv, j<self.passStats[dv])
         self.configFitter()
-#         print self.fitter.data1.size()
-#         self.fitter.showData(500)
-#         self.fitter.mean0, self.fitter.sigma0 = self.mean_estimate() 
-#         self.fitter.mean0 = 0.0408
-#         self.fitter.meanU = 0.06
-#         self.fitter.meanD = 0.02
-#         self.fitter.sigma0 = 0.005
-#         self.fitter.sigmaU = 0.01
-#         self.fitter.sigmaD = 0.001
-#         print self.fitter.mean0, self.fitter.sigma0
-        self.fitter.fit()
+
+        self.status = self.fitter.fit()
         self.mean = self.fitter.mean
         self.meanErr = self.fitter.meanErr
         self.sigma = self.fitter.sigma

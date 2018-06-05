@@ -86,7 +86,7 @@ class encFitter{
    min.SetVariableLimits(0, meanD, meanU);
    min.SetVariableLimits(1, sigmaD, sigmaU);
  
-   min.Minimize(); 
+   int ret = min.Minimize()?0:min.Status(); 
 
    /// check the results    
    const double *xs = min.X();
@@ -109,7 +109,7 @@ class encFitter{
 //    double par2[2] = {1.00301e-01, 4.40609e-03};
 //    cout << intL(par2) << endl;
 
-   return 0;
+   return ret;
   }
 
   int test(string fname="ENC_0507_Chip5Col12_scan_normal_try1.dat"){
