@@ -198,7 +198,7 @@ def check_map():
 #         'ENC/May29_Chip7_enc_scan_row16To23_col0To32.dat',
 #         'ENC/May29_Chip7_enc_scan_row24To31_col0To32.dat',
 #         'ENC/May30_Chip7_enc_scan_row32To39_112To113_col0To32.dat',
-        'ENC/May30_Chip7_enc_scan_row40To47_114To115_col0To32.dat',
+#         'ENC/May30_Chip7_enc_scan_row40To47_114To115_col0To32.dat',
 #         'ENC/May30_Chip7_enc_scan_row48To55_116To117_col0To32.dat',
 #         'ENC/May30_Chip7_enc_scan_row56To63_118To119_col0To32.dat',
 #         'ENC/May30_Chip7_enc_scan_row63To71_col0To32.dat',
@@ -207,12 +207,12 @@ def check_map():
 #         'ENC/May30_Chip7_enc_scan_row88To95_col0To32.dat',
 #         'ENC/May30_Chip7_enc_scan_row96To103_col0To32.dat',
 #         'ENC/May30_Chip7_enc_scan_row104To111_and15_col0To32.dat',
-#         'ENC/May28_Chip7_enc_scan_row120To127_col0To32.dat',
+        'ENC/May28_Chip7_enc_scan_row120To127_col0To32.dat',
         ]
 
     px1 = None
-#     px1 = (127,17)
-    px1 = (42,2)
+    px1 = (127,17)
+#     px1 = (42,2)
 
     stats1 = None
     for f in flist:
@@ -229,9 +229,15 @@ def check_map():
             p1.getGraph().Draw("AP")
             p1.getFitFun().Draw('same')
             fun1 = p1.getFitFun()
+            fun1.SetLineColor(2)
             print fun1.GetParError(0), fun1.GetParError(1)
+            h1t = p1.getGraph().GetHistogram()
+            h1t.GetXaxis().SetTitle('#DeltaU [V]')
+            h1t.GetYaxis().SetTitle('Prob')
+            lt = TLatex()
+            lt.DrawLatexNDC(0.7,0.3,'Pixel ({0:d},{1:d})'.format(px1[0],px1[1]))
 
-            waitRootCmdX()
+            waitRootCmdX(sDir+sTag+'scan_pixel_{0:d}_{1:d}'.format(px1[0],px1[1]))
             return
 
         ex2.processAll()
