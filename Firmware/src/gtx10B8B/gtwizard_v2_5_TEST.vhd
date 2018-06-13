@@ -83,6 +83,7 @@ generic
 );
 port
 (
+    RESET                                   : in   std_logic;
     Q0_CLK1_GTREFCLK_PAD_N_IN               : in   std_logic;
     Q0_CLK1_GTREFCLK_PAD_P_IN               : in   std_logic;
     DRPCLK_IN                               : in   std_logic;
@@ -830,7 +831,8 @@ gt0_drpdi_i <= (others => '0');
 gt0_drpen_i <= '0';
 gt0_drpwe_i <= '0';
 
-  soft_reset_i <= tied_to_ground_i;
+--   soft_reset_i <= tied_to_ground_i;
+  soft_reset_i <= RESET;
 
 end RTL;
 

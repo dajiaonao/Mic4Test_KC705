@@ -907,6 +907,8 @@ COMPONENT dbg_ila2
   SIGNAL  rxcommadet_i   :std_logic;
   SIGNAL  rxisaligned_i  :std_logic;
   SIGNAL  track_out_i    :std_logic;
+  SIGNAL  gtx_refclk_P   :std_logic;
+  SIGNAL  gtx_refclk_N   :std_logic;
   ---------------------------------------------> DOUT
   
 BEGIN
@@ -1395,19 +1397,19 @@ BEGIN
   ---------------------------------------------> SDRAM
 
   -- clock output
-  refout_clk_div_inst : clk_div
-    PORT MAP (
-      RESET   => reset,
-      CLK     => idata_adc_data_clk,
-      DIV     => config_reg(16*15+3 DOWNTO 16*15),
-      CLK_DIV => idata_adc_refout_clkdiv
-    );
-  clk_fwd_inst : clk_fwd
-    PORT MAP (R => reset, I => idata_adc_refout_clkdiv, O => USER_SMA_CLOCK_P);
-  clk_fwd_inst1 : clk_fwd GENERIC MAP (INV => true)
-    PORT MAP (R => reset, I => idata_adc_refout_clkdiv, O => USER_SMA_CLOCK_N);
-  clk_fwd_inst2 : clk_fwd GENERIC MAP (INV => true)
-    PORT MAP (R => reset, I => idata_adc_data_clk, O => USER_SMA_GPIO_N);
+--   refout_clk_div_inst : clk_div
+--     PORT MAP (
+--       RESET   => reset,
+--       CLK     => idata_adc_data_clk,
+--       DIV     => config_reg(16*15+3 DOWNTO 16*15),
+--       CLK_DIV => idata_adc_refout_clkdiv
+--     );
+--   clk_fwd_inst : clk_fwd
+--     PORT MAP (R => reset, I => idata_adc_refout_clkdiv, O => USER_SMA_CLOCK_P);
+--   clk_fwd_inst1 : clk_fwd GENERIC MAP (INV => true)
+--     PORT MAP (R => reset, I => idata_adc_refout_clkdiv, O => USER_SMA_CLOCK_N);
+--   clk_fwd_inst2 : clk_fwd GENERIC MAP (INV => true)
+--     PORT MAP (R => reset, I => idata_adc_data_clk, O => USER_SMA_GPIO_N);
 
   -- capture the rising edge of trigger
   trig_edge_sync_inst : edge_sync
@@ -1616,7 +1618,8 @@ BEGIN
       FRAME_WIDTH => 48
     )
     PORT MAP(
-      clk_in      => clk_out_mc,
+--       clk_in      => clk_out_mc,
+      clk_in      => clk_600MHz,
       clk_control => control_clk,
       rst         => reset,
       start_pulse => pulse_reg(10),
@@ -1663,7 +1666,7 @@ BEGIN
   ---------------------------------------------< DIV_5
   div_5_inst0 : div_5 
     PORT MAP (
-      clkin      => clk_out_mc,
+      clkin      => clk_600MHz,
       rst        => reset,
       clkout     => div_5_out
   );
@@ -1797,10 +1800,31 @@ BEGIN
  
 
   ---------------------------------------------> FDOUT
+  clkgtx_obufds_inst : OBUFDS
+    GENERIC MAP (
+      IOSTANDARD => "LVDS"
+    )
+    PORT MAP (
+    O  => USER_SMA_CLOCK_P,
+    OB => USER_SMA_CLOCK_N,
+--       O  => gtx_refclk_P,  -- Diff_p output (connect directly to top-level port)
+--       OB => gtx_refclk_N,  -- Diff_n output (connect directly to top-level port)
+      I  => div_5_out
+   );
+
+-- USER_SMA_CLOCK_P<=gtx_refclk_P;
+-- USER_SMA_CLOCK_N<=gtx_refclk_N;
+--   clk_fwd_inst : clk_fwd
+--     PORT MAP (R => reset, I => gtx_refclk_P, O => USER_SMA_CLOCK_P);
+--   clk_fwd_inst1 : clk_fwd GENERIC MAP (INV => true)
+--     PORT MAP (R => reset, I => gtx_refclk_N, O => USER_SMA_CLOCK_N);
+
 -----------------------------------------< DOUT
    GTX10B8B_dec_inst1: GTX10B8B_dec
    port map (
 	RESET                     => reset,
+-- 	Q2_CLK1_GTREFCLK_PAD_N_IN => gtx_refclk_N,
+-- 	Q2_CLK1_GTREFCLK_PAD_P_IN => gtx_refclk_P,
 	Q2_CLK1_GTREFCLK_PAD_N_IN => GTREFCLK_N,
 	Q2_CLK1_GTREFCLK_PAD_P_IN => GTREFCLK_P,
 	SYSCLK_IN                 => sys_clk, 

@@ -143,10 +143,12 @@ set_property IOSTANDARD LVCMOS18 [get_ports {BTN5Bit[4]}]
 set_property PACKAGE_PIN AC6 [get_ports {BTN5Bit[4]}]
 
 # SMA
+set_property IOSTANDARD LVDS_25 [get_ports USER_SMA_CLOCK_P]
+#set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_P]
 set_property PACKAGE_PIN L25 [get_ports USER_SMA_CLOCK_P]
-set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_P]
 set_property PACKAGE_PIN K25 [get_ports USER_SMA_CLOCK_N]
-set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_N]
+set_property IOSTANDARD LVDS_25 [get_ports USER_SMA_CLOCK_N]
+#set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_N]
 
 set_property PACKAGE_PIN Y23 [get_ports USER_SMA_GPIO_P]
 set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_P]
@@ -154,12 +156,12 @@ set_property PACKAGE_PIN Y24 [get_ports USER_SMA_GPIO_N]
 set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_N]
 
 
-set_property PACKAGE_PIN J7 [get_ports GTREFCLK_N]
 set_property PACKAGE_PIN J8 [get_ports GTREFCLK_P]
-set_property PACKAGE_PIN K2 [get_ports SMA_MGT_TX_P]
-set_property PACKAGE_PIN K1 [get_ports SMA_MGT_TX_N]
-set_property PACKAGE_PIN K6 [get_ports SMA_MGT_RX_P]
+set_property PACKAGE_PIN J7 [get_ports GTREFCLK_N]
 set_property PACKAGE_PIN K5 [get_ports SMA_MGT_RX_N]
+set_property PACKAGE_PIN K6 [get_ports SMA_MGT_RX_P]
+set_property PACKAGE_PIN K1 [get_ports SMA_MGT_TX_N]
+set_property PACKAGE_PIN K2 [get_ports SMA_MGT_TX_P]
 
 
 
@@ -294,3 +296,8 @@ set_property IOSTANDARD LVCMOS25 [get_ports I2C_SDA]
 
 set_property IOSTANDARD LVCMOS25 [get_ports USER_CLK_N]
 set_property IOSTANDARD LVCMOS25 [get_ports USER_CLK_P]
+
+set_property C_CLK_INPUT_FREQ_HZ 300000000 [get_debug_cores dbg_hub]
+set_property C_ENABLE_CLK_DIVIDER false [get_debug_cores dbg_hub]
+set_property C_USER_SCAN_CHAIN 1 [get_debug_cores dbg_hub]
+connect_debug_port dbg_hub/clk [get_nets sys_clk]
