@@ -29,7 +29,9 @@ module GTX10B8B_dec(
   input  wire RXP_IN,
   output wire TXN_OUT,
   output wire TXP_OUT,
-  output wire [7:0] D_DATAOUT1
+  output wire [7:0] D_DATAOUT1,
+  output wire rxcommadet,
+  output wire rxisaligned
   ////////////////////////////////////////////
 );
 	 
@@ -37,8 +39,8 @@ reg   [19:0]  gt0_txdata_i;
 wire  [19:0]  gt0_rxdata_i;
 wire          gt0_txusrclk2_i;
 wire          gt0_rxusrclk2_i;
-wire          gt0_rxcommadet_i;
-wire          gt0_rxbyteisaligned_i;
+// wire          rxcommadet;
+// wire          rxisaligned;
 wire          gt0_rxbyterealign_i;
 
 wire CLK_100_TX;
@@ -189,8 +191,8 @@ gtwizard_v2_5 gtx_support_int0(
     .gt0_rxdata_out(gt0_rxdata_i), 
     .GT0_TXUSRCLK2_OUT(gt0_txusrclk2_i), 
     .GT0_RXUSRCLK2_OUT(gt0_rxusrclk2_i),
-    .gt0_rxcommadet_out(gt0_rxcommadet_i),
-    .gt0_rxbyteisaligned_out(gt0_rxbyteisaligned_i),
+    .gt0_rxcommadet_out(rxcommadet),
+    .gt0_rxbyteisaligned_out(rxisaligned),
     .gt0_rxbyterealign_out(gt0_rxbyterealign_i)
 );
 
