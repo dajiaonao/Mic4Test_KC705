@@ -880,8 +880,9 @@ COMPONENT dbg_ila2
   ---------------------------------------------< Mic4 control
   SIGNAL  div0_mc : std_logic_vector(5 DOWNTO 0);
   SIGNAL  div1_mc : std_logic_vector(5 DOWNTO 0);
-  SIGNAL  clk_out_mc : std_logic;
-  SIGNAL  lt_out_mc : std_logic;
+  SIGNAL  clk_out_mc   : std_logic;
+  SIGNAL  clk_out_mc_i : std_logic;
+  SIGNAL  lt_out_mc    : std_logic;
   ---------------------------------------------> Mic4 control
   SIGNAL  fd_out0 : std_logic; 
   SIGNAL  fd_out1 : std_logic;
@@ -1570,7 +1571,8 @@ BEGIN
       GRST_LENGTH   => 5
     )
     PORT MAP (
-      clk_in => clk_250MHz, --250MHz
+--       clk_in => clk_250MHz, --250MHz
+      clk_in => clk_600MHz, --250MHz
       clk_control => control_clk, --100MHz
       rst  => reset,
       div0 => div0_mc,
@@ -1578,7 +1580,7 @@ BEGIN
       pulse_grst => pulse_reg(5),
       pulse_a => pulse_reg(6),
       pulse_d => pulse_reg(7),
-      clk_out => clk_out_mc, -- CLK_IN of mic4
+      clk_out => clk_out_mc_i, -- CLK_IN of mic4
       lt_out => lt_out_mc, --LT_IN of mic4
       a_pulse_out => FMC_HPC_LA_P(21),
 --      a_pulse_out => OPEN,
@@ -1587,7 +1589,14 @@ BEGIN
       grst_n_out => FMC_HPC_LA_P(28)
     );
 --  FMC_HPC_LA_P(21) <= '1';
-  
+
+  --- Make it a global clock to get better timing
+  BUFG_inst2 : BUFG
+    PORT MAP (
+      I => clk_out_mc_i,
+      O => clk_out_mc
+    );
+
   clkmc_obufds_inst : OBUFDS
     GENERIC MAP (
       IOSTANDARD => "LVDS"
@@ -1618,8 +1627,8 @@ BEGIN
       FRAME_WIDTH => 48
     )
     PORT MAP(
---       clk_in      => clk_out_mc,
-      clk_in      => clk_600MHz,
+      clk_in      => clk_out_mc,
+--       clk_in      => clk_600MHz,
       clk_control => control_clk,
       rst         => reset,
       start_pulse => pulse_reg(10),
