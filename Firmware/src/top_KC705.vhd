@@ -630,7 +630,8 @@ COMPONENT dbg_ila2
       TXP_OUT                     : OUT std_logic;
       D_DATAOUT1                  : OUT std_logic_Vector(7 DOWNTO 0);
       rxcommadet                  : OUT std_logic;
-      rxisaligned                 : OUT std_logic
+      rxisaligned                 : OUT std_logic;
+      track_out                   : OUT std_logic
   );
   END COMPONENT;
   ---------------------------------------------> DOUT
@@ -905,6 +906,7 @@ COMPONENT dbg_ila2
   SIGNAL  data_DOut      :std_logic_vector(7 DOWNTO 0);
   SIGNAL  rxcommadet_i   :std_logic;
   SIGNAL  rxisaligned_i  :std_logic;
+  SIGNAL  track_out_i    :std_logic;
   ---------------------------------------------> DOUT
   
 BEGIN
@@ -1669,7 +1671,7 @@ BEGIN
 --FMC_HPC_LA_P(21) <= clk_out_mc;
 
    probe0_FD <= fd_out0 & fd_out1 & fd_out2 & fd_out3 & fd_out4 & fd_out5 & fd_out6 & fd_out7;
-   ila2_probe1(0) <= div_5_out;
+   ila2_probe1(0) <= track_out_i;
    ila2_probe1(1) <= fifo_empty2;
    ila2_probe1(2) <= rxcommadet_i;
    ila2_probe1(3) <= rxisaligned_i;
@@ -1808,7 +1810,8 @@ BEGIN
 	TXP_OUT                   => SMA_MGT_TX_P,
 	D_DATAOUT1                => data_DOut,
 	rxcommadet                => rxcommadet_i,
-	rxisaligned               => rxisaligned_i
+	rxisaligned               => rxisaligned_i,
+	track_out                 => track_out_i
    );
    -----------------------------------------> DOUT
 END Behavioral;
