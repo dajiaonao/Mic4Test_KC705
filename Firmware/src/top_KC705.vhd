@@ -631,6 +631,7 @@ COMPONENT dbg_ila2
       D_DATAOUT1                  : OUT std_logic_Vector(7 DOWNTO 0);
       rxcommadet                  : OUT std_logic;
       rxisaligned                 : OUT std_logic;
+      rxbyterealign               : OUT std_logic;
       track_out                   : OUT std_logic
   );
   END COMPONENT;
@@ -907,6 +908,7 @@ COMPONENT dbg_ila2
   SIGNAL  data_DOut      :std_logic_vector(7 DOWNTO 0);
   SIGNAL  rxcommadet_i   :std_logic;
   SIGNAL  rxisaligned_i  :std_logic;
+  SIGNAL  rxbyterealign_i:std_logic;
   SIGNAL  track_out_i    :std_logic;
   SIGNAL  gtx_refclk_P   :std_logic;
   SIGNAL  gtx_refclk_N   :std_logic;
@@ -1844,6 +1846,7 @@ BEGIN
 	D_DATAOUT1                => data_DOut,
 	rxcommadet                => rxcommadet_i,
 	rxisaligned               => rxisaligned_i,
+	rxbyterealign             => rxbyterealign_i,
 	track_out                 => track_out_i
    );
    -----------------------------------------> DOUT

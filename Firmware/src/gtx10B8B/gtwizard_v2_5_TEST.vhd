@@ -95,6 +95,7 @@ port
     rxusrclk2                               : out  std_logic;
     rxdata                                  : out  std_logic_vector(15 downto 0);
     rxbyteisaligned                         : out  std_logic;
+    rxbyterealign                           : out  std_logic;
     rxcommadet                              : out  std_logic
 );
 
@@ -627,7 +628,7 @@ q0_clk1_refclk_i                             <= '0';
         gt0_gtxrxn_in                   =>      RXN_IN,
         -------------- Receive Ports - RX Byte and Word Alignment Ports ------------
         gt0_rxbyteisaligned_out         =>      rxbyteisaligned,
-        gt0_rxbyterealign_out           =>      gt0_rxbyterealign_i,
+        gt0_rxbyterealign_out           =>      rxbyterealign,
         gt0_rxcommadet_out              =>      rxcommadet,
         --------------------- Receive Ports - RX Equalizer Ports -------------------
         gt0_rxdfelpmreset_in            =>      tied_to_ground_i,

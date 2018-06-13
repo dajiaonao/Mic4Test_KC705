@@ -32,6 +32,7 @@ module GTX10B8B_dec(
   output reg [7:0] D_DATAOUT1,
   output wire rxcommadet,
   output wire rxisaligned,
+  output wire rxbyterealign,
   output wire track_out
   ////////////////////////////////////////////
 );
@@ -56,7 +57,8 @@ gtwizard_v2_5_TEST gtx_test1(
     .TXP_OUT(TXP_OUT),
     .rxusrclk2(gt0_rxusrclk2_i),
     .rxdata(gt0_rxdata_i),
-    .rxbyteisaligned(rxdata),
+    .rxbyteisaligned(rxisaligned),
+    .rxbyterealign(rxbyterealign),
     .rxcommadet(rxcommadet)
 );
 
