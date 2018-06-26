@@ -368,7 +368,8 @@ class pixelData:
 class multiPixelENC:
     def __init__(self):
         self.fitter = encFitter()
-        self.pixels = [pixelData((i,j),self.fitter) for i in range(120,128) for j in range(32)]
+        self.pixels = [pixelData((i,j),self.fitter) for i in range(112,120) for j in range(32,64)]
+        #self.pixels = [pixelData((i,j),self.fitter) for i in range(112,120) for j in range(32,64) if (i,j) not in [(), (), ()]]
         self.funX = self.setDU
         self.funY = self.getVal
         self.npoints = 10
@@ -478,7 +479,7 @@ class multiPixelENC:
         ### OK, now we have more than 3 points
         ### Take data until enough
         print "going with", listA
-        listC = fillList(genList(listA, self.npoints),0.003)
+        listC = fillList(genList(listA, self.npoints),0.008)
         print 'Will scan', listC
         nSample = self.nSamples2
         while True:
@@ -521,7 +522,7 @@ class GenXY:
 class mic4ENCCalculator:
     def __init__(self):
         self.mic4 = MIC4Config()
-        self.pixel = (127,12)
+        self.pixel = (127,62)
         self.vL = 0.7
         self.logFile = None
 
@@ -543,48 +544,80 @@ class mic4ENCCalculator:
         cx1.funX = self.setDU
         cx1.funY = self.getVal
 #SUB=0V
-#        for i in range(1):
-#            ix = 0.4+0.1*i
+        for i in range(1):
+            ix = 0.4+0.1*i
 #            #if ix > 0.7 : break
-#            vclip = 0.
-#            vcasn = ix
-#            vcasp = 0.5
-#            vreset= 1.35
-#            vcasn2= 0.5
-#            vref  = 0.4
-#            ibias = 0xff
-#            idb   = 0x80
-#            ithr  = 0x70
-#            ireset= 0x80
-#            idb2  = 0x80
-#SUB=-3V
-        for i in range(15):
-            ix = 0x20+16*i
-            #if ix > 1.4 : break
-            vclip = 0.45
-            vcasn = 0.87
-            vcasp = 0.5
-            vreset= 1.4
-            vcasn2= 0.9
+            vclip = 0.1
+            vcasn = ix
+            vcasp = 0.37
+            vreset= 1.1
+            vcasn2= 0.5
             vref  = 0.4
-            ibias = 0xff
-            idb   = 0x80
-            ithr  = ix  #0x80
+            ibias = 0xc9
+            idb   = 0x90
+            ithr  = 0x10
             ireset= 0x80
-            idb2  = 0x80
+            idb2  = 0xff
 
+
+#IHEP-SIM-chip#7
+#    mc1.sReg.setPar('VCLIP' ,0.1,  1.423, 0x3ff)
+#    mc1.sReg.setPar('VCASN' ,0.4,1.419, 0x3ff)
+#    mc1.sReg.setPar('VCASP' ,0.37, 1.422, 0x3ff)
+#    mc1.sReg.setPar('VReset',1.1,  1.43, 0x3ff)
+#    mc1.sReg.setPar('VCASN2',0.5,  1.416, 0x3ff)
+#    mc1.sReg.setPar('VRef'  ,0.4,  1.424, 0x3ff)
+#    mc1.sReg.setPar('IBIAS' ,0xc9)
+#    mc1.sReg.setPar('IDB'   ,0x30)
+#    mc1.sReg.setPar('ITHR'  ,0x10)
+#    mc1.sReg.setPar('IRESET',0x80)
+#    mc1.sReg.setPar('IDB2'  ,0xff)
             ### set the values
-            self.mic4.sReg.setPar('VCLIP' ,vclip,   0.686, 0x200) #select<5>
-            self.mic4.sReg.setPar('VReset',vreset,   0.701, 0x200) #select<2> 
-            self.mic4.sReg.setPar('VCASN2',vcasn2,   0.692, 0x200) #select<1>
-            self.mic4.sReg.setPar('VCASN' ,vcasn,  0.695, 0x200) #select<4>
-            self.mic4.sReg.setPar('VCASP' ,vcasp,  0.692, 0x200) #select<3>
-            self.mic4.sReg.setPar('VRef'  ,vref,    0.701, 0x200) #select<0> 
+            self.mic4.sReg.setPar('VCLIP' ,vclip,   1.423, 0x3ff) #select<5>
+            self.mic4.sReg.setPar('VReset',vreset,   1.43, 0x3ff) #select<2> 
+            self.mic4.sReg.setPar('VCASN2',vcasn2,   1.416, 0x3ff) #select<1>
+            self.mic4.sReg.setPar('VCASN' ,vcasn,   1.419, 0x3ff) #select<4>
+            self.mic4.sReg.setPar('VCASP' ,vcasp,   1.422, 0x3ff) #select<3>
+            self.mic4.sReg.setPar('VRef'  ,vref,    1.424, 0x3ff) #select<0> 
             self.mic4.sReg.setPar('IBIAS' ,ibias )#select<4> 0x80 is 0.342  0xff is 0.588
             self.mic4.sReg.setPar('IDB'   ,idb   )#select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
             self.mic4.sReg.setPar('ITHR'  ,ithr  )#select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
             self.mic4.sReg.setPar('IRESET',ireset)
             self.mic4.sReg.setPar('IDB2'  ,idb2  )
+
+#SUB=-3V
+#        for i in range(15):
+#            ix = 0x20+16*i
+#            #if ix > 1.4 : break
+#            vclip = 0.45
+#            vcasn = 0.87
+#            vcasp = 0.5
+#            vreset= 1.4
+#            vcasn2= 0.9
+#            vref  = 0.4
+#            ibias = 0xff
+#            idb   = 0x80
+#            ithr  = ix  #0x80
+#            ireset= 0x80
+#            idb2  = 0x80
+
+
+
+
+
+
+            ### set the values
+#            self.mic4.sReg.setPar('VCLIP' ,vclip,   0.686, 0x200) #select<5>
+#            self.mic4.sReg.setPar('VReset',vreset,   0.701, 0x200) #select<2> 
+#            self.mic4.sReg.setPar('VCASN2',vcasn2,   0.692, 0x200) #select<1>
+#            self.mic4.sReg.setPar('VCASN' ,vcasn,  0.695, 0x200) #select<4>
+#            self.mic4.sReg.setPar('VCASP' ,vcasp,  0.692, 0x200) #select<3>
+#            self.mic4.sReg.setPar('VRef'  ,vref,    0.701, 0x200) #select<0> 
+#            self.mic4.sReg.setPar('IBIAS' ,ibias )#select<4> 0x80 is 0.342  0xff is 0.588
+#            self.mic4.sReg.setPar('IDB'   ,idb   )#select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
+#            self.mic4.sReg.setPar('ITHR'  ,ithr  )#select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
+#            self.mic4.sReg.setPar('IRESET',ireset)
+#            self.mic4.sReg.setPar('IDB2'  ,idb2  )
 
 # SUB=-3V Chip #5 bias6
 
@@ -620,7 +653,7 @@ class mic4ENCCalculator:
 
             self.mic4.sReg.selectVolDAC(2)
             self.mic4.sReg.selectCurDAC(6)
-            self.mic4.sReg.selectCol(12)
+            self.mic4.sReg.selectCol(62)
             self.mic4.sReg.setTRX16(0b1000)
             self.mic4.sReg.show()
             self.mic4.testReg(read=True)
@@ -649,9 +682,9 @@ class mic4ENCCalculator:
 
 def testScan():
     mc1 = mic4ENCCalculator()
-    mc1.pixel = (127,12)
+    mc1.pixel = (127,62)
 #    logFileName = 'DAC_scan_vcasn_0p2to0p6.dat'
-    logFileName = 'May18_ENC_col12_SUB-3V_scan_ithr_0x20to0xf0.dat'
+    logFileName = 'june25_ENC_col62_SUB0V.dat'
     if os.path.exists(logFileName):
         idz = 1
         while os.path.exists(logFileName+'.'+str(idz)):
@@ -821,7 +854,7 @@ def testScanMore():
     a.setup()
     a.nSamples2 = 200
     a.enc_error_MAX = None
-    a.outfilename = 'enc_scan_BlockRow15.dat'
+    a.outfilename = 'IHEP_jun26_enc_scan_BlockRow14.dat'
     a.run_check()
 
         ###

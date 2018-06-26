@@ -4,6 +4,15 @@ import time
 from MIC4Config import MIC4Config, bitSet
 import socket
 
+
+def checkDout(mc1):
+    mc1.sReg.useDefault() 
+    mc1.sReg.selectCol(0)
+    mc1.sReg.setTEST(1)
+    mc1.sReg.show()
+    mc1.testReg(read=True)
+
+
 def check_FDout(mc1, iTest=10):
 #     setAllPixels(mc1, mask=1, pulse_en=0)
 #     setAllPixels(mc1, mask=1, pulse_en=0)
@@ -163,10 +172,10 @@ def test_AOUT_IHEP_loop(mc1):
         mc1.sendA_PULSE()
 
 def test_AOUT(mc1):
-    mc1.setClocks(0,6,6)
+#    mc1.setClocks(0,6,6)
 #     sys.exit(1)
     mc1.test_DAC8568_config()
-    mc1.setVhVl(0.7,0.7)
+    mc1.setVhVl(1.3,0.7)
 # # #     mc1.sReg.useDefault()
     mc1.sReg.value =  0
     mc1.sReg.setPDB(0)
@@ -205,26 +214,53 @@ def test_AOUT(mc1):
 #    mc1.sReg.setPar('VRef'  ,0.8,  0.406, 0b100011111)
 #    mc1.sReg.setPar('IBIAS' ,0xc9)
 #    mc1.sReg.setPar('IDB'   ,0x40)
-#    mc1.sReg.setPar('ITHR'  ,0x30)
+#    mc1.sReg.setPar('ITHR'  ,0x10)
 #    mc1.sReg.setPar('IRESET',0xff)
 #    mc1.sReg.setPar('IDB2'  ,0x80)
 
-# PLAC 
-    mc1.sReg.setPar('VCLIP' ,0. , 0.689, 0x200)
-    mc1.sReg.setPar('VReset',1.1, 0.703, 0x200)
-    mc1.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
-    mc1.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
-#     mc1.sReg.setPar('VCASP' ,0.5, 0.694, 0x200)
-    mc1.sReg.setPar('VCASP' ,0.7, 0.694, 0x200)
-    mc1.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
-#     mc1.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
-    mc1.sReg.setPar('IBIAS' ,0x0) ## Chip 5: 0xff->0.594 V
-#     mc1.sReg.setPar('IDB'   ,0xf0)
-    mc1.sReg.setPar('ITHR'  ,0xff)
-#     mc1.sReg.setPar('ITHR'  ,0xf0)
+#IHEP-chip#7
+#    mc1.sReg.setPar('VCLIP' ,0.1,  1.423, 0x3ff)
+#    mc1.sReg.setPar('VCASN' ,0.4,1.419, 0x3ff)
+#    mc1.sReg.setPar('VCASP' ,0.37, 1.422, 0x3ff)
+#    mc1.sReg.setPar('VReset',1.1,  1.43, 0x3ff)
+#    mc1.sReg.setPar('VCASN2',0.5,  1.416, 0x3ff)
+#    mc1.sReg.setPar('VRef'  ,0.4,  1.424, 0x3ff)
+#    mc1.sReg.setPar('IBIAS' ,0xc9)
+#    mc1.sReg.setPar('IDB'   ,0x30)
+#    mc1.sReg.setPar('ITHR'  ,0x10)
+#    mc1.sReg.setPar('IRESET',0xff)
+#    mc1.sReg.setPar('IDB2'  ,0x80)
+#IHEP-SIM-chip#7
+    mc1.sReg.setPar('VCLIP' ,0.1,  1.423, 0x3ff)
+    mc1.sReg.setPar('VCASN' ,0.4, 1.419, 0x3ff)
+    mc1.sReg.setPar('VCASP' ,0.37, 1.422, 0x3ff)
+    mc1.sReg.setPar('VReset',1.1,  1.43, 0x3ff)
+    mc1.sReg.setPar('VCASN2',0.5,  1.416, 0x3ff)
+    mc1.sReg.setPar('VRef'  ,0.4,  1.424, 0x3ff)
+    mc1.sReg.setPar('IBIAS' ,0xc9)
+    mc1.sReg.setPar('IDB'   ,0x90)
+    mc1.sReg.setPar('ITHR'  ,0x10)
     mc1.sReg.setPar('IRESET',0x80)
+    mc1.sReg.setPar('IDB2'  ,0xff)
+
+
+
+# PLAC 
+#    mc1.sReg.setPar('VCLIP' ,0. , 0.689, 0x200)
+#    mc1.sReg.setPar('VReset',1.1, 0.703, 0x200)
+#    mc1.sReg.setPar('VCASN2',0.5, 0.693, 0x200)
+#    mc1.sReg.setPar('VCASN' ,0.4, 0.689, 0x200)
+#     mc1.sReg.setPar('VCASP' ,0.5, 0.694, 0x200)
+#    mc1.sReg.setPar('VCASP' ,0.7, 0.694, 0x200)
+#    mc1.sReg.setPar('VRef'  ,0.4, 0.701, 0x200)
+#     mc1.sReg.setPar('IBIAS' ,0xff) ## Chip 5: 0xff->0.594 V
+#    mc1.sReg.setPar('IBIAS' ,0x0) ## Chip 5: 0xff->0.594 V
+#     mc1.sReg.setPar('IDB'   ,0xf0)
+#    mc1.sReg.setPar('ITHR'  ,0xff)
+#     mc1.sReg.setPar('ITHR'  ,0xf0)
+#    mc1.sReg.setPar('IRESET',0x80)
 #     mc1.sReg.setPar('IDB2'  ,0x80)
-    mc1.sReg.setPar('IDB2'  ,0xf0)
+#    mc1.sReg.setPar('IDB2'  ,0xf0)
 
 #     mc1.sReg.setPar('VCLIP' ,0,  0.833, 0b1001011001)
 #     mc1.sReg.setPar('VCASN' ,0.4,  0.384, 0b100011110)
@@ -301,20 +337,20 @@ def test_AOUT(mc1):
 
 
 
-    mc1.sReg.selectCol(12)
+    mc1.sReg.selectCol(62)
 
 
-    mc1.sReg.selectVolDAC(2)
-    mc1.sReg.selectCurDAC(6)
+    mc1.sReg.selectVolDAC(0)
+    mc1.sReg.selectCurDAC(2)
 #    mc1.sReg.setLVDS_TEST(0b1000)
-    mc1.sReg.setTRX16(0b1000)
+#    mc1.sReg.setTRX16(0b1000)
     mc1.sReg.setTRX15_serializer(0b1000)
     mc1.sReg.show()
     mc1.testReg(read=True)
 # #     mc1.setClocks(1,6,6)
 
-#     time.sleep(2)
-#     mc1.sendA_PULSE()
+#    time.sleep(2)
+#    mc1.sendA_PULSE()
 
 
 def check_DOUT(mc1):
@@ -579,28 +615,38 @@ if __name__ == '__main__':
     mc1 = MIC4Config()
 #     mc1.host = '192.168.2.1'
     mc1.connect()
-#     mc1.setup()
+
+#    mc1.test_DAC8568_config()
+#    mc1.clk_div = 6
+#    mc1.setup()
+#    checkDout(mc1)
 #     mc1.setPixelsInRow(127, mask=0, pulse_en=0)
 #     for i in range(121):
 #         mc1.setPixelsInRow(i, mask=0, pulse_en=0)
 #         time.sleep(0.5)
 #         print mc1.getFDAddresses(50)
+
 #     mc1.setPixels([(i+32*k,j,0,1) for i in range(7) for j in range(32) for k in range(4)])
+#    mc1.setPixels([(i+120,j,0,1) for i in range(7) for j in range(32,64)])
 #     mc1.setPixels([(120,30,1,0)])
 #     mc1.setPixels([(120,20,1,0)])
 
 #     time.sleep(0.5)
-#   mc1.setPixels([(127,20,1,0),(127,30,0,1)])
+#    mc1.setPixels([(120,52,1,0),(123,35,1,0)])
  #   mc1.setPixels([(120,8,1,0),(127,12,0,1)])
-#     mc1.setPixels([(15, 10,1,0)])
+#    mc1.setPixels([(123, 52,1,0)])
 #     mc1.setPixels([(8*i+i,i,1,1) for i in range(8)])
 #     mc1.setPixels([(7,8,0,1)])
 #     mc1.setPixels([(8,0,1,0),(8,1,0,1)])
 #     mc1.setPixels([(8,1,1,1)])
 #     setPixels(mc1, [(127,i,0,1) for i in range(32)])
-#     test_AOUT(mc1)
-# # #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
-#     mc1.sendGRST_B()
+#    mc1.setPixels([(127,62,0,1)])
+    test_AOUT(mc1)
+    time.sleep(2)
+    mc1.sendA_PULSE()
+#    mc1.sendD_PULSE()
+#    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
+#    mc1.sendGRST_B()
 #    mc1.setAllPixels(mask=1, pulse_en=0)
 #     sys.exit(0)
 #     mc1.setClocks(0,6,6)
@@ -636,7 +682,7 @@ if __name__ == '__main__':
 
 #     mc1.start_take_data(dataFileName='data_May15_noise_allPixels.dat')
 #     print mc1.getFDAddresses(100,True)
-#     mc1.sendA_PULSE()
+
 #     mc1.sendGRST_B()
 #     l1 = mc1.getFDAddresses(100,True)
 #     print l1
