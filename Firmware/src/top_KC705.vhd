@@ -899,6 +899,7 @@ COMPONENT dbg_ila2
   SIGNAL  fifo_q2     : std_logic_vector(35 DOWNTO 0);
   SIGNAL  probe0_FD   :std_logic_vector(7 DOWNTO 0);
   SIGNAL  ila2_probe1 :std_logic_vector(3 DOWNTO 0);
+  SIGNAL  ila2_probe2 :std_logic_vector(15 DOWNTO 0);
   SIGNAL  start_fd  : std_logic;
   ---------------------------------------------> FDOUT
   ---------------------------------------------> DIV_5
@@ -982,10 +983,10 @@ BEGIN
   PORT MAP (
       clk => sys_clk,
       --clk => clk_250MHz,
---       probe0 => probe0_FD,
-      probe0 => data_DOut,
+      probe0 => probe0_FD,
+--       probe0 => data_DOut,
       probe1 => ila2_probe1,
-      probe2 => pulse_reg
+      probe2 => ila2_probe2
   );
   ---------------------------------------------> debug : ILA and VIO (`Chipscope')
   ---------------------------------------------< UART/RS232
@@ -1685,10 +1686,20 @@ BEGIN
 --FMC_HPC_LA_P(21) <= clk_out_mc;
 
    probe0_FD <= fd_out0 & fd_out1 & fd_out2 & fd_out3 & fd_out4 & fd_out5 & fd_out6 & fd_out7;
-   ila2_probe1(0) <= track_out_i;
+   ila2_probe1(0) <= fifo_empty1;
    ila2_probe1(1) <= fifo_empty2;
-   ila2_probe1(2) <= rxcommadet_i;
-   ila2_probe1(3) <= rxisaligned_i;
+   ila2_probe1(2) <= FMC_HPC_HA_P(05);
+   ila2_probe1(3) <= pulse_reg(10);
+
+   ila2_probe2(7 DOWNTO 0) <= data_Dout;
+   ila2_probe2(8) <= track_out_i; 
+   ila2_probe2(9) <= rxcommadet_i; 
+   ila2_probe2(10) <= rxisaligned_i; 
+   ila2_probe2(11) <= rxbyterealign_i;
+   ila2_probe2(12) <= div_5_out;
+   ila2_probe2(13) <= rxbyterealign_i;
+   ila2_probe2(14) <= rxbyterealign_i;
+   ila2_probe2(15) <= rxbyterealign_i;
    
    -- IBUFDS: Differential Input Buffer
    --         Kintex-7

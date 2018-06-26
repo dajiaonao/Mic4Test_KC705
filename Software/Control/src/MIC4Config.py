@@ -257,7 +257,9 @@ class MIC4Config():
                 jd = defaultdict(int)
                 if addr is not None:
                     for x in addr: jd[x] += 1
-                else: continue
+                else:
+                    itx += 1
+                    continue
 
                 newList = []
                 for x in jd:
@@ -343,6 +345,7 @@ class MIC4Config():
         if configID is None: self.sReg.useDefault()
         else:
             try:
+                print('useConfig{%d}'.format(configID))
                 getattr(self.sReg, 'useConfig{%d}'.format(configID))()
             except:
                 print("problem with configID:", configID)
@@ -1012,9 +1015,9 @@ class MIC4Reg(object):
     def useDefault(self):
         self.value =  0
         self.setPDB(0)
-#         self.setLVDS_TEST(0b0000)
+        self.setLVDS_TEST(0b1100)
         self.setTRX16(0b1000)
-#         self.setTRX15_serializer(0b1000)
+        self.setTRX15_serializer(0b1100)
 #         self.setTEST(0)
         self.setPar('VCLIP' ,0,  0.833, 0b1001011001)
         self.setPar('VCASN' ,0.4,  0.384, 0b100011110)
@@ -1305,7 +1308,15 @@ def testDataSave():
 #     c.close()
     mc1.s.close()
 
+def testGetAttr():
+    mc1 = MIC4Config()
+    configID = 3
+    x = getattr(self.sReg, 'useConfig{%d}'.format(configID))()
+    print(x)
+
+
 if __name__ == "__main__":
+    testGetAttr()
 #     testReg()
 #     testPConf()
 #     testDataSave()
