@@ -295,19 +295,31 @@ class DeltaUScanner(dataTaker):
         ithr  = 0x70
         ireset= 0x80
         idb2  = 0x80
-
-        ### set the values
-        self.mic4.sReg.setPar('VCLIP' ,vclip,   0.686, 0x200) #select<5>
-        self.mic4.sReg.setPar('VReset',vreset,   0.701, 0x200) #select<2> 
-        self.mic4.sReg.setPar('VCASN2',vcasn2,   0.692, 0x200) #select<1>
-        self.mic4.sReg.setPar('VCASN' ,vcasn,  0.695, 0x200) #select<4>
-        self.mic4.sReg.setPar('VCASP' ,vcasp,  0.692, 0x200) #select<3>
-        self.mic4.sReg.setPar('VRef'  ,vref,    0.701, 0x200) #select<0> 
+        ### chip #7 set the values
+        self.mic4.sReg.setPar('VCLIP' ,vclip,  1.423, 0x3ff) #select<5>
+        self.mic4.sReg.setPar('VReset',vreset, 1.430, 0x3ff) #select<2> 
+        self.mic4.sReg.setPar('VCASN2',vcasn2, 1.416, 0x3ff) #select<1>
+        self.mic4.sReg.setPar('VCASN' ,vcasn,  1.419, 0x3ff) #select<4>
+        self.mic4.sReg.setPar('VCASP' ,vcasp,  1.422, 0x3ff) #select<3>
+        self.mic4.sReg.setPar('VRef'  ,vref,   1.416, 0x3ff) #select<0> 
         self.mic4.sReg.setPar('IBIAS' ,ibias )#select<4> 0x80 is 0.342  0xff is 0.588
         self.mic4.sReg.setPar('IDB'   ,idb   )#select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
         self.mic4.sReg.setPar('ITHR'  ,ithr  )#select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
         self.mic4.sReg.setPar('IRESET',ireset)
         self.mic4.sReg.setPar('IDB2'  ,idb2  )
+
+        ### set the values
+#        self.mic4.sReg.setPar('VCLIP' ,vclip,   0.686, 0x200) #select<5>
+#        self.mic4.sReg.setPar('VReset',vreset,   0.701, 0x200) #select<2> 
+#        self.mic4.sReg.setPar('VCASN2',vcasn2,   0.692, 0x200) #select<1>
+#        self.mic4.sReg.setPar('VCASN' ,vcasn,  0.695, 0x200) #select<4>
+#        self.mic4.sReg.setPar('VCASP' ,vcasp,  0.692, 0x200) #select<3>
+#        self.mic4.sReg.setPar('VRef'  ,vref,    0.701, 0x200) #select<0> 
+#        self.mic4.sReg.setPar('IBIAS' ,ibias )#select<4> 0x80 is 0.342  0xff is 0.588
+#        self.mic4.sReg.setPar('IDB'   ,idb   )#select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
+#        self.mic4.sReg.setPar('ITHR'  ,ithr  )#select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
+#        self.mic4.sReg.setPar('IRESET',ireset)
+#        self.mic4.sReg.setPar('IDB2'  ,idb2  )
 
 
 # SUB=-4V Chip #5 bias1

@@ -368,7 +368,14 @@ class pixelData:
 class multiPixelENC:
     def __init__(self):
         self.fitter = encFitter()
-        self.pixels = [pixelData((i,j),self.fitter) for i in range(120,128) for j in range(32)]
+        #self.pixels = [pixelData((i,j),self.fitter) for i in range(120,128) for j in range(32) if (i,j)!=(120,26)]
+        #self.pixels = [pixelData((i,j),self.fitter) for i in range(16,23) for j in range(32) if (i,j) not in [(16,26),(17,31),(16,29),(17,22),(23,15),(17,6),(17,23),(16,17),(16,5),(16,2)]]
+
+        #self.pixels = [pixelData((i,j),self.fitter) for i in range(16,24) for j in range(32) if (i,j) not in [(16,26),(17,31)]]
+
+        self.pixels = [pixelData((i,j),self.fitter) for i in range(24,32) for j in range(32) if (i,j) not in [(31,24),(31,7)]]
+        self.autoMasked = None
+
         self.funX = self.setDU
         self.funY = self.getVal
         self.npoints = 10
@@ -387,6 +394,15 @@ class multiPixelENC:
 
     def setup(self):
         self.mic4.setup(configID=0)
+        self.mic4.setVhVl(1.5,0.7)
+        self.mic4.maskedPixels = set([(r,c) for r in range(128) for c in range(64) if (r,c) not in [a.addr for a in self.pixels]])
+        self.autoMasked = self.mic4.checkPixels()
+        print "Auto masked pixles:",
+        for px in self.pixels:
+            if px.addr in self.autoMasked:
+                print px.addr,
+                self.pixels.remove(px)
+        print
 
     def getCheckList(self,n, update=False):
         if update: self.nCheck = n
@@ -410,19 +426,26 @@ class multiPixelENC:
             if jd[x]>1:
                 print "duplicated:",x,' --> ', jd[x]
             if jd[x]>5:
-#                 self.mic4.setPixels([(x[0],x[1],1,0)])                
+                self.mic4.setPixels([(x[0],x[1],1,0)])
+                self.mic4.maskedPixels.add(x)
+                for px in self.pixels:
+                    if px.addr == x:
+                        print px.addr, ' will be removed.'
+                        self.pixels.remove(px)
+#                  print self.pixels, x
+#                 self.pixels.remove(x)
                 self.mic4.sendGRST_B()
-                print "reset the states"
+                print "reset the states. Pixel masked"
 
     def getVal(self):
         '''Use some pixels to calculate, no need to do all of them
         The statistics need to be recorded.
         '''
-        self.mic4.getFDAddresses(100) # empty fifo
+        self.mic4.getFDAddresses(200) # empty fifo
         self.mic4.sendA_PULSE()
         time.sleep(0.05)
 
-        adds = self.mic4.getFDAddresses(100,debug=1)
+        adds = self.mic4.getFDAddresses(200,debug=1)
 #         print adds
         if adds is not None: self.check(adds)
         return sum([p.D(adds, self.dU) for p in self.pixels])
@@ -448,7 +471,7 @@ class multiPixelENC:
         npixel = len(self.pixels)
 
         ### Find a good range to take data. We can do 10 points
-        while len(listA)<4:
+        while len(listA)<10:
             if len(listA) <2:
                 print "Not a good range..... Skipping..."
                 return
@@ -496,6 +519,7 @@ class multiPixelENC:
         ### Save data for further analysis
         ### for each pixel
         with open(self.outfilename, 'w') as fout1:
+            if self.autoMasked is not None: fout1.write('Auto-masked pixels:'+str(self.autoMasked)+'\n')
             for p in self.pixels:
                 fout1.write(p.dumpInfo())
 
@@ -543,48 +567,64 @@ class mic4ENCCalculator:
         cx1.funX = self.setDU
         cx1.funY = self.getVal
 #SUB=0V
-#        for i in range(1):
-#            ix = 0.4+0.1*i
-#            #if ix > 0.7 : break
-#            vclip = 0.
-#            vcasn = ix
-#            vcasp = 0.5
-#            vreset= 1.35
-#            vcasn2= 0.5
-#            vref  = 0.4
-#            ibias = 0xff
-#            idb   = 0x80
-#            ithr  = 0x70
-#            ireset= 0x80
-#            idb2  = 0x80
-#SUB=-3V
-        for i in range(15):
-            ix = 0x20+16*i
-            #if ix > 1.4 : break
-            vclip = 0.45
-            vcasn = 0.87
+        for i in range(1):
+            ix = 1.35+0.04*i
+           #if ix > 0.7 : break
+            vclip = 0.
+            vcasn = 0.4
             vcasp = 0.5
-            vreset= 1.4
-            vcasn2= 0.9
+            vreset= ix
+            vcasn2= 0.5
             vref  = 0.4
             ibias = 0xff
             idb   = 0x80
-            ithr  = ix  #0x80
+            ithr  = 0x70
             ireset= 0x80
             idb2  = 0x80
+#SUB=-3V
+#        for i in range(15):
+#            ix = 0x20+16*i
+#            #if ix > 1.4 : break
+#            vclip = 0.45
+#            vcasn = 0.87
+#            vcasp = 0.5
+#            vreset= 1.4
+#            vcasn2= 0.9
+#            vref  = 0.4
+#            ibias = 0xff
+#            idb   = 0x80
+#            ithr  = ix  #0x80
+#            ireset= 0x80
+#            idb2  = 0x80
 
-            ### set the values
-            self.mic4.sReg.setPar('VCLIP' ,vclip,   0.686, 0x200) #select<5>
-            self.mic4.sReg.setPar('VReset',vreset,   0.701, 0x200) #select<2> 
-            self.mic4.sReg.setPar('VCASN2',vcasn2,   0.692, 0x200) #select<1>
-            self.mic4.sReg.setPar('VCASN' ,vcasn,  0.695, 0x200) #select<4>
-            self.mic4.sReg.setPar('VCASP' ,vcasp,  0.692, 0x200) #select<3>
-            self.mic4.sReg.setPar('VRef'  ,vref,    0.701, 0x200) #select<0> 
+
+
+            ### chip #7 set the values
+            self.mic4.sReg.setPar('VCLIP' ,vclip,  1.423, 0x3ff) #select<5>
+            self.mic4.sReg.setPar('VReset',vreset, 1.430, 0x3ff) #select<2> 
+            self.mic4.sReg.setPar('VCASN2',vcasn2, 1.416, 0x3ff) #select<1>
+            self.mic4.sReg.setPar('VCASN' ,vcasn,  1.419, 0x3ff) #select<4>
+            self.mic4.sReg.setPar('VCASP' ,vcasp,  1.422, 0x3ff) #select<3>
+            self.mic4.sReg.setPar('VRef'  ,vref,   1.416, 0x3ff) #select<0> 
             self.mic4.sReg.setPar('IBIAS' ,ibias )#select<4> 0x80 is 0.342  0xff is 0.588
             self.mic4.sReg.setPar('IDB'   ,idb   )#select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
             self.mic4.sReg.setPar('ITHR'  ,ithr  )#select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
             self.mic4.sReg.setPar('IRESET',ireset)
             self.mic4.sReg.setPar('IDB2'  ,idb2  )
+
+
+            ### chip #5 set the values
+#            self.mic4.sReg.setPar('VCLIP' ,vclip,   0.686, 0x200) #select<5>
+#            self.mic4.sReg.setPar('VReset',vreset,   0.701, 0x200) #select<2> 
+#            self.mic4.sReg.setPar('VCASN2',vcasn2,   0.692, 0x200) #select<1>
+#            self.mic4.sReg.setPar('VCASN' ,vcasn,  0.695, 0x200) #select<4>
+#            self.mic4.sReg.setPar('VCASP' ,vcasp,  0.692, 0x200) #select<3>
+#            self.mic4.sReg.setPar('VRef'  ,vref,    0.701, 0x200) #select<0> 
+#            self.mic4.sReg.setPar('IBIAS' ,ibias )#select<4> 0x80 is 0.342  0xff is 0.588
+#            self.mic4.sReg.setPar('IDB'   ,idb   )#select<6> 0x80 is 0.0738 0xff is 0.1154 0xc0 is 0.101
+#            self.mic4.sReg.setPar('ITHR'  ,ithr  )#select<5> 0x80 is 0.0101 0xff is 0.0158 0x40 is 6.4mV
+#            self.mic4.sReg.setPar('IRESET',ireset)
+#            self.mic4.sReg.setPar('IDB2'  ,idb2  )
 
 # SUB=-3V Chip #5 bias6
 
@@ -649,9 +689,11 @@ class mic4ENCCalculator:
 
 def testScan():
     mc1 = mic4ENCCalculator()
-    mc1.pixel = (127,12)
+    mc1.pixel = (127,20)
 #    logFileName = 'DAC_scan_vcasn_0p2to0p6.dat'
-    logFileName = 'May18_ENC_col12_SUB-3V_scan_ithr_0x20to0xf0.dat'
+#    logFileName = 'May18_ENC_col12_SUB-3V_scan_ithr_0x20to0xf0.dat'
+#    logFileName = 'May23_chip7_ENC_col12_SUB0V_scan_vreset_1p24to1p36.dat'
+    logFileName = 'May28_chip7_ENC_row127col20_SUB0V_turnon_4X32pixels.dat'
     if os.path.exists(logFileName):
         idz = 1
         while os.path.exists(logFileName+'.'+str(idz)):
@@ -818,10 +860,22 @@ def testT():
 
 def testScanMore():
     a = multiPixelENC()
+#     a.pixels = [pixelData((i,j),a.fitter) for i in range(88,96) for j in range(32) if (i,j)]
+#     a.pixels = [pixelData((i,j),a.fitter) for i in range(96,104) for j in range(32) if (i,j)]
+#     a.pixels = [pixelData((i,j),a.fitter) for i in range(104,112) for j in range(32)]+[pixelData((15,j),a.fitter) for j in range(32)]
+#     a.pixels = [pixelData((i,j),a.fitter) for i in range(32,40) for j in range(32)] + [pixelData((i,j),a.fitter) for i in range(112,114) for j in range(32) if (i,j)]
+#     a.pixels = [pixelData((i,j),a.fitter) for i in range(40,48) for j in range(32)] + [pixelData((i,j),a.fitter) for i in range(114,116) for j in range(32) if (i,j)]
+#     a.pixels = [pixelData((i,j),a.fitter) for i in range(48,56) for j in range(32)] + [pixelData((i,j),a.fitter) for i in range(116,118) for j in range(32) if (i,j)]
+    a.pixels = [pixelData((i,j),a.fitter) for i in range(56,64) for j in range(32)] + [pixelData((i,j),a.fitter) for i in range(118,120) for j in range(32) if (i,j)]
+#     a.pixels += [pixelData((i,j),a.fitter) for i in range(32,40) for j in range(32) if (i,j)]
     a.setup()
     a.nSamples2 = 200
     a.enc_error_MAX = None
-    a.outfilename = 'enc_scan_BlockRow15.dat'
+#    a.outfilename = 'enc_scan_BlockRow15.dat'
+#     a.outfilename = 'May30_Chip7_enc_scan_row88To95_col0To32.dat'
+#     a.outfilename = 'May30_Chip7_enc_scan_row96To103_col0To32.dat'
+    a.outfilename = 'May30_Chip7_enc_scan_row56To63_118To119_col0To32.dat'
+
     a.run_check()
 
         ###

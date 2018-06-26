@@ -13,6 +13,7 @@ import socket
 import time
 import sys
 from datetime import datetime
+from collections import defaultdict
 
 ## Manage Topmetal-S 1mm chip's internal register map.
 # Allow combining and disassembling individual registers
@@ -204,6 +205,135 @@ class MIC4Config():
         self.pCfg = PixelConfig(self.cmd, self.s)
         self.pCfg.clk_div = self.clk_div+10 # from 100 MHz clock
         self.threads = []
+        self.maskedPixels = set()
+    def resetChip(self):
+        cmdstr = self.cmd.send_pulse(0x1<<11)
+        self.s.sendall(cmdstr)
+
+    def autoMaskNoisyPixels(self, nMax=1):
+        code = 0
+        allMasked = []
+        while True:
+            self.getFDAddresses(100, True)
+            time.sleep(1)
+            print("getting more")
+            self.sendD_PULSE()
+            time.sleep(1)
+            addr = self.getFDAddresses(100,True)
+            print(addr)
+            jd = defaultdict(int)
+            if addr is not None:
+                for x in addr: jd[x] += 1
+            print(jd)
+
+            newList = []
+            for x in jd:
+                if jd[x]>nMax: newList.append(x)
+            print("Pixels to be masked:", newList)
+            if len(newList) == 0: break
+            self.setPixels([(x[0],x[1],1,0) for x in newList])
+            time.sleep(0.5)
+            allMasked += newList
+
+        self.maskedPixels.update(allMasked)
+        self.checkMasked(nTry=3)
+        return allMasked
+
+    def checkPixels(self, nTry=3, autoMask=True, nMax=2, nTest=5):
+        autoMasked = []
+        
+        iT = 0
+        while iT != nTry:
+
+            ### mask all noisy pixels, get the enabled list -- adds
+            adds = set()
+            itx = 0
+            while itx<nTest:
+                self.sendD_PULSE()
+                time.sleep(0.2)
+                addr = self.getFDAddresses(100,True)
+                if addr is not None: adds = set(addr)
+
+                jd = defaultdict(int)
+                if addr is not None:
+                    for x in addr: jd[x] += 1
+                else: continue
+
+                newList = []
+                for x in jd:
+                    if jd[x]>nMax: newList.append(x)
+
+                ### no noisy pixels in nTest tests
+                if len(newList) == 0:
+                    itx += 1
+                    continue
+                itx = 0
+                print("Pixels to be masked:", newList)
+                self.setPixels([(x[0],x[1],1,0) for x in newList])
+                time.sleep(0.1*len(newList))
+                autoMasked += newList
+                while True:
+                    rem = self.getFDAddresses(100,True)
+                    if rem is None: break
+                    print("remove remainings:", rem)
+                time.sleep(1)
+
+            ### the the noisy ones to the list
+            self.maskedPixels.update(autoMasked)
+            print("AutoMasked:", autoMasked)
+
+            ### get the address to be masked
+            en_pixels = set([(r,c) for r in range(128) for c in range(64) if (r,c) not in self.maskedPixels])
+            to_mask = adds - en_pixels
+            to_unmask = en_pixels - adds
+            print("get addresses:", adds)
+            print('to_mask',to_mask)
+            print('to_unmask',to_unmask)
+
+            ### leave if nothing to do
+            if len(to_mask)+len(to_unmask) == 0: break
+
+            ### get the config code
+            configx = [(x[0],x[1],1,0) for x in to_mask] + [(x[0],x[1],0,1) for x in to_unmask]
+
+            if iT>0: self.resetChip()
+            self.setPixels(configx)
+            time.sleep(0.1*(len(to_mask)+len(to_unmask)))
+            
+            iT += 1
+        return autoMasked
+
+    def checkMasked(self, nTry=3):
+        iT = 0
+        while iT != nTry:
+            ### send D-Pulse, get the returned addreses
+
+            self.sendD_PULSE()
+            time.sleep(1)
+            addr=self.getFDAddresses(100,True)
+            print(addr)
+            adds = set() if addr is None else set(addr)
+
+            ### get the address to be masked
+            en_pixels = set([(r,c) for r in range(128) for c in range(64) if (r,c) not in self.maskedPixels])
+            to_mask = adds - en_pixels
+            to_unmask = en_pixels - adds
+            print('to_mask',to_mask)
+            print('to_unmask',to_unmask)
+
+            ### check if a configuration is needed
+            if len(to_mask)+len(to_unmask) == 0: break
+
+            ### get the configuration
+            configx = [(x[0],x[1],1,0) for x in to_mask] + [(x[0],x[1],0,1) for x in to_unmask]
+
+            if iT>0: self.resetChip() ## reset signal to the chip, this is needed when the inside counter and the data are misagligned
+            self.setPixels(configx) ## apply the config
+            time.sleep(1)
+
+            iT += 1
+
+        return iT
 
     def setup(self, configID=None):
         self.connect()
@@ -381,6 +511,12 @@ class MIC4Config():
         nByte = 4*nWord
         try:
             retw = self.s.recv(nByte)
+#             retw = []
+#             while True:
+#                 retw += self.s.recv(nByte)
+#                 print(len(retw))
+# #                 print ("----------->", retw)
+#                 if len(retw) == 0: break
         except socket.timeout as e:
             return None
 
@@ -722,11 +858,11 @@ class MIC4Reg(object):
         print('-'*10,'Other','-'*10)
         print('TEST     :',(self.value>>22)&0x1)
         print('PDB      :',(self.value>>21)&0x1)
-        print('TRX_seril:',(self.value>>21)&0x1)
-        print('TRX5_seri:',(self.value>>20)&0x1)
-        print('TRX6_seri:',(self.value>>19)&0x1)
-        print('TRX7_seri:',(self.value>>18)&0x1)
-        print('TRX8_seri:',(self.value>>17)&0x1)
+        print('TRX_seril:',(self.value>>17)&0xf)
+#         print('TRX5_seri:',(self.value>>20)&0x1)
+#         print('TRX6_seri:',(self.value>>19)&0x1)
+#         print('TRX7_seri:',(self.value>>18)&0x1)
+#         print('TRX8_seri:',(self.value>>17)&0x1)
         print('TRX16    :',(self.value>>13)&0xf)
         print('LVDS_Test:',(self.value>>9)&0xf)
 
@@ -925,7 +1061,6 @@ class MIC4Reg(object):
                 print(j,':',i)
                 j+=1
 
-
 class PixelConfig():
     '''For pixel config'''
     def __init__(self, cmd, s):
@@ -941,7 +1076,7 @@ class PixelConfig():
     def getConfList(self, list0=None):
         list1 = list0
         if list0 is None: list1 = self.pixels
-        print("List1:", list1)
+#         print("List1:", list1)
 
         listA = []
         w = None
@@ -966,7 +1101,7 @@ class PixelConfig():
         if self.isTest:
             for w in listA: print(bin(w))
             return
-        print(listA)
+#         print(listA)
         return listA
 
     def getCode(self, x):

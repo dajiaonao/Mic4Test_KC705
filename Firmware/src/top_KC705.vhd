@@ -1563,7 +1563,7 @@ BEGIN
   div0_mc <= config_reg(16*18+5 DOWNTO 16*18);
   div1_mc <= config_reg(16*18+11 DOWNTO 16*18+6);
   FMC_HPC_LA_P(30) <= config_reg(16*18+12); --STROBE
-  FMC_HPC_LA_P(32) <= NOT reset; --RESET: the modules work with high voltage in the chip.
+  FMC_HPC_LA_P(32) <= NOT (reset OR pulse_reg(11)); --RESET: the modules work with high voltage in the chip.
   Mic4_Cntrl_inst : Mic4_Cntrl
     GENERIC MAP(
       DIV_WIDTH     => 6,
@@ -1604,8 +1604,8 @@ BEGIN
       IOSTANDARD => "LVDS"
     )
     PORT MAP (
-      O  => FMC_HPC_LA_P(29),  -- Diff_p output (connect directly to top-level port)
-      OB => FMC_HPC_LA_N(29),  -- Diff_n output (connect directly to top-level port)
+      O  => USER_SMA_CLOCK_P,  -- Diff_p output (connect directly to top-level port)
+      OB => USER_SMA_CLOCK_N,  -- Diff_n output (connect directly to top-level port)
       I  => clk_out_mc
    );
 
