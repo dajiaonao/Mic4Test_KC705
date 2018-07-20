@@ -297,10 +297,7 @@ set_property IOSTANDARD LVCMOS25 [get_ports I2C_SDA]
 set_property IOSTANDARD LVCMOS25 [get_ports USER_CLK_N]
 set_property IOSTANDARD LVCMOS25 [get_ports USER_CLK_P]
 
-<<<<<<< Updated upstream
 set_property C_CLK_INPUT_FREQ_HZ 300000000 [get_debug_cores dbg_hub]
 set_property C_ENABLE_CLK_DIVIDER false [get_debug_cores dbg_hub]
 set_property C_USER_SCAN_CHAIN 1 [get_debug_cores dbg_hub]
 connect_debug_port dbg_hub/clk [get_nets sys_clk]
-=======
->>>>>>> Stashed changes

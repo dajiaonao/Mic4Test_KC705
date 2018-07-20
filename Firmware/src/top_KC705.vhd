@@ -558,6 +558,20 @@ COMPONENT dbg_ila2
     );
   END COMPONENT;
   ---------------------------------------------> Mic4 control
+    ---------------------------------------------< Strobe
+  COMPONENT delayed_rise
+      GENERIC (
+    DELAY_COUNT : positive := 14
+    );
+    PORT (
+      clk          :IN  std_logic;
+      rst          :IN  std_logic;
+      trigger      :IN  std_logic;
+      out1         :OUT std_logic
+    );
+  END COMPONENT;
+  ---------------------------------------------> Strobe
+  
   ---------------------------------------------< FDOUT
   COMPONENT Parallel_SerialX_top
     GENERIC (
@@ -644,8 +658,9 @@ COMPONENT dbg_ila2
   SIGNAL clk_100MHz                        : std_logic;
   SIGNAL clk_125MHz                        : std_logic;
   SIGNAL clk_200MHz                        : std_logic;
-  SIGNAL clk_250MHz                        : std_logic;
+  SIGNAL clk_450MHz                        : std_logic;
   SIGNAL clk_600MHz                        : std_logic;
+  SIGNAL clk_run                           : std_logic;
   SIGNAL clk156                            : std_logic;
   SIGNAL clk_sgmii_i                       : std_logic;
   SIGNAL clk_sgmii                         : std_logic;
@@ -898,9 +913,12 @@ COMPONENT dbg_ila2
   SIGNAL  fifo_empty2 : std_logic;
   SIGNAL  fifo_q2     : std_logic_vector(35 DOWNTO 0);
   SIGNAL  probe0_FD   :std_logic_vector(7 DOWNTO 0);
+  SIGNAL  data_out    :std_logic_vector(7 DOWNTO 0);
   SIGNAL  ila2_probe1 :std_logic_vector(3 DOWNTO 0);
   SIGNAL  ila2_probe2 :std_logic_vector(15 DOWNTO 0);
   SIGNAL  start_fd  : std_logic;
+  SIGNAL  strobe_i    :std_logic;
+  SIGNAL  valid_out   :std_logic;
   ---------------------------------------------> FDOUT
   ---------------------------------------------> DIV_5
   SIGNAL div_5_out : std_logic;
@@ -928,7 +946,7 @@ BEGIN
       CLK_OUT1   => clk_50MHz,
       CLK_OUT2   => clk_100MHz,
       CLK_OUT3   => clk_600MHz,
-      CLK_OUT4   => clk_250MHz
+      CLK_OUT4   => clk_450MHz
     );
 
   -- gtx/gth reference clock can be used as general purpose clock this way
@@ -946,6 +964,7 @@ BEGIN
       O => clk_sgmii
     );
   clk_125MHz <= clk_sgmii;
+
   ---------------------------------------------> Clock
   ---------------------------------------------< debug : ILA and VIO (`Chipscope')
   dbg_cores : IF ENABLE_DEBUG GENERATE
@@ -982,9 +1001,7 @@ BEGIN
   dbg_ila2_FD : dbg_ila2
   PORT MAP (
       clk => sys_clk,
-      --clk => clk_250MHz,
       probe0 => probe0_FD,
---       probe0 => data_DOut,
       probe1 => ila2_probe1,
       probe2 => ila2_probe2
   );
@@ -1034,6 +1051,8 @@ BEGIN
   END GENERATE uart_cores;
 
   control_clk <= clk_100MHz;
+  clk_run <= clk_600MHz;
+
   control_interface_inst : control_interface
     PORT MAP (
       RESET => reset,
@@ -1287,133 +1306,6 @@ BEGIN
     control_fifo_rdreq    <= NOT gig_eth_tx_fifo_full;
   END GENERATE gig_eth_cores;
   ---------------------------------------------> gig_eth
-  ---------------------------------------------< SDRAM
---  sdram_ddr3_inst : sdram_ddr3
---    PORT MAP (
---      CLK                   => sys_clk,  -- system clock, must be the same as intended in MIG
---      REFCLK                => sys_clk,  -- 200MHz for iodelay
---      RESET                 => reset,
---      -- SDRAM_DDR3
---      -- Inouts
---      DDR3_DQ               => DDR3_DQ,
---      DDR3_DQS_P            => DDR3_DQS_P,
---      DDR3_DQS_N            => DDR3_DQS_N,
---      -- Outputs
---      DDR3_ADDR             => DDR3_ADDR,
---      DDR3_BA               => DDR3_BA,
---      DDR3_RAS_N            => DDR3_RAS_N,
---      DDR3_CAS_N            => DDR3_CAS_N,
---      DDR3_WE_N             => DDR3_WE_N,
---      DDR3_RESET_N          => DDR3_RESET_N,
---      DDR3_CK_P             => DDR3_CK_P,
---      DDR3_CK_N             => DDR3_CK_N,
---      DDR3_CKE              => DDR3_CKE,
---      DDR3_CS_N             => DDR3_CS_N,
---      DDR3_DM               => DDR3_DM,
---      DDR3_ODT              => DDR3_ODT,
---      -- Status Outputs
---      INIT_CALIB_COMPLETE   => LED8Bit(4),
---      -- Internal data r/w interface
---      UI_CLK                => clk_200MHz,
---      --
---      CTRL_RESET            => pulse_reg(6),
---      WR_START              => idata_data_wr_start,
---      WR_ADDR_BEGIN         => config_reg(32*4+27 DOWNTO 32*4),
---      WR_STOP               => pulse_reg(4),
---      WR_WRAP_AROUND        => config_reg(32*4+28),
---      POST_TRIGGER          => config_reg(32*5+27 DOWNTO 32*5),
---      WR_BUSY               => idata_data_wr_busy,
---      WR_POINTER            => OPEN,
---      --TRIGGER_POINTER       => status_reg(64*2+27 DOWNTO 64*2),
---      WR_WRAPPED            => idata_data_wr_wrapped,
---      RD_START              => pulse_reg(5),
---      RD_ADDR_BEGIN         => (OTHERS => '0'),
---      RD_ADDR_END           => config_reg(32*6+27 DOWNTO 32*6),
---      --RD_BUSY               => status_reg(64*2+30),
---      --
---      DATA_FIFO_RESET       => idata_data_fifo_reset,
---      INDATA_FIFO_WRCLK     => idata_adc_data_clk,
---      INDATA_FIFO_Q         => idata_idata_fifo_q,
---      INDATA_FIFO_FULL      => idata_idata_fifo_full,
---      INDATA_FIFO_WREN      => idata_idata_fifo_wren,
---      --
---      OUTDATA_FIFO_RDCLK    => idata_data_fifo_rdclk,
---      OUTDATA_FIFO_Q        => idata_data_fifo_dout,
---      OUTDATA_FIFO_EMPTY    => idata_data_fifo_empty,
---      OUTDATA_FIFO_RDEN     => idata_data_fifo_rden,
---      --
---      DBG_APP_ADDR          => sdram_app_addr,
---      DBG_APP_EN            => sdram_app_en,
---      DBG_APP_RDY           => sdram_app_rdy,
---      DBG_APP_WDF_DATA      => sdram_app_wdf_data,
---      DBG_APP_WDF_END       => sdram_app_wdf_end,
---      DBG_APP_WDF_WREN      => sdram_app_wdf_wren,
---      DBG_APP_WDF_RDY       => sdram_app_wdf_rdy,
---      DBG_APP_RD_DATA       => sdram_app_rd_data,
---      DBG_APP_RD_DATA_VALID => sdram_app_rd_data_valid
---    );
---  idata_data_fifo_reset <= pulse_reg(2);
---  --status_reg(64*2+28)    <= idata_data_wr_busy;
---  --status_reg(64*2+29)    <= idata_data_wr_wrapped;
---  --
---  channel_sel_inst : channel_sel
---    PORT MAP (
---      CLK             => idata_adc_data_clk,  -- fifo wrclk
---      RESET           => reset,
---      SEL             => config_reg(32*7+7 DOWNTO 32*7),
---      --
---      DATA_FIFO_RESET => idata_data_fifo_reset,
---      --
---      INDATA_Q        => idata_channel_avg_outdata_q,
---      DATA_FIFO_WREN  => idata_data_fifo_wren,
---      DATA_FIFO_FULL  => idata_data_fifo_full,
---      --
---      OUTDATA_FIFO_Q  => idata_idata_fifo_q,
---      DATA_FIFO_RDEN  => idata_idata_fifo_rden,
---      DATA_FIFO_EMPTY => idata_idata_fifo_empty
---    );
---  idata_idata_fifo_rden <= NOT idata_idata_fifo_full;
---  idata_idata_fifo_wren <= NOT idata_idata_fifo_empty;
---  idata_data_fifo_wren  <= config_reg(32*6+31) AND idata_channel_avg_outvalid;
---  --
---  channel_avg_inst : channel_avg
---    PORT MAP (
---      RESET           => reset,
---      CLK             => idata_adc_data_clk,
---      -- high 4-bit is offset, 2**(low 4-bit) is number of points to average    
---      CONFIG          => config_reg(32*7+15 DOWNTO 32*7+8),
---      TRIG            => idata_data_wr_start,
---      INDATA_Q        => idata_data_fifo_din,
---      OUTVALID        => idata_channel_avg_outvalid,
---      OUTDATA_Q       => idata_channel_avg_outdata_q
---    );
---  --
---  dbg_ila_probe3(27 DOWNTO 0)               <= sdram_app_addr;
---  dbg_ila_probe3(28)                        <= sdram_app_en;
---  dbg_ila_probe3(29)                        <= sdram_app_rdy;
---  dbg_ila_probe3(30)                        <= sdram_app_wdf_wren;
---  dbg_ila_probe3(31)                        <= sdram_app_wdf_rdy;
---  dbg_ila_probe3(32)                        <= sdram_app_wdf_end;
---  dbg_ila_probe3(1023 DOWNTO 512)           <= sdram_app_wdf_data;
---  dbg_ila_probe3(1024+1023 DOWNTO 1024+512) <= sdram_app_rd_data;
---  dbg_ila_probe3(33)                        <= sdram_app_rd_data_valid;
---  dbg_ila_probe3(511 DOWNTO 336)            <= status_reg;
-  ---------------------------------------------> SDRAM
-
-  -- clock output
---   refout_clk_div_inst : clk_div
---     PORT MAP (
---       RESET   => reset,
---       CLK     => idata_adc_data_clk,
---       DIV     => config_reg(16*15+3 DOWNTO 16*15),
---       CLK_DIV => idata_adc_refout_clkdiv
---     );
---   clk_fwd_inst : clk_fwd
---     PORT MAP (R => reset, I => idata_adc_refout_clkdiv, O => USER_SMA_CLOCK_P);
---   clk_fwd_inst1 : clk_fwd GENERIC MAP (INV => true)
---     PORT MAP (R => reset, I => idata_adc_refout_clkdiv, O => USER_SMA_CLOCK_N);
---   clk_fwd_inst2 : clk_fwd GENERIC MAP (INV => true)
---     PORT MAP (R => reset, I => idata_adc_data_clk, O => USER_SMA_GPIO_N);
 
   -- capture the rising edge of trigger
   trig_edge_sync_inst : edge_sync
@@ -1474,13 +1366,11 @@ BEGIN
       data_in    => FMC_HPC_HA_P(9) ,
       div        => div,
       fifo_rd_en => fifo_rden1,
---      fifo_rd_en => idata_data_fifo_rden,
       clk        => clk_sr_contr,
       clk_sr     => FMC_HPC_LA_P(20),
       data_out   => FMC_HPC_LA_P(33),
       load_sr    => FMC_HPC_LA_P(31),
       fifo_empty => fifo_empty1,
---      fifo_empty => idata_data_fifo_empty,
       fifo_q     => fifo_q1
     );
   ---------------------------------------------> TOP_SR
@@ -1563,8 +1453,26 @@ BEGIN
   ---------------------------------------------< Mic4 control
   div0_mc <= config_reg(16*18+5 DOWNTO 16*18);
   div1_mc <= config_reg(16*18+11 DOWNTO 16*18+6);
-  FMC_HPC_LA_P(30) <= config_reg(16*18+12); --STROBE
+  
+  ------------------------------Strobe
+  delayed_rise_inst0: delayed_rise
+    GENERIC MAP(
+      DELAY_COUNT => 14
+    )
+    PORT MAP (
+      clk => clk_run, --250MHz
+      rst  => reset,
+      trigger => valid_out,
+      out1 => strobe_i
+    );
+  ---------------------------Strobe
+  --FMC_HPC_LA_P(30) <= config_reg(16*18+12); --STROBE
+  --FMC_HPC_LA_P(30) <= strobe_i;
+  
+  FMC_HPC_LA_P(30) <= strobe_i when config_reg(16*18+13)='1' else config_reg(16*18+12);
+  FMC_HPC_HA_P(05) <= valid_out;
   FMC_HPC_LA_P(32) <= NOT (reset OR pulse_reg(11)); --RESET: the modules work with high voltage in the chip.
+  
   Mic4_Cntrl_inst : Mic4_Cntrl
     GENERIC MAP(
       DIV_WIDTH     => 6,
@@ -1574,8 +1482,7 @@ BEGIN
       GRST_LENGTH   => 5
     )
     PORT MAP (
---       clk_in => clk_250MHz, --250MHz
-      clk_in => clk_600MHz, --250MHz
+      clk_in => clk_run, --250MHz
       clk_control => control_clk, --100MHz
       rst  => reset,
       div0 => div0_mc,
@@ -1586,12 +1493,9 @@ BEGIN
       clk_out => clk_out_mc_i, -- CLK_IN of mic4
       lt_out => lt_out_mc, --LT_IN of mic4
       a_pulse_out => FMC_HPC_LA_P(21),
---      a_pulse_out => OPEN,
       d_pulse_out => FMC_HPC_LA_P(24),
---      d_pulse_out => OPEN,
       grst_n_out => FMC_HPC_LA_P(28)
     );
---  FMC_HPC_LA_P(21) <= '1';
 
   --- Make it a global clock to get better timing
   BUFG_inst2 : BUFG
@@ -1618,9 +1522,13 @@ BEGIN
       O  => FMC_HPC_LA_P(19),  -- Diff_p output (connect directly to top-level port)
       OB => FMC_HPC_LA_N(19),  -- Diff_n output (connect directly to top-level port)
       I  => lt_out_mc
---       I => div_5_out
    );
   ---------------------------------------------< Mic4 control
+
+  --data_out <= probe0_FD;
+--    data_out <= data_DOut;
+  data_out <= probe0_FD when config_reg(16*18+15)='1' else data_DOut;
+  
   ---------------------------------------------< FDOUT
   Parallel_SerialX_top_inst0: Parallel_SerialX_top
     GENERIC MAP (
@@ -1631,50 +1539,16 @@ BEGIN
     )
     PORT MAP(
       clk_in      => clk_out_mc,
---       clk_in      => clk_600MHz,
       clk_control => control_clk,
       rst         => reset,
       start_pulse => pulse_reg(10),
---       fd_in       => probe0_FD, 
-      fd_in       => data_DOut, 
-      trigger     => FMC_HPC_HA_P(05),
+      fd_in       => data_out, 
+      trigger     => valid_out,
       fifo_rd_en  => fifo_rden2,
       fifo_empty  => fifo_empty2,
       fifo_q      => fifo_q2
   );
---   start_fd <= FMC_HPC_HA_P(05) or pulse_reg(10);
---   Parallel_Serial_top_inst0: Parallel_Serial_top
---     GENERIC MAP (
---       NDATA       => 20,
---       FIFO_WIDTH  => 36,
---       NUM_WIDTH   => 2 ,
---       FRAME_WIDTH => 48
---     )
---     PORT MAP(
---       clk_in      => clk_out_mc,
---       clk_control => control_clk,
---       rst         => reset,
--- --       start_pulse => pulse_reg(10),
---       start_pulse => start_fd,
---       fd0         => fd_out0,
---       fd1         => fd_out1,
---       fd2         => fd_out2,
---       fd3         => fd_out3,
---       fd4         => fd_out4,
---       fd5         => fd_out5,
---       fd6         => fd_out6,
---       fd7         => fd_out7,
---       mode        => '1',
---       fifo_rd_en  => fifo_rden2,
--- --      out_debug   => FMC_HPC_LA_P(21),
---       out_debug   => OPEN,
---       fifo_empty  => fifo_empty2,
--- --      fifo_empty  => FMC_HPC_LA_P(21),
---       fifo_q      => fifo_q2
---   );
-  ---------------------------------------------> FDOUT
 
---   FMC_HPC_LA_P(24) <= div_5_out; -- use d-pulse temparaily
   ---------------------------------------------< DIV_5
   div_5_inst0 : div_5 
     PORT MAP (
@@ -1683,7 +1557,6 @@ BEGIN
       clkout     => div_5_out
   );
   ---------------------------------------------< DIV_5
---FMC_HPC_LA_P(21) <= clk_out_mc;
 
    probe0_FD <= fd_out0 & fd_out1 & fd_out2 & fd_out3 & fd_out4 & fd_out5 & fd_out6 & fd_out7;
    ila2_probe1(0) <= fifo_empty1;
@@ -1691,7 +1564,7 @@ BEGIN
    ila2_probe1(2) <= FMC_HPC_HA_P(05);
    ila2_probe1(3) <= pulse_reg(10);
 
-   ila2_probe2(7 DOWNTO 0) <= data_Dout;
+   ila2_probe2(7 DOWNTO 0) <= data_out;
    ila2_probe2(8) <= track_out_i; 
    ila2_probe2(9) <= rxcommadet_i; 
    ila2_probe2(10) <= rxisaligned_i; 
@@ -1713,8 +1586,6 @@ BEGIN
 --       IOSTANDARD => "LVDS")
    port map (
       O => fd_out0,  -- Buffer output
---      O => probe0_FD(0),
---       O =>  FMC_HPC_LA_P(21),
       I =>  FMC_HPC_HA_P(18),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(18) -- Diff_n buffer input (connect directly to top-level port)
    );
@@ -1726,7 +1597,6 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out1,  -- Buffer output
---      O => probe0_FD(1),
       I =>  FMC_HPC_HA_P(17),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(17) -- Diff_n buffer input (connect directly to top-level port)
    );
@@ -1738,8 +1608,6 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out2,  -- Buffer output
---      O => probe0_FD(2),
---      O =>  FMC_HPC_LA_P(21),
       I =>  FMC_HPC_HA_P(14),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(14) -- Diff_n buffer input (connect directly to top-level port)
    );
@@ -1751,7 +1619,6 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out3,  -- Buffer output
---      O => probe0_FD(3),
       I =>  FMC_HPC_HA_P(10),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(10) -- Diff_n buffer input (connect directly to top-level port)
    );
@@ -1763,7 +1630,6 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out4,  -- Buffer output
---      O => probe0_FD(4),
       I =>  FMC_HPC_HA_P(03),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(03) -- Diff_n buffer input (connect directly to top-level port)
    );
@@ -1775,9 +1641,6 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out5,  -- Buffer output
---      O => probe0_FD(5),
---       I => '1',
---       IB => '0'
       I =>  FMC_HPC_HA_P(02),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(02) -- Diff_n buffer input (connect directly to top-level port)
    );
@@ -1789,12 +1652,10 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out6,  -- Buffer output
---      O => probe0_FD(6),
       I =>  FMC_HPC_HA_P(07),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(07) -- Diff_n buffer input (connect directly to top-level port)
    );
 
- --  fd_out7 => FMC_HPC_LA_P(21); -- FIXME, redirecting this signal to a pin for debug
    FD7_inst : IBUFDS
    generic map (
       DIFF_TERM => TRUE, -- Differential Termination 
@@ -1802,11 +1663,10 @@ BEGIN
       IOSTANDARD => "DEFAULT")
    port map (
       O => fd_out7,  -- Buffer output
---      O => probe0_FD(7),
---       O =>  FMC_HPC_LA_P(21),
       I =>  FMC_HPC_HA_P(06),  -- Diff_p buffer input (connect directly to top-level port)
       IB => FMC_HPC_HA_N(06) -- Diff_n buffer input (connect directly to top-level port)
    );
+  ---------------------------------------------> FDOUT
 
   --- The convert module
 --   ---------------------------------------------< PULSE_SYNCHRONISE
@@ -1821,32 +1681,10 @@ BEGIN
 --   ---------------------------------------------> PULSE_SYNCHRONISE
  
 
-  ---------------------------------------------> FDOUT
-  clkgtx_obufds_inst : OBUFDS
-    GENERIC MAP (
-      IOSTANDARD => "LVDS"
-    )
-    PORT MAP (
-    O  => USER_SMA_CLOCK_P,
-    OB => USER_SMA_CLOCK_N,
---       O  => gtx_refclk_P,  -- Diff_p output (connect directly to top-level port)
---       OB => gtx_refclk_N,  -- Diff_n output (connect directly to top-level port)
-      I  => div_5_out
-   );
-
--- USER_SMA_CLOCK_P<=gtx_refclk_P;
--- USER_SMA_CLOCK_N<=gtx_refclk_N;
---   clk_fwd_inst : clk_fwd
---     PORT MAP (R => reset, I => gtx_refclk_P, O => USER_SMA_CLOCK_P);
---   clk_fwd_inst1 : clk_fwd GENERIC MAP (INV => true)
---     PORT MAP (R => reset, I => gtx_refclk_N, O => USER_SMA_CLOCK_N);
-
 -----------------------------------------< DOUT
    GTX10B8B_dec_inst1: GTX10B8B_dec
    port map (
 	RESET                     => reset,
--- 	Q2_CLK1_GTREFCLK_PAD_N_IN => gtx_refclk_N,
--- 	Q2_CLK1_GTREFCLK_PAD_P_IN => gtx_refclk_P,
 	Q2_CLK1_GTREFCLK_PAD_N_IN => GTREFCLK_N,
 	Q2_CLK1_GTREFCLK_PAD_P_IN => GTREFCLK_P,
 	SYSCLK_IN                 => sys_clk, 
