@@ -294,6 +294,7 @@ if __name__ == '__main__':
     ss = socket.socket(socket.AF_INET,socket.SOCK_STREAM)       #init local socket handle
     ss.connect((hostname,port))                                 #connect to the server
 #     saveWaveform()
+#     saveWaveform()
 #     captureScreen()
 #     takeData([1,2])
     takeDataCmd()
