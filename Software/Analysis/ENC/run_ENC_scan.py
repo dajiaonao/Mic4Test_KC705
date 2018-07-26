@@ -883,13 +883,11 @@ def testT():
 def testScanMore():
     a = multiPixelENC()
 #     a.pixels = [pixelData((i,j),a.fitter) for i in range(88,96) for j in range(32) if (i,j)]
-#     a.pixels = [pixelData((i,j),a.fitter) for i in range(96,104) for j in range(32) if (i,j)]
+
 #     a.pixels = [pixelData((i,j),a.fitter) for i in range(104,112) for j in range(32)]+[pixelData((15,j),a.fitter) for j in range(32)]
 #     a.pixels = [pixelData((i,j),a.fitter) for i in range(32,40) for j in range(32)] + [pixelData((i,j),a.fitter) for i in range(112,114) for j in range(32) if (i,j)]
-#     a.pixels = [pixelData((i,j),a.fitter) for i in range(40,48) for j in range(32)] + [pixelData((i,j),a.fitter) for i in range(114,116) for j in range(32) if (i,j)]
-#     a.pixels = [pixelData((i,j),a.fitter) for i in range(48,56) for j in range(32)] + [pixelData((i,j),a.fitter) for i in range(116,118) for j in range(32) if (i,j)]
-#     a.pixels = [pixelData((i,j),a.fitter) for i in range(56,64) for j in range(32)] + [pixelData((i,j),a.fitter) for i in range(118,120) for j in range(32) if (i,j)]
-#     a.pixels += [pixelData((i,j),a.fitter) for i in range(32,40) for j in range(32) if (i,j)]
+#    a.pixels = [pixelData((i,j),a.fitter) for i in range(32,40) for j in range(32,64)] + [pixelData((i,j),a.fitter) for i in range(18,20) for j in range(32,64)]
+    a.pixels = [pixelData((i,j),a.fitter) for i in range(20,24) for j in range(32,64)] 
     a.setup()
     a.nSamples2 = 200
     a.enc_error_MAX = None
@@ -898,7 +896,7 @@ def testScanMore():
 #     a.outfilename = 'May30_Chip7_enc_scan_row96To103_col0To32.dat'
 #     a.outfilename = 'May30_Chip7_enc_scan_row56To63_118To119_col0To32.dat'
 
-    a.outfilename = 'IHEP_jun26_enc_scan_BlockRow14.dat'
+    a.outfilename = 'IHEP_jun28_enc_scan_BlockRow2.dat'
     a.run_check()
 
         ###

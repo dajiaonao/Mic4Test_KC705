@@ -542,8 +542,8 @@ COMPONENT dbg_ila2
       GRST_LENGTH : positive := 5
     );
     PORT (
-      clk_in      : IN std_logic; --250MHz
-      clk_control : IN std_logic; --100MHz
+      clk_in      : IN std_logic; 
+      clk_control : IN std_logic;
       rst         : IN std_logic;
       div0        : IN std_logic_Vector(DIV_WIDTH-1 DOWNTO 0);
       div1        : IN std_logic_Vector(DIV_WIDTH-1 DOWNTO 0);
@@ -1461,7 +1461,7 @@ BEGIN
       DELAY_COUNT => 14
     )
     PORT MAP (
-      clk => clk_run, --250MHz
+      clk => clk_run,
       rst  => reset,
       trigger => valid_out,
       out1 => strobe_i
@@ -1496,8 +1496,8 @@ BEGIN
       GRST_LENGTH   => 5
     )
     PORT MAP (
-      clk_in => clk_run, --250MHz
-      clk_control => control_clk, --100MHz
+      clk_in => clk_run,
+      clk_control => control_clk,
       rst  => reset,
       div0 => div0_mc,
       div1 => div1_mc,
@@ -1566,7 +1566,7 @@ BEGIN
   ---------------------------------------------< DIV_5
   div_5_inst0 : div_5 
     PORT MAP (
-      clkin      => clk_600MHz,
+      clkin      => clk_out_mc,
       rst        => reset,
       clkout     => div_5_out
   );

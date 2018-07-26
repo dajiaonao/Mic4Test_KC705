@@ -6,7 +6,8 @@ from ROOT import *
 from collections import defaultdict
 import math
 from run_ENC_scan import pixelData
-from rootUtil import waitRootCmdX, useAtlasStyle, savehistory, get_default_fig_dir
+# from rootUtil import waitRootCmdX, useAtlasStyle, savehistory, get_default_fig_dir
+from rootUtil import waitRootCmdX, savehistory, get_default_fig_dir
 
 sDir = get_default_fig_dir()
 sTag = 'test1_'
@@ -23,11 +24,11 @@ class ENC_stats():
         self.h2_thr = h2temp.Clone('h_threshold') 
         self.h2_enc = h2temp.Clone('h_enc') 
 
-        self.h1_thr = TH1F('h1_thr','h1_thr;#DeltaU [V];# Pixel',50,0,0.3)
-        self.h1_enc = TH1F('h1_enc','h1_enc;#DeltaU [V];# Pixel',50,0,0.01)
+        self.h1_thr = TH1F('h1_thr','h1_thr;#DeltaU [V];# Pixel',50,0,0.7)
+        self.h1_enc = TH1F('h1_enc','h1_enc;#DeltaU [V];# Pixel',50,0,0.04)
         self.h1b_thr = h1_thr.Clone('h1b_thr')
 
-        self.th2 = TH2F('th2','th2;#DeltaU [V];Prob',100,0,0.3,100,0,1)
+        self.th2 = TH2F('th2','th2;#DeltaU [V];Prob',100,0,0.7,100,0,1)
         self.lt = TLatex()
         self.sDir = sDir
         self.sTag = sTag
@@ -39,7 +40,7 @@ class ENC_stats():
 
     def show(self):
 #         self.th2.Draw('axis')
-# 
+# 	
 #         waitRootCmdX()
 
         tx1 = ''
@@ -191,7 +192,7 @@ class ENC_checkX():
             print dv,self.corrTable[dv], dv>self.lowX
 
 def check_map():
-    dir1 = '../data/'
+    dir1 = './'
     flist = [
 #         'ENC/May28_Chip7_enc_scan_row0To7_col0To32.dat',
 #         'ENC/May29_Chip7_enc_scan_row8To15_col0To32.dat',
@@ -207,11 +208,26 @@ def check_map():
 #         'ENC/May30_Chip7_enc_scan_row88To95_col0To32.dat',
 #         'ENC/May30_Chip7_enc_scan_row96To103_col0To32.dat',
 #         'ENC/May30_Chip7_enc_scan_row104To111_and15_col0To32.dat',
-        'ENC/May28_Chip7_enc_scan_row120To127_col0To32.dat',
+#        'May28_Chip7_enc_scan_row120To127_col0To32.dat',
+        'IHEP_jun25_enc_scan_BlockRow15-M.dat',
+        'IHEP_jun26_enc_scan_BlockRow14-M.dat',
+        'IHEP_jun26_enc_scan_BlockRow13.dat',
+        'IHEP_jun26_enc_scan_BlockRow12-M.dat',
+        'IHEP_jun26_enc_scan_BlockRow11-M.dat',
+        'IHEP_jun26_enc_scan_BlockRow10-M.dat',
+        'IHEP_jun26_enc_scan_BlockRow9-M.dat',
+        'IHEP_jun26_enc_scan_BlockRow8-M.dat',
+        'IHEP_jun26_enc_scan_BlockRow7-M.dat',
+        'IHEP_jun27_enc_scan_BlockRow6-M.dat',
+        'IHEP_jun28_enc_scan_BlockRow5-M.dat',
+        'IHEP_jun28_enc_scan_BlockRow4-M.dat',
+        'IHEP_jun28_enc_scan_BlockRow3-M.dat',
+        'IHEP_jun28_enc_scan_BlockRow2.dat'
         ]
 
     px1 = None
-    px1 = (127,17)
+#    px1 = (104,50)
+#    px1 = (121,32)
 #     px1 = (42,2)
 
     stats1 = None
@@ -236,6 +252,10 @@ def check_map():
             h1t.GetYaxis().SetTitle('Prob')
             lt = TLatex()
             lt.DrawLatexNDC(0.7,0.3,'Pixel ({0:d},{1:d})'.format(px1[0],px1[1]))
+
+            c = 0.0007
+            lt.DrawLatexNDC(0.6,0.5,"Threshold:{0:.1f} #pm {1:.1f}".format(fun1.GetParameter(0)/c, fun1.GetParError(0)/c)+' e^{-}')
+            lt.DrawLatexNDC(0.6,0.45,"Noise    :{0:.1f} #pm {1:.1f}".format(fun1.GetParameter(1)/c, fun1.GetParError(1)/c)+' e^{-}')
 
             waitRootCmdX(sDir+sTag+'scan_pixel_{0:d}_{1:d}'.format(px1[0],px1[1]))
             return
@@ -402,7 +422,8 @@ def test1():
     waitRootCmdX()
 
 if __name__ == '__main__':
-    useAtlasStyle()
+#     useAtlasStyle()
+    gStyle.SetMarkerStyle(20)
     savehistory('./')
 #     test2()
 #     test5()
