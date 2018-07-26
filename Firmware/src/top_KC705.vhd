@@ -922,6 +922,7 @@ COMPONENT dbg_ila2
   ---------------------------------------------> FDOUT
   ---------------------------------------------> DIV_5
   SIGNAL div_5_out : std_logic;
+  SIGNAL chip_rest: std_logic;
   ---------------------------------------------> DIV_5
   ---------------------------------------------< DOUT
   SIGNAL  data_DOut      :std_logic_vector(7 DOWNTO 0);
@@ -1466,12 +1467,25 @@ BEGIN
       out1 => strobe_i
     );
   ---------------------------Strobe
+
+  --------------------------- Chip reset
+  pulse_synchronise_chip_reset : pulse_synchronise
+    PORT MAP (
+      pulse_in  => pulse_reg(11),
+      clk_in    => control_clk,
+      clk_out   => div_5_out,
+      rst       => reset,
+      pulse_out => chip_rest
+    );
+  ----------------------------
+
   --FMC_HPC_LA_P(30) <= config_reg(16*18+12); --STROBE
   --FMC_HPC_LA_P(30) <= strobe_i;
   
+  
   FMC_HPC_LA_P(30) <= strobe_i when config_reg(16*18+13)='1' else config_reg(16*18+12);
   FMC_HPC_HA_P(05) <= valid_out;
-  FMC_HPC_LA_P(32) <= NOT (reset OR pulse_reg(11)); --RESET: the modules work with high voltage in the chip.
+  FMC_HPC_LA_P(32) <= NOT (reset OR chip_rest); --RESET: the modules work with high voltage in the chip.
   
   Mic4_Cntrl_inst : Mic4_Cntrl
     GENERIC MAP(
