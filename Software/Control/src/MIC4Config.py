@@ -536,7 +536,7 @@ class MIC4Config():
 
         aList = []
         while hd+nF<=len(dx):
-            aList += parseFD(dx[hd:hd+nF], show=False)
+            aList += parseFD(dx[hd:hd+nF], debug>0)
             hd+=nF
         if debug==1 and len(aList)==0: print(dx)
         return aList

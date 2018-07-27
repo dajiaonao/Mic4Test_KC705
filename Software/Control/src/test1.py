@@ -188,9 +188,9 @@ def test_AOUT_IHEP_loop(mc1):
 def test_AOUT(mc1):
     #mc1.setClocks(0,0,0)
 #     sys.exit(1)
-    #mc1.test_DAC8568_config()
+    mc1.test_DAC8568_config()
 
-    #mc1.setVhVl(1,0.7)
+    mc1.setVhVl(1,0.7)
 
 # # #     mc1.sReg.useDefault()
     mc1.sReg.value =  0
@@ -369,7 +369,7 @@ def test_AOUT(mc1):
     mc1.sReg.setLVDS_TEST(0b1100)
     mc1.sReg.setTRX16(0b1000)
     mc1.sReg.setTRX15_serializer(0b1100)
-    mc1.sReg.setTEST(1)
+   # mc1.sReg.setTEST(1)
 
 
     mc1.sReg.show()
@@ -377,7 +377,7 @@ def test_AOUT(mc1):
 # #     mc1.setClocks(1,6,6)
 
     time.sleep(2)
-#    mc1.sendA_PULSE()
+    mc1.sendA_PULSE()
 
 
 
@@ -652,19 +652,23 @@ if __name__ == '__main__':
     mc1 = MIC4Config()
 #     mc1.host = '192.168.2.1'
     mc1.connect()
-#    mc1.resetChip()
+#     mc1.resetChip()
 #     mc1.setClocks(0,0,0)
-    mc1.setOptions(0,0,strobe_b=0, strobe_opt=1, data_opt=1)
+#     mc1.setOptions(1,1,strobe_b=0, strobe_opt=1, data_opt=1)
 #    mc1.test_DAC8568_config()
 #     mc1.setup()
+#     mc1.setVhVl(1.5,0.7)
 
 #    mc1.clk_div = 7
 #    mc1.setup()
 #    testAutoMask(mc1)
 
 #    testChip(mc1)
-#    mc1.setPixels([(0,0,1,0)])
-#    mc1.setPixels([(127,16,0,1)])
+#    mc1.setPixels([(0,0,0,1),(127,3,0,1)])
+#    mc1.setPixels([(127,9,1,0),(127,3,0,1)])
+
+#    mc1.setPixels([(127,12,0,1)])
+#    mc1.setPixels([(7,0,1,0),(8,0,0,1)])
 #     test_AOUT(mc1)
 #     sys.exit()
 
@@ -737,15 +741,15 @@ if __name__ == '__main__':
 #    test_AOUT(mc1)
 #    time.sleep(2)
 #    mc1.sendA_PULSE()
-    mc1.sendD_PULSE()
+#     mc1.sendD_PULSE()
 #    setPixels(mc1, [(127,62,1,0),(127,12,0,1)])
 
 #    mc1.sendGRST_B()
-#    mc1.setAllPixels(mask=1, pulse_en=0)
+#     mc1.setAllPixels(mask=1, pulse_en=0)
 #     sys.exit(0)
 #    mc1.setClocks(0,6,6)
-#     for i in range(4):
-#         mc1.setPixelsInSuperblock(15,i,mask=1, pulse_en=0)
+    for i in range(4):
+        mc1.setPixelsInSuperblock(15,i,mask=0, pulse_en=1)
 #     mc1.setPixelsInSuperblock(0,0,mask=1, pulse_en=1)
 #     mc1.setPixelsInSuperblock(1,0,mask=0, pulse_en=1)
 #     mc1.setPixelsInSuperblock(1,0,mask=1, pulse_en=0)
@@ -783,7 +787,7 @@ if __name__ == '__main__':
 #    l1 = mc1.getFDAddresses(100,True)
 #    print l1
 
-    print mc1.getFDAddresses(100,True)
+#     print mc1.getFDAddresses(100,True)
 
 #     mc1.sendGRST_B()
 #     l1 = mc1.getFDAddresses(100,True)
