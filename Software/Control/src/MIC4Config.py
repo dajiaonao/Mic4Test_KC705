@@ -151,7 +151,7 @@ class DataCollector(threading.Thread):
         self.pipe = os.fdopen(p,'w')
         self.conn = conn
         self.cmdstr = None
-        self.data = ""
+        self.data = None
         self.isDebug = False
         self.on = True
         self.daemon = True
@@ -160,16 +160,10 @@ class DataCollector(threading.Thread):
         while self.on:
             self.conn.sendall(self.cmdstr)
             try:
-                self.data += self.conn.recv(4*(12*self.nFrame+1))
+                data1 = self.conn.recv(4*(12*self.nFrame+1))
             except socket.timeout as e:
                 continue
-            if self.data:
-                if self.isDebug:
-                    print([ord(w) for w in self.data])
-                self.pipe.write(self.data+'\n')
-                self.pipe.flush()
-                self.data = ''
-        self.pipe.close()
+            self.data.append((datetime.now(), data1))
 
 class DataSaver(threading.Thread):
     def __init__(self, p, saveName='test_data_out.dat'):
@@ -179,45 +173,70 @@ class DataSaver(threading.Thread):
         self.isDebug = False
         self.on = True
         self.daemon = True
-        self.data = []
+        self.data = None
+        self.plotInterval = 20
+        self.tObjects = None
+
+    def setupPlot(self):
+        from ROOT import TH2F, gStyle, TCanvas, TLatex
+        setStyle()
+        h2 = TH2F('h2','h2;Col;Row',64,-0.5,63.5,128,-0.5,127.5)
+        h2.SetLineColor(920)
+        h2C = h2.Clone('h2C')
+#         valid_list = [(i+32*k,j,0,1) for i in range(7) for j in range(32) for k in range(4)]
+        valid_list = [(i+32*k,j,0,1) for i in range(24,32) for j in range(32) for k in range(3,4)]
+        for t in valid_list:
+            h2C.Fill(t[1],t[0])
+
+        lt = TLatex()
+        cav1 = TCanvas('cav1','cav1',800,700)
+        cav1.Divide(2)
+        cav1a = cav1.cd(1)
+        h2C.Draw('box')
+        htx = h2.Clone('htx')
+        htx.Draw("colzsame")
+        self.lt0 = lt.DrawLatexNDC(0.2,0.95,"DATE")
+        cav1b = cav1.cd(2)
+        h2C.Draw('box')
+        htC = h2.Clone('htC')
+        htC.Draw("colzsame")
+        cav1.cd()
+        self.tObjects = [cav1, lt0, cav1a, cav1b, h2C, htx, htC]
+
     def run(self):
         with open(self.saveName, 'a') as fout:
+            data1 = None
+            r = []
+            iPlot = 0
             while self.on:
                 try:
-                    retw = self.pipe.readline()[:-1]
-                    dx = self.data + [ord(w) for w in retw]
-                except TypeError as e:
+                    data1 += self.data.pop(0)
+                except IndexError as e:
                     print(e)
-#                     print(len(retw))
-#                     print(retw)
                     continue
+                fout.write('#'+str(data1[0])+'\n')
+                datax = [ord(w) for w in data1[1]] 
+                fout.write(str(datax)+'\n')
 
-                print(datetime.now())
-                idx =0
+                ### monitor
+                adds,r = getAddressesN(r+datax, True)
+                print(adds)
+                if r: print("remaining:", r)
 
-                nF = 48
-                hd = findHeader(dx)
-                if hd<0:
-                    print("header not found....")
-                    print(dx)
-                    continue
+                ### plots
+                iPlot += 1
+                if iPlot == self.plotInterval:
+                    ### create plot
+                    if self.tObjects is None: self.setupPlot()
+                    for x in adds:
+                        self.tObjects[5].Fill(x[1],x[0])
+                        self.tObjects[6].Fill(x[1],x[0])
+                    self.tObjects[1].SetText(0.2,0.95,str(data1[0]))
+                    self.tObjects[2].Modified()
+                    self.tObjects[3].Modified()
 
-                aList = []
-                while hd+nF<=len(dx):
-                    aList += parseFD(dx[hd:hd+nF], show=False)
-                    hd+=nF
-                print(aList)
-                self.data = dx[hd:]
-                if self.data: print("Remaining:", self.data)
-#                 for x in aList:
-#                     if x[0] == 127:
-#                         print('/'*40+'\n')
-#                         print(x)
-#                         print('\\'*40+'\n')
-                fout.write('#'+str(datetime.now())+'\n')
-                fout.write(retw+'\n')
-        self.pipe.close()
-
+                    ### Reset the counter
+                    iPlot = 0
 
 class MIC4Config():
     cmd = Cmd()
@@ -390,12 +409,16 @@ class MIC4Config():
         cmdstr += self.cmd.write_register(0, 0)
         self.s.sendall(cmdstr)
 
+        from collections import deque
+        dataT = deque()
         r, w = os.pipe()
         c1 = DataCollector(w, self.s)
         c1.cmdstr = self.cmd.read_datafifo(480)
+        c1.data = dataT 
 #         print("xxx",c1)
 #         c1.run()
         s1 = DataSaver(r,saveName=dataFileName)
+        s1.data = dataT
 # 
         s1.start()
         c1.start()

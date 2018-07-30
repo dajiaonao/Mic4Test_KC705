@@ -25,15 +25,28 @@ def setStyle():
 def test():
     setStyle()
     h2 = TH2F('h2','h2;Col;Row',64,-0.5,63.5,128,-0.5,127.5)
+    h2.SetLineColor(920)
     h2C = h2.Clone('h2C')
-    valid_list = [(i+32*k,j,0,1) for i in range(7) for j in range(32) for k in range(4)]
-    for t in [(i+32*k,j,0,1) for i in range(7) for j in range(32) for k in range(4)]:
+    valid_list = [(i+32*k,j,0,1) for i in range(24,32) for j in range(32) for k in range(3,4)]
+#     valid_list = [(i+32*k,j,0,1) for i in range(7) for j in range(32) for k in range(4)]
+#     for t in [(i+32*k,j,0,1) for i in range(7) for j in range(32) for k in range(4)]:
+    for t in valid_list: 
         h2C.Fill(t[1],t[0])
 
-    cav1 = TCanvas('cav1','cav1',400,700)
-    h2C.Draw('box')
-#     waitRootCmdX()
     lt = TLatex()
+    cav1 = TCanvas('cav1','cav1',800,700)
+    cav1.Divide(2)
+    cav1a = cav1.cd(1)
+    h2C.Draw('box')
+    htx = h2.Clone('htx')
+    htx.Draw("colzsame")
+    lt0 = lt.DrawLatexNDC(0.2,0.95,"empty")
+    cav1b = cav1.cd(2)
+    h2C.Draw('box')
+    htC = h2.Clone('htC')
+    htC.Draw("colzsame")
+    cav1.cd()
+#     waitRootCmdX()
 #
     figI = 0
     with open('../data/xRay/data_xRayTest_Jul27_1.dat','r') as fin1:
@@ -65,13 +78,13 @@ def test():
                     print datax
                     print
                 datax = r
-                continue
+#                 continue
                 bc1.show("OKBLUE",str(date))
 #                 print date
                 print adds
 
-                htx = h2.Clone('htx')
                 if adds:
+                    htx.Reset()
                     for x in adds:
 #                         if x not in valid_list:
 #                             print [ord(w) for w in line[:-1]] 
@@ -81,8 +94,10 @@ def test():
 #                             return 0
 #                         h2.Fill(x[1],x[0])
                         htx.Fill(x[1],x[0])
-                htx.Draw("colz")
-                lt.DrawLatexNDC(0.2,0.95,str(date))
+                        htC.Fill(x[1],x[0])
+                    lt0.SetText(0.2,0.95,str(date))
+                    cav1a.Modified()
+                    cav1b.Modified()
                 waitRootCmdX(sDir+sTag+str(figI), autoSave)
                 figI += 1
 
