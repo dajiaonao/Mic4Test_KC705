@@ -1,10 +1,17 @@
 #!/usr/bin/env python
 import sys
 sys.path.append('../../Control/src')
-from MIC4Config import getAddresses
-from ROOT import TH2F, gStyle, TCanvas
-from rootUtil import waitRootCmdX
+from MIC4Config import getAddresses, getAddressesN
+from ROOT import TH2F, gStyle, TCanvas, TLatex
+from rootUtil import waitRootCmdX, bcolors
 from dateutil.parser import parse
+
+
+sDir = 'xray_figs/'
+sTag = 'Jul27a_'
+autoSave = False
+# autoSave = True
+bc1 = bcolors()
 
 def setStyle():
     gStyle.SetOptStat(0)
@@ -26,21 +33,44 @@ def test():
     cav1 = TCanvas('cav1','cav1',400,700)
     h2C.Draw('box')
 #     waitRootCmdX()
+    lt = TLatex()
 #
-    with open('test_data_out1.dat','r') as fin1:
+    figI = 0
+    with open('../data/xRay/data_xRayTest_Jul27_1.dat','r') as fin1:
         started = False
-        date0 = parse('2018-05-11 21:52:35.0')
-        date1 = parse('2018-05-11 22:52:35.0')
+        date0 = parse('2018-07-27 16:05:33.9')
+        date1 = parse('2018-09-11 22:52:35.0')
+#         datax = None
+        datax = []
         while True:
             line = fin1.readline()
             if len(line)==0: break 
             if line[0:5]=='#2018':
-                print line,
+#                 print line,
                 date = parse(line[1:])
-                print date
+#                 print date
                 started = date0<date<date1
             elif started:
-                adds = getAddresses(line[:-1])
+#                 print [ord(w) for w in line]
+                if datax: 
+                    print '-->',datax
+                    print '===',[ord(w) for w in line[:-1]]
+                datax += [ord(w) for w in line[:-1]]
+                adds,r = getAddressesN(datax, False)
+                if r: 
+                    print '>>>>',datax
+                    print '++++',r
+                if adds == [] or adds is None:
+                    print '---:', date
+                    print datax
+                    print
+                datax = r
+                continue
+                bc1.show("OKBLUE",str(date))
+#                 print date
+                print adds
+
+                htx = h2.Clone('htx')
                 if adds:
                     for x in adds:
 #                         if x not in valid_list:
@@ -49,7 +79,13 @@ def test():
 #                             getAddresses(line[:-1],True)
 #                             print x
 #                             return 0
-                        h2.Fill(x[1],x[0])
+#                         h2.Fill(x[1],x[0])
+                        htx.Fill(x[1],x[0])
+                htx.Draw("colz")
+                lt.DrawLatexNDC(0.2,0.95,str(date))
+                waitRootCmdX(sDir+sTag+str(figI), autoSave)
+                figI += 1
+
     h2.Draw('colzsame')
     waitRootCmdX()
 
