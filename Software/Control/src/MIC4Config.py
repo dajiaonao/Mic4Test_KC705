@@ -154,7 +154,7 @@ class DataCollector(threading.Thread):
                 continue
             if self.data:
                 if self.isDebug:
-                    print [ord(w) for w in self.data]
+                    print([ord(w) for w in self.data])
                 self.pipe.write(self.data+'\n')
                 self.pipe.flush()
                 self.data = ''
@@ -197,7 +197,7 @@ class DataSaver(threading.Thread):
                     hd+=nF
                 print(aList)
                 self.data = dx[hd:]
-                if self.data: print "Remaining:", self.data
+                if self.data: print("Remaining:", self.data)
 #                 for x in aList:
 #                     if x[0] == 127:
 #                         print('/'*40+'\n')
