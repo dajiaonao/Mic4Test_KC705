@@ -9,7 +9,8 @@ module Mic4_Cntrl#(parameter DIV_WIDTH=6,  //% @param width of division factor.
                    parameter COUNT_WIDTH=64, //% @param Width of clock division counter, it must be greater than 2**DIV_WIDTH.
                    parameter APULSE_LENGTH = 100, //% output pulse have a length of PULSE_LENGTH*CLOCK_PERIOD
                    parameter DPULSE_LENGTH = 300, //% output pulse have a length of PULSE_LENGTH*CLOCK_PERIOD
-                   parameter GRST_LENGTH = 5 //% output pulse have a length of PULSE_LENGTH*CLOCK_PERIOD
+                   parameter GRST_LENGTH = 5, //% output pulse have a length of PULSE_LENGTH*CLOCK_PERIOD
+                   parameter STROBE_LENGTH = 2 //% output pulse have a length of PULSE_LENGTH*CLOCK_PERIOD
   ) (
 input clk_in, //%250MHz
 input clk_control, //%100MHz
@@ -19,15 +20,18 @@ input [DIV_WIDTH-1:0] div1,
 input pulse_grst,
 input pulse_a,
 input pulse_d,
+input pulse_s,
 output clk_out, //% CLK_IN of mic4
 output lt_out, //%LT_IN of mic4
 output a_pulse_out,
 output d_pulse_out,
-output grst_n_out
+output grst_n_out,
+output strobe_out
     );
 
 wire [COUNT_WIDTH-1:0] counter0, counter1;
 wire grst_temp;
+wire strobe_temp;
 
 Clock_Div #(.DIV_WIDTH(DIV_WIDTH), .COUNT_WIDTH(COUNT_WIDTH))
         clock_div_1(
@@ -71,4 +75,14 @@ Pulse_Strecher #(.PULSE_LENGTH(GRST_LENGTH))
    .pulse_in(pulse_grst),
    .pulse_out(grst_temp)
     );
+
+assign strobe_temp=~strobe_out;
+Pulse_Strecher #(.PULSE_LENGTH(STROBE_LENGTH))
+  ps_inst2(
+   .clk_in(clk_control),
+   .rst(rst),
+   .pulse_in(pulse_s),
+   .pulse_out(strobe_temp)
+    );
+
 endmodule

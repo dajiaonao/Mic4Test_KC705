@@ -12,6 +12,7 @@ module Parallel_SerialX_top #( parameter NDATA=1, //% 2**NDATA number of data to
   input start_pulse, // to trigger the data dumpt
   input [7:0] fd_in,
   input trigger, //! trigger
+  input evt_trig,
   input fifo_rd_en, //% control_interface FIFO full signal.
   output fifo_empty, //% FIFO empty signal sent to control_interface.
   output [FIFO_WIDTH-1:0] fifo_q //% data send to internal FIFO of control interface.
@@ -46,6 +47,7 @@ Parallel_SerialX #(.NDATA(NDATA), .FIFO_WIDTH(FIFO_WIDTH), .NUM_WIDTH(NUM_WIDTH)
    .rst(rst),
    .fd_in(fd_in),
    .trigger(trigger),
+   .evt_trig(evt_trig),
    .fifo_full(fifo_full), //% feed back from fifo
    .fifo_wr_en(fifo_wr_en), //% to trigger the fifo writing
    .data_out(data_to_fifo) //% data pass to fifo

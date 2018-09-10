@@ -19,6 +19,7 @@ module Parallel_SerialX #( parameter NDATA=100, //% 2**NDATA number of data to b
   input start, // to trigger the data dumpt
   input [7:0]fd_in,
   input trigger, //! trigger mode: 1
+  input evt_trig, // event trigger, increase the counter
   input fifo_full, //% feed back from fifo
   output reg fifo_wr_en, //% to trigger the fifo writing
   output reg [FIFO_WIDTH-1:0] data_out //% data pass to fifo
@@ -28,6 +29,7 @@ reg [NUM_WIDTH-1:0] counter0; /// for number of words
 reg [9:0] counter1; /// for number of data
 reg [5:0] counter2; /// number of words in a frame: 8+23*16+8=48*8=12*32, reserve 64 words
 reg [5:0] counter3;
+reg [35:0] evt_cnt;
 reg [5:0] nData;
 
 parameter COUNTER0_FULL = 2'b11;
@@ -50,6 +52,16 @@ parameter s2=3'b100;
 
 wire moni0;
 assign moni0 = (counter3==FRAME_WIDTH-1);
+
+always@(posedge evt_trig or posedge rst)
+begin
+  if (rst) begin
+    evt_cnt <= 36'b0;
+  end
+  else begin
+    evt_cnt <= evt_cnt+1;
+  end
+end
 
 ///% doing the combination
 always@(negedge clk)
@@ -74,13 +86,11 @@ begin
       counter3 <= 0;
       data_out_temp <= 0;
       data_out <= 0;
-      has_header <= 1'b0;
       fifo_wr_en <= 0;
+      has_header <= 1'b0;
       next_state <= s1;
     end
     s1: begin/// find header
-      fifo_wr_en <= 0; /// needed when the previous state is s3
-      data_out <= 0;
       counter0 = COUNTER0_FULL;
 
       if(has_header == 1'b0) begin /// find header
@@ -103,6 +113,14 @@ begin
         data_out_temp = (fd_in<<(counter0*8));
         counter0 = counter0-1;
         counter2 = 0;
+
+        /// write out the event number
+        data_out <= evt_cnt;
+        fifo_wr_en <= 1;
+      end
+      else begin
+        data_out <= 0;
+        fifo_wr_en <= 0; /// needed when the previous state is s3
       end
     end
     s2: begin //% pass data

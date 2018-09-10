@@ -539,7 +539,8 @@ COMPONENT dbg_ila2
       COUNT_WIDTH : positive := 64;
       APULSE_LENGTH : positive := 100;
       DPULSE_LENGTH : positive := 300;
-      GRST_LENGTH : positive := 5
+      GRST_LENGTH : positive := 5;
+      STROBE_LENGTH : positive := 2
     );
     PORT (
       clk_in      : IN std_logic; 
@@ -549,12 +550,14 @@ COMPONENT dbg_ila2
       div1        : IN std_logic_Vector(DIV_WIDTH-1 DOWNTO 0);
       pulse_a     : IN std_logic;
       pulse_d     : IN std_logic;
+      pulse_s     : IN std_logic;
       pulse_grst  : IN std_logic;
       clk_out     : OUT std_logic; --CLK_IN of mic4
       lt_out      : OUT std_logic; --LT_IN of mic4
       a_pulse_out : OUT std_logic;
       d_pulse_out : OUT std_logic;
-      grst_n_out  : OUT std_logic
+      grst_n_out  : OUT std_logic;
+      strobe_out  : OUT std_logic
     );
   END COMPONENT;
   ---------------------------------------------> Mic4 control
@@ -587,6 +590,7 @@ COMPONENT dbg_ila2
       start_pulse: IN  std_logic;
       fd_in      : IN  std_logic_Vector(7 DOWNTO 0);
       trigger    : IN  std_logic;
+      evt_trig   : IN  std_logic;
       fifo_rd_en : IN  std_logic;
       fifo_empty : OUT std_logic;
       fifo_q     : OUT std_logic_Vector(FIFO_WIDTH-1 DOWNTO 0)
@@ -917,7 +921,10 @@ COMPONENT dbg_ila2
   SIGNAL  ila2_probe1 :std_logic_vector(3 DOWNTO 0);
   SIGNAL  ila2_probe2 :std_logic_vector(15 DOWNTO 0);
   SIGNAL  start_fd  : std_logic;
+  SIGNAL  trigger_in  :std_logic;
   SIGNAL  strobe_i    :std_logic;
+  SIGNAL  strobe_i2   :std_logic;
+  SIGNAL  strobe_opt  :std_logic_vector(1 DOWNTO 0);
   SIGNAL  valid_out   :std_logic;
   ---------------------------------------------> FDOUT
   ---------------------------------------------> DIV_5
@@ -1481,19 +1488,32 @@ BEGIN
 
   --FMC_HPC_LA_P(30) <= config_reg(16*18+12); --STROBE
   --FMC_HPC_LA_P(30) <= strobe_i;
+ 
+  strobe_opt <= config_reg(16*18+14 DOWNTO 16*18+13);
   
-  
-  FMC_HPC_LA_P(30) <= strobe_i when config_reg(16*18+13)='1' else config_reg(16*18+12);
+  FMC_HPC_LA_P(30) <= strobe_i when strobe_opt="01" else -- data-driven
+		              strobe_i2 when strobe_opt="10" else -- trigger-driven
+		              config_reg(16*18+12); -- constant
+
   FMC_HPC_HA_P(05) <= valid_out;
   FMC_HPC_LA_P(32) <= NOT (reset OR chip_rest); --RESET: the modules work with high voltage in the chip.
-  
+ 
+  --FMC_HPC_HA_N(19) <= trigger_in;
+
+  BUFG_inst3 : BUFG
+    PORT MAP (
+      I => FMC_HPC_HA_N(19),
+      O => trigger_in
+    );
+
   Mic4_Cntrl_inst : Mic4_Cntrl
     GENERIC MAP(
       DIV_WIDTH     => 6,
       COUNT_WIDTH   => 64,
       APULSE_LENGTH => 90000,
       DPULSE_LENGTH => 10,
-      GRST_LENGTH   => 5
+      GRST_LENGTH   => 5,
+      STROBE_LENGTH => 2
     )
     PORT MAP (
       clk_in => clk_run,
@@ -1504,11 +1524,13 @@ BEGIN
       pulse_grst => pulse_reg(5),
       pulse_a => pulse_reg(6),
       pulse_d => pulse_reg(7),
+      pulse_s => trigger_in,
       clk_out => clk_out_mc_i, -- CLK_IN of mic4
       lt_out => lt_out_mc, --LT_IN of mic4
       a_pulse_out => FMC_HPC_LA_P(21),
       d_pulse_out => FMC_HPC_LA_P(24),
-      grst_n_out => FMC_HPC_LA_P(28)
+      grst_n_out => FMC_HPC_LA_P(28),
+      strobe_out => strobe_i2
     );
 
   --- Make it a global clock to get better timing
@@ -1542,7 +1564,7 @@ BEGIN
   --data_out <= probe0_FD;
 --    data_out <= data_DOut;
   data_out <= probe0_FD when config_reg(16*18+15)='1' else data_DOut;
-  
+ 
   ---------------------------------------------< FDOUT
   Parallel_SerialX_top_inst0: Parallel_SerialX_top
     GENERIC MAP (
@@ -1558,6 +1580,7 @@ BEGIN
       start_pulse => pulse_reg(10),
       fd_in       => data_out, 
       trigger     => valid_out,
+      evt_trig    => trigger_in,
       fifo_rd_en  => fifo_rden2,
       fifo_empty  => fifo_empty2,
       fifo_q      => fifo_q2
