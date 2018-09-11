@@ -1596,20 +1596,35 @@ BEGIN
   ---------------------------------------------< DIV_5
 
    probe0_FD <= fd_out0 & fd_out1 & fd_out2 & fd_out3 & fd_out4 & fd_out5 & fd_out6 & fd_out7;
-   ila2_probe1(0) <= fifo_empty1;
-   ila2_probe1(1) <= fifo_empty2;
-   ila2_probe1(2) <= FMC_HPC_HA_P(05);
-   ila2_probe1(3) <= pulse_reg(10);
+   ila2_probe1(0) <= config_reg(16*18+14); --- strobe option
+   ila2_probe1(1) <= config_reg(16*18+13); --- strobe option
+--    ila2_probe1(2) <= config_reg(16*18+12);
+   ila2_probe1(2) <= FMC_HPC_LA_P(30); -- output strobe
+   ila2_probe1(3) <= config_reg(6); --- strobe
+
+--    ila2_probe1(0) <= fifo_empty1;
+--    ila2_probe1(1) <= fifo_empty2;
+--    ila2_probe1(2) <= FMC_HPC_HA_P(05);
+--    ila2_probe1(3) <= pulse_reg(10);
+
+   ila2_probe2(8) <= fifo_empty1;
+   ila2_probe2(9) <= fifo_rden1;
+   ila2_probe2(10) <= fifo_empty2;
+   ila2_probe2(11) <= fifo_rden2;
+   ila2_probe2(12) <= FMC_HPC_HA_N(19); --- input trigger pin
+   ila2_probe2(13) <= trigger_in;
+   ila2_probe2(14) <= strobe_i;
+   ila2_probe2(15) <= strobe_i2;
 
    ila2_probe2(7 DOWNTO 0) <= data_out;
-   ila2_probe2(8) <= track_out_i; 
-   ila2_probe2(9) <= rxcommadet_i; 
-   ila2_probe2(10) <= rxisaligned_i; 
-   ila2_probe2(11) <= rxbyterealign_i;
-   ila2_probe2(12) <= div_5_out;
-   ila2_probe2(13) <= rxbyterealign_i;
-   ila2_probe2(14) <= rxbyterealign_i;
-   ila2_probe2(15) <= rxbyterealign_i;
+--    ila2_probe2(8) <= track_out_i; 
+--    ila2_probe2(9) <= rxcommadet_i; 
+--    ila2_probe2(10) <= rxisaligned_i; 
+--    ila2_probe2(11) <= rxbyterealign_i;
+--    ila2_probe2(12) <= div_5_out;
+--    ila2_probe2(13) <= rxbyterealign_i;
+--    ila2_probe2(14) <= rxbyterealign_i;
+--    ila2_probe2(15) <= rxbyterealign_i;
    
    -- IBUFDS: Differential Input Buffer
    --         Kintex-7
