@@ -67,15 +67,6 @@ Pulse_Strecher #(.PULSE_LENGTH(DPULSE_LENGTH))
    .pulse_out(d_pulse_out)
     );
 
-assign grst_n_out=~grst_temp;
-Pulse_Strecher #(.PULSE_LENGTH(GRST_LENGTH))
-  ps_inst(
-   .clk_in(clk_control),
-   .rst(rst),
-   .pulse_in(pulse_grst),
-   .pulse_out(grst_temp)
-    );
-
 assign strobe_temp=~strobe_out;
 Pulse_Strecher #(.PULSE_LENGTH(STROBE_LENGTH))
   ps_inst2(
@@ -83,6 +74,15 @@ Pulse_Strecher #(.PULSE_LENGTH(STROBE_LENGTH))
    .rst(rst),
    .pulse_in(pulse_s),
    .pulse_out(strobe_temp)
+    );
+
+assign grst_n_out=~grst_temp;
+Pulse_Strecher #(.PULSE_LENGTH(GRST_LENGTH))
+  ps_inst(
+   .clk_in(clk_control),
+   .rst(rst),
+   .pulse_in(pulse_grst),
+   .pulse_out(grst_temp)
     );
 
 endmodule

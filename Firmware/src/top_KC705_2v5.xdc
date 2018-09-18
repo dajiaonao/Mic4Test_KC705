@@ -26,8 +26,8 @@ set_property PACKAGE_PIN K28 [get_ports USER_CLK_P]
 set_property PACKAGE_PIN K29 [get_ports USER_CLK_N]
 
 # 125MHz clock, for GTP/GTH/GTX
-set_property PACKAGE_PIN G8 [get_ports SGMIICLK_Q0_P]
 set_property PACKAGE_PIN G7 [get_ports SGMIICLK_Q0_N]
+set_property PACKAGE_PIN G8 [get_ports SGMIICLK_Q0_P]
 
 # clock domain interaction
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks system_clock] -group [get_clocks -include_generated_clocks sgmii_clock]
@@ -158,10 +158,10 @@ set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_N]
 
 set_property PACKAGE_PIN J8 [get_ports GTREFCLK_P]
 set_property PACKAGE_PIN J7 [get_ports GTREFCLK_N]
-set_property PACKAGE_PIN K5 [get_ports SMA_MGT_RX_N]
 set_property PACKAGE_PIN K6 [get_ports SMA_MGT_RX_P]
 set_property PACKAGE_PIN K1 [get_ports SMA_MGT_TX_N]
 set_property PACKAGE_PIN K2 [get_ports SMA_MGT_TX_P]
+set_property PACKAGE_PIN K5 [get_ports SMA_MGT_RX_N]
 
 
 
@@ -180,6 +180,8 @@ set_property IOSTANDARD LVCMOS25 [get_ports USB_TX]
 #<-- control interface --<
 
 set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sConfigReg_reg[*]}] -filter {NAME =~ *C}]
+set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sPulseReg_reg[*]}] -filter {NAME =~ *C}]
+set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sPulseReg_reg[*]}] -filter {NAME =~ *C}]
 set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sPulseReg_reg[*]}] -filter {NAME =~ *C}]
 set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sPulseReg_reg[*]}] -filter {NAME =~ *C}]
 set_false_path -to [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *control_interface_inst*sRegOut_reg[*]}] -filter {NAME =~ *D}]
@@ -297,10 +299,12 @@ set_property IOSTANDARD LVCMOS25 [get_ports I2C_SDA]
 set_property IOSTANDARD LVCMOS25 [get_ports USER_CLK_N]
 set_property IOSTANDARD LVCMOS25 [get_ports USER_CLK_P]
 
+
+### new things
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets {FMC_HPC_HA_N_IBUF[19]}]
+
+set_property IOSTANDARD LVCMOS25 [get_ports {FMC_HPC_HA_P[15]}]
 set_property C_CLK_INPUT_FREQ_HZ 300000000 [get_debug_cores dbg_hub]
 set_property C_ENABLE_CLK_DIVIDER false [get_debug_cores dbg_hub]
 set_property C_USER_SCAN_CHAIN 1 [get_debug_cores dbg_hub]
 connect_debug_port dbg_hub/clk [get_nets sys_clk]
-
-### new things
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets FMC_HPC_HA_N_IBUF[19]]

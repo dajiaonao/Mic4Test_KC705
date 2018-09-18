@@ -1492,8 +1492,8 @@ BEGIN
   strobe_opt <= config_reg(16*18+14 DOWNTO 16*18+13);
   
   FMC_HPC_LA_P(30) <= strobe_i when strobe_opt="01" else -- data-driven
-		              strobe_i2 when strobe_opt="10" else -- trigger-driven
-		              config_reg(16*18+12); -- constant
+		      strobe_i2 when strobe_opt="10" else -- trigger-driven
+		      config_reg(16*18+12); -- constant
 
   FMC_HPC_HA_P(05) <= valid_out;
   FMC_HPC_LA_P(32) <= NOT (reset OR chip_rest); --RESET: the modules work with high voltage in the chip.
@@ -1502,7 +1502,7 @@ BEGIN
 
   BUFG_inst3 : BUFG
     PORT MAP (
-      I => FMC_HPC_HA_N(19),
+      I => '0', --FMC_HPC_HA_N(19),
       O => trigger_in
     );
 
@@ -1561,6 +1561,17 @@ BEGIN
    );
   ---------------------------------------------< Mic4 control
 
+
+  test_obufds_inst : OBUFDS
+  GENERIC MAP (
+    IOSTANDARD => "LVDS"
+  )
+  PORT MAP (
+    O  => FMC_HPC_HA_P(15),  -- Diff_p output (connect directly to top-level port)
+    OB => FMC_HPC_HA_N(15),  -- Diff_n output (connect directly to top-level port)
+    I  => div_5_out
+ );
+
   --data_out <= probe0_FD;
 --    data_out <= data_DOut;
   data_out <= probe0_FD when config_reg(16*18+15)='1' else data_DOut;
@@ -1594,6 +1605,9 @@ BEGIN
       clkout     => div_5_out
   );
   ---------------------------------------------< DIV_5
+
+   FMC_HPC_HA_N(19)<=div_5_out;
+   FMC_HPC_HA_P(19)<=clk_out_mc;
 
    probe0_FD <= fd_out0 & fd_out1 & fd_out2 & fd_out3 & fd_out4 & fd_out5 & fd_out6 & fd_out7;
    ila2_probe1(0) <= config_reg(16*18+14); --- strobe option
