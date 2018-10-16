@@ -143,12 +143,12 @@ set_property IOSTANDARD LVCMOS18 [get_ports {BTN5Bit[4]}]
 set_property PACKAGE_PIN AC6 [get_ports {BTN5Bit[4]}]
 
 # SMA
-set_property IOSTANDARD LVDS_25 [get_ports USER_SMA_CLOCK_P]
-#set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_P]
+#set_property IOSTANDARD LVDS_25 [get_ports USER_SMA_CLOCK_P]
+#set_property IOSTANDARD LVDS_25 [get_ports USER_SMA_CLOCK_N]
+set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_P]
+set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_N]
 set_property PACKAGE_PIN L25 [get_ports USER_SMA_CLOCK_P]
 set_property PACKAGE_PIN K25 [get_ports USER_SMA_CLOCK_N]
-set_property IOSTANDARD LVDS_25 [get_ports USER_SMA_CLOCK_N]
-#set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_N]
 
 set_property PACKAGE_PIN Y23 [get_ports USER_SMA_GPIO_P]
 set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_P]
